@@ -21,6 +21,7 @@ const HymnalPage = lazy(() => import('@/pages/hymnal/HymnalPage'));
 const AppTabPage = lazy(() => import('@/pages/app/AppTabPage'));
 const AppPlaceholderPage = lazy(() => import('@/pages/app/AppPlaceholderPage'));
 const ProfilePage = lazy(() => import('@/pages/profile/ProfilePage'));
+const WalletPage = lazy(() => import('@/pages/wallet/WalletPage'));
 const LaunchPage = lazy(() => import('@/pages/launch/LaunchPage'));
 const LoginPage = lazy(() => import('@/pages/auth/login/LoginPage'));
 const GoogleRedirectPage = lazy(() => import('@/pages/auth/google-redirect/GoogleRedirectPage'));
@@ -105,7 +106,7 @@ const RoutedApp = () => {
             <Route path={paths.church} element={<AppTabPage kind="church" />} />
             <Route path={paths.resources} element={<AppPlaceholderPage title="Resources" />} />
             <Route path={paths.discipleship} element={<AppPlaceholderPage title="Discipleship" />} />
-            <Route path={paths.wallet} element={<AppTabPage kind="wallet" />} />
+            <Route path={paths.wallet} element={<WalletPage />} />
             <Route path={paths.profile} element={<ProfilePage />} />
             <Route path={paths.settings} element={<AppPlaceholderPage title="Settings" />} />
             <Route path={paths.devotional} element={<AppPlaceholderPage title="Devotional" />} />

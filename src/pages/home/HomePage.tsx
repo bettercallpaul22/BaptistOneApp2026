@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   BookMarked,
   Clock3,
@@ -14,6 +15,7 @@ import prayerIcon from '@/assets/icons/app_prayer.svg';
 import walletIcon from '@/assets/icons/app_wallet.svg';
 import { AppButton, AppText } from '@/components/common';
 import { AppCard, QuickActionCard, type QuickActionCardTone } from '@/components/display';
+import { AppModal } from '@/components/feedback';
 import { useDeviceProfile } from '@/hooks/useDeviceProfile';
 import { useHomeBootstrapApi } from '@/hooks/useHomeBootstrapApi';
 import { AppShell } from '@/layouts/AppShell';
@@ -26,6 +28,7 @@ type QuickAction = {
   icon: string;
   tone: QuickActionCardTone;
   to?: string;
+  requiresAuth?: boolean;
 };
 
 const quickActions: QuickAction[] = [
@@ -34,7 +37,7 @@ const quickActions: QuickAction[] = [
   { label: 'Prayer', icon: prayerIcon, tone: 'plain' },
   { label: 'Events', icon: eventIcon, tone: 'plain' },
   { label: 'Giving', icon: givingIcon, tone: 'plain' },
-  { label: 'Wallet', icon: walletIcon, tone: 'plain' },
+  { label: 'Wallet', icon: walletIcon, tone: 'plain', to: paths.wallet, requiresAuth: true },
 ];
 
 const getTimeOfDayGreeting = () => {
@@ -49,7 +52,9 @@ const getTimeOfDayGreeting = () => {
 const getFirstName = (name?: string | null) => name?.trim().split(/\s+/)[0] || null;
 
 export default function HomePage() {
-  const authData = useAppSelector((state) => state.auth.authData);
+  const navigate = useNavigate();
+  const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
+  const { authData, isAuthenticated } = useAppSelector((state) => state.auth);
   const memberAccount = useAppSelector((state) => state.member.data);
   useHomeBootstrapApi();
 
@@ -72,6 +77,12 @@ export default function HomePage() {
         : 'h2';
   const verseReferenceVariant: TypographyVariant = isDesktop ? 'bodyLarge' : 'bodySmall';
   const verseLineClamp = isDesktop ? undefined : isTablet || isIPad ? 4 : 3;
+  const closeLoginPrompt = () => setIsLoginPromptOpen(false);
+
+  const handleLoginPromptConfirm = () => {
+    setIsLoginPromptOpen(false);
+    navigate(paths.login);
+  };
 
   return (
     <AppShell>
@@ -107,9 +118,18 @@ export default function HomePage() {
               <section className="grid gap-4">
                 <AppText variant="h4">Quick Access</AppText>
                 <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-                  {quickActions.map((action) => (
-                    <QuickActionCard key={action.label} {...action} />
-                  ))}
+                  {quickActions.map((action) => {
+                    const shouldPromptForLogin = action.requiresAuth && !isAuthenticated;
+
+                    return (
+                      <QuickActionCard
+                        key={action.label}
+                        {...action}
+                        to={shouldPromptForLogin ? undefined : action.to}
+                        onClick={shouldPromptForLogin ? () => setIsLoginPromptOpen(true) : undefined}
+                      />
+                    );
+                  })}
                 </div>
               </section>
 
@@ -169,6 +189,22 @@ export default function HomePage() {
             </aside>
           </div>
       </div>
+      <AppModal
+        open={isLoginPromptOpen}
+        title="Login required"
+        onClose={closeLoginPrompt}
+        footerLayout="split"
+        footer={
+          <>
+            <AppButton variant="outline" onClick={closeLoginPrompt}>
+              Cancel
+            </AppButton>
+            <AppButton onClick={handleLoginPromptConfirm}>Login</AppButton>
+          </>
+        }
+      >
+        Please login to continue.
+      </AppModal>
     </AppShell>
   );
 }

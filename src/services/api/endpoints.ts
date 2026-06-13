@@ -44,4 +44,7 @@ export const endpoints = {
     profileCompletion: '/private/members/profile-completion',
     profileCompletionSection: (sectionKey: string) => `/private/members/profile-completion/sections/${sectionKey}`,
   },
+  privateWallets: {
+    wallets: '/private/wallets',
+  },
 } as const;
