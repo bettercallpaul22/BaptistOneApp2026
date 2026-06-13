@@ -3,6 +3,8 @@ import { useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
+import appleIcon from '@/assets/icons/apple_icon.svg';
+import googleIcon from '@/assets/icons/google_icon.svg';
 import { AppButton } from '@/components/common';
 import { AppCheckbox, AppInput } from '@/components/form';
 import { AuthLayout } from '@/layouts/AuthLayout';
@@ -19,6 +21,10 @@ const schema = z.object({
 });
 
 type LoginForm = z.infer<typeof schema>;
+
+const SocialIcon = ({ src, alt }: { src: string; alt: string }) => (
+  <img className="size-4 shrink-0" src={src} alt={alt} />
+);
 
 export default function LoginPage() {
   const dispatch = useAppDispatch();
@@ -77,8 +83,12 @@ export default function LoginPage() {
         </form>
         <div className={authDividerClass}>or continue with</div>
         <div className={authSocialsClass}>
-          <AppButton variant="outline">Google</AppButton>
-          <AppButton variant="outline">Apple</AppButton>
+          <AppButton fullWidth leftIcon={<SocialIcon src={googleIcon} alt="" />} variant="outline">
+            Google
+          </AppButton>
+          <AppButton fullWidth leftIcon={<SocialIcon src={appleIcon} alt="" />} variant="outline">
+            Apple
+          </AppButton>
         </div>
         <div className={authFooterClass}>
           <span>Don&apos;t have an account?</span>

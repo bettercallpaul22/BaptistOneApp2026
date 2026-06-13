@@ -1,5 +1,6 @@
 import { type ReactNode, useMemo, useRef, useState } from 'react';
 import clsx from 'clsx';
+import { ChevronDown } from 'lucide-react';
 
 export interface DropdownOption {
   label: string;
@@ -13,6 +14,11 @@ export interface AppDropdownProps<TOption extends DropdownOption = DropdownOptio
   value?: string | string[];
   placeholder?: string;
   searchable?: boolean;
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
+  loading?: boolean;
+  emptyText?: string;
+  filterOptions?: boolean;
   multi?: boolean;
   disabled?: boolean;
   error?: string;
@@ -26,6 +32,11 @@ export const AppDropdown = <TOption extends DropdownOption>({
   value,
   placeholder = 'Select an option',
   searchable = false,
+  searchQuery,
+  onSearchChange,
+  loading = false,
+  emptyText = 'No results found',
+  filterOptions = true,
   multi = false,
   disabled = false,
   error,
@@ -37,10 +48,14 @@ export const AppDropdown = <TOption extends DropdownOption>({
   const [activeIndex, setActiveIndex] = useState(0);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
+  const resolvedQuery = searchQuery ?? query;
   const values = useMemo(() => (Array.isArray(value) ? value : value ? [value] : []), [value]);
   const filtered = useMemo(
-    () => options.filter((option) => option.label.toLowerCase().includes(query.toLowerCase())),
-    [options, query],
+    () =>
+      filterOptions
+        ? options.filter((option) => option.label.toLowerCase().includes(resolvedQuery.toLowerCase()))
+        : options,
+    [filterOptions, options, resolvedQuery],
   );
   const selectedLabel = options
     .filter((option) => values.includes(option.value))
@@ -102,30 +117,43 @@ export const AppDropdown = <TOption extends DropdownOption>({
         onClick={() => setOpen((state) => !state)}
       >
         <span className={clsx('min-w-0 truncate', !selectedLabel && 'text-[#8A96AA]')}>{selectedLabel || placeholder}</span>
-        <span aria-hidden>{open ? '^' : 'v'}</span>
+        <ChevronDown className={clsx('size-4 shrink-0 transition-transform', open && 'rotate-180')} aria-hidden />
       </button>
       {open && (
-        <div className="absolute top-[calc(100%+0.375rem)] right-0 left-0 z-20 overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-[0_20px_45px_rgba(11,31,74,0.16)]">
+        <div className="absolute top-[calc(100%+0.375rem)] right-0 left-0 z-[70] overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-[0_20px_45px_rgba(11,31,74,0.16)]">
           {searchable && (
             <input
               autoFocus
-              className="m-2 w-[calc(100%-1rem)] rounded-lg border border-[#E5E7EB] px-3 py-2.5 outline-none focus:border-[#123B8D]"
+              className="m-2 w-[calc(100%-1rem)] rounded-lg border border-[#E5E7EB] px-3 py-2.5 text-sm text-[#0B1F4A] outline-none placeholder:text-[#8A96AA] focus:border-[#123B8D]"
               placeholder="Search"
-              value={query}
+              value={resolvedQuery}
               onChange={(event) => {
-                setQuery(event.target.value);
+                const nextQuery = event.target.value;
+
+                if (onSearchChange) {
+                  onSearchChange(nextQuery);
+                } else {
+                  setQuery(nextQuery);
+                }
+
                 setActiveIndex(0);
               }}
             />
           )}
-          <div className="max-h-60 overflow-auto p-1.5" role="listbox" aria-multiselectable={multi}>
+          <div className="max-h-[18rem] overflow-auto overscroll-contain p-1.5" role="listbox" aria-multiselectable={multi}>
+            {loading && (
+              <span className="flex items-center gap-2 p-2 text-xs font-semibold text-[#123B8D]">
+                <span className="size-3.5 animate-spin rounded-full border-2 border-[#D9E4F6] border-t-[#123B8D]" aria-hidden />
+                Loading
+              </span>
+            )}
             {filtered.map((option, index) => {
               const selected = values.includes(option.value);
 
               return (
                 <button
                   className={clsx(
-                    'flex min-h-9 w-full items-center justify-between gap-2 rounded-lg border-0 bg-transparent px-2.5 text-left text-[#46556E] hover:bg-[#EAF1FF] hover:text-[#123B8D]',
+                    'relative flex min-h-14 w-full items-start gap-3 rounded-lg border-0 bg-transparent px-3 py-2.5 pr-8 text-left text-sm text-[#46556E] hover:bg-[#EAF1FF] hover:text-[#123B8D]',
                     selected && 'font-bold',
                     index === activeIndex && 'bg-[#EAF1FF] text-[#123B8D]',
                   )}
@@ -137,12 +165,12 @@ export const AppDropdown = <TOption extends DropdownOption>({
                   onMouseEnter={() => setActiveIndex(index)}
                   onClick={() => selectOption(option)}
                 >
-                  {renderItem ? renderItem(option, selected) : option.label}
-                  {selected && <span className="size-1.5 rounded-full bg-[#123B8D]" aria-hidden />}
+                  <span className="min-w-0 flex-1 overflow-hidden">{renderItem ? renderItem(option, selected) : option.label}</span>
+                  {selected && <span className="absolute top-4 right-3 size-1.5 rounded-full bg-[#123B8D]" aria-hidden />}
                 </button>
               );
             })}
-            {filtered.length === 0 && <span className="block p-2 text-xs text-[#79859A]">No results found</span>}
+            {!loading && filtered.length === 0 && <span className="block p-2 text-xs text-[#79859A]">{emptyText}</span>}
           </div>
         </div>
       )}

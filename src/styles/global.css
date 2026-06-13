@@ -36,6 +36,16 @@ textarea {
   font: inherit;
 }
 
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: #0b1f4a;
+  caret-color: #0b1f4a;
+  box-shadow: 0 0 0 1000px transparent inset;
+  transition: background-color 9999s ease-out, color 9999s ease-out;
+}
+
 button {
   cursor: pointer;
 }
@@ -90,5 +100,41 @@ img {
   100% {
     opacity: 1;
     transform: scaleX(1);
+  }
+}
+
+@keyframes input-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  20% {
+    transform: translateX(-0.18rem);
+  }
+
+  40% {
+    transform: translateX(0.18rem);
+  }
+
+  60% {
+    transform: translateX(-0.12rem);
+  }
+
+  80% {
+    transform: translateX(0.12rem);
+  }
+}
+
+.app-input-error {
+  animation: input-shake 0.28s ease-in-out;
+  box-shadow:
+    0 0 0 1px #dc2626,
+    0 0 0 4px rgb(220 38 38 / 0.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-input-error {
+    animation: none;
   }
 }

@@ -2,11 +2,9 @@ import { Link } from 'react-router-dom';
 import {
   BookMarked,
   Clock3,
-  HeartHandshake,
   MapPin,
   Megaphone,
   Share2,
-  Sprout,
 } from 'lucide-react';
 import bibleIcon from '@/assets/icons/app_bible.svg';
 import eventIcon from '@/assets/icons/app_event.svg';
@@ -17,6 +15,7 @@ import walletIcon from '@/assets/icons/app_wallet.svg';
 import { AppButton, AppText } from '@/components/common';
 import { AppCard, QuickActionCard, type QuickActionCardTone } from '@/components/display';
 import { useDeviceProfile } from '@/hooks/useDeviceProfile';
+import { useHomeBootstrapApi } from '@/hooks/useHomeBootstrapApi';
 import { AppShell } from '@/layouts/AppShell';
 import { paths } from '@/routes/paths';
 import { useAppSelector } from '@/store/hooks';
@@ -38,9 +37,6 @@ const quickActions: QuickAction[] = [
   { label: 'Wallet', icon: walletIcon, tone: 'plain' },
 ];
 
-const verseImage =
-  'https://images.unsplash.com/photo-1438032005730-c779502df39b?auto=format&fit=crop&w=1200&q=80';
-
 const getTimeOfDayGreeting = () => {
   const hour = new Date().getHours();
 
@@ -54,11 +50,16 @@ const getFirstName = (name?: string | null) => name?.trim().split(/\s+/)[0] || n
 
 export default function HomePage() {
   const authData = useAppSelector((state) => state.auth.authData);
+  const memberAccount = useAppSelector((state) => state.member.data);
+  useHomeBootstrapApi();
+
   const { isDesktop, isFoldableDevice, isIPad, isMediumDevice, isSmallDevice, isTablet } = useDeviceProfile();
   const greeting = getTimeOfDayGreeting();
   const displayName =
-    getFirstName(authData?.profile.displayName) ||
-    getFirstName(authData?.user.firstName) ||
+    getFirstName(memberAccount?.basicProfile?.displayName) ||
+    getFirstName(memberAccount?.basicProfile?.firstName) ||
+    getFirstName(authData?.profile?.displayName) ||
+    getFirstName(authData?.user?.firstName) ||
     'there';
   const verseTextVariant: TypographyVariant = isSmallDevice
     ? 'h6'
@@ -82,12 +83,8 @@ export default function HomePage() {
           <div className="grid gap-7 xl:grid-cols-[minmax(0,1fr)_22rem]">
             <section className="grid gap-7">
               <article
-                className="relative min-h-[11.7rem] overflow-hidden rounded-2xl bg-cover bg-center p-4 text-white shadow-[0_14px_28px_rgba(11,31,74,0.15)] sm:min-h-[19.5rem] sm:p-6"
-                style={{
-                  backgroundImage: `linear-gradient(90deg,rgba(13,31,58,0.38),rgba(13,31,58,0.2)),url(${verseImage})`,
-                }}
+                className="relative min-h-[11.7rem] overflow-hidden rounded-2xl bg-[#06202B] p-4 text-white shadow-[0_14px_28px_rgba(11,31,74,0.15)] sm:min-h-[19.5rem] sm:p-6"
               >
-                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,13,27,0.1)_0%,rgba(4,13,27,0.55)_100%)]" />
                 <div className="relative z-10 flex h-full min-h-[9.7rem] flex-col justify-between gap-2 sm:min-h-[15rem] sm:gap-6">
                   <div className="flex items-center justify-between gap-3">
                     <span className="rounded-md bg-white px-3 py-1.5 text-xs font-extrabold text-[#0B1F4A] sm:rounded-lg sm:px-4 sm:py-2 sm:text-sm">
@@ -169,51 +166,6 @@ export default function HomePage() {
                 </div>
               </AppCard>
 
-              <section className="grid gap-5 rounded-xl bg-[#123B8D] p-6 text-white shadow-[0_12px_24px_rgba(18,59,141,0.24)]">
-                <div className="flex items-center gap-3">
-                  <span className="grid size-11 place-items-center rounded-full bg-white/15">
-                    <HeartHandshake className="size-6" aria-hidden />
-                  </span>
-                  <AppText variant="h4" color="textInverse">
-                    Prayer Wall
-                  </AppText>
-                </div>
-                <AppText variant="bodyLarge" color="#D8E4FF">
-                  Share your burdens or join in praying for others in the community.
-                </AppText>
-                <div className="grid gap-3">
-                  <AppButton variant="outline">Submit Request</AppButton>
-                  <AppButton className="border-white/25 bg-transparent text-white shadow-none" variant="outline">
-                    View Community Prayers
-                  </AppButton>
-                </div>
-              </section>
-
-              <AppCard>
-                <div className="grid gap-5">
-                  <div className="flex items-center justify-between gap-4">
-                    <AppText variant="h4">Recent Giving</AppText>
-                    <Link className="text-sm font-bold text-[#123B8D]" to={paths.home}>
-                      History
-                    </Link>
-                  </div>
-                  <div className="grid grid-cols-[auto_1fr_auto] items-center gap-4 rounded-lg border border-[#E5E7EB] bg-[#FBFCFE] p-4">
-                    <span className="grid size-11 place-items-center rounded-full bg-green-100 text-green-600">
-                      <Sprout className="size-6 fill-current/10" aria-hidden />
-                    </span>
-                    <div>
-                      <AppText variant="subtitle">Tithe</AppText>
-                      <AppText variant="bodySmall" color="textMuted">
-                        Oct 1, 2023
-                      </AppText>
-                    </div>
-                    <AppText variant="subtitle">₦50,000</AppText>
-                  </div>
-                  <AppButton className="bg-[#111827] text-white" leftIcon={<span className="text-xl leading-none">+</span>}>
-                    Give Now
-                  </AppButton>
-                </div>
-              </AppCard>
             </aside>
           </div>
       </div>

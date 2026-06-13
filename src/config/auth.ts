@@ -2,7 +2,8 @@ export type AuthPlatform = 'app' | 'admin' | 'sysadmin';
 
 export const AUTH_APP_NAME = 'baptist-one';
 export const AUTH_PLATFORM: AuthPlatform = 'app';
-export const AUTH_REDIRECT_URL = 'https://baptist.ng/auth/callback';
+export const AUTH_REDIRECT_URL = 'http://localhost:5173/auth/email-verify';
+// export const AUTH_REDIRECT_URL = 'http://baptist.dokploy.rokswood.com/auth/callback';
 
 export const buildAuthQuery = (includeRedirectUrl = false) => {
   const params = new URLSearchParams({

@@ -12,6 +12,8 @@ interface RefreshResponse {
 
 const publicAuthEndpoints = new Set<string>([
   endpoints.auth.login,
+  endpoints.auth.intent,
+  endpoints.auth.handoffLogin,
   endpoints.auth.register,
   endpoints.auth.refresh,
   endpoints.auth.forgotPassword,

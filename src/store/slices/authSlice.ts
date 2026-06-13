@@ -1,7 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import { storageKeys } from '@/constants/storage';
 import { tokenStore } from '@/services/api/tokenStore';
-import { loginThunk, registerThunk } from '@/store/thunks/authThunk';
+import { handoffLoginThunk, intentLogin, loginThunk, registerThunk } from '@/store/thunks/authThunk';
 import { getStoredAuthStatus, hasStoredUserData, readStoredAuthData, type StoredAuthStatus } from '@/utils/authToken';
 import type { AuthData, AuthUser, RegistrationResult } from '@/types/auth';
 
@@ -51,6 +51,16 @@ const applyUnauthenticatedState = (state: AuthState) => {
   state.isAuthenticated = false;
 };
 
+const applyAuthenticatedState = (state: AuthState, authData: AuthData) => {
+  state.loading = false;
+  state.authData = authData;
+  state.user = authData.user;
+  state.accessToken = authData.access.token;
+  state.isAuthenticated = true;
+  state.isAuthChecked = true;
+  state.hasKnownUser = true;
+};
+
 export const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -71,6 +81,8 @@ export const authSlice = createSlice({
     },
     logout: (state) => {
       tokenStore.clear();
+      localStorage.removeItem(storageKeys.memberAccount);
+      localStorage.removeItem(storageKeys.profileCompletion);
       applyUnauthenticatedState(state);
       state.isAuthChecked = true;
       state.hasKnownUser = Boolean(state.authData || state.user);
@@ -86,17 +98,33 @@ export const authSlice = createSlice({
         state.error = null;
       })
       .addCase(loginThunk.fulfilled, (state, action) => {
-        state.loading = false;
-        state.authData = action.payload;
-        state.user = action.payload.user;
-        state.accessToken = action.payload.access.token;
-        state.isAuthenticated = true;
-        state.isAuthChecked = true;
-        state.hasKnownUser = true;
+        applyAuthenticatedState(state, action.payload);
       })
       .addCase(loginThunk.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.message ?? 'Unable to sign in.';
+      })
+      .addCase(intentLogin.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(intentLogin.fulfilled, (state, action) => {
+        applyAuthenticatedState(state, action.payload);
+      })
+      .addCase(intentLogin.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload?.message ?? 'Unable to verify your email.';
+      })
+      .addCase(handoffLoginThunk.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(handoffLoginThunk.fulfilled, (state, action) => {
+        applyAuthenticatedState(state, action.payload);
+      })
+      .addCase(handoffLoginThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload?.message ?? 'Unable to complete handoff login.';
       })
       .addCase(registerThunk.pending, (state) => {
         state.registerLoading = true;

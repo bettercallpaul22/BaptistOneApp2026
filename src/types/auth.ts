@@ -70,6 +70,14 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface IntentLoginPayload {
+  intent: string;
+}
+
+export interface HandoffLoginPayload {
+  code: string;
+}
+
 export interface RegisterPayload {
   fullName: string;
   email: string;

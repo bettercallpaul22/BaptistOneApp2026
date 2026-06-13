@@ -20,8 +20,11 @@ const BiblePage = lazy(() => import('@/pages/bible/BiblePage'));
 const HymnalPage = lazy(() => import('@/pages/hymnal/HymnalPage'));
 const AppTabPage = lazy(() => import('@/pages/app/AppTabPage'));
 const AppPlaceholderPage = lazy(() => import('@/pages/app/AppPlaceholderPage'));
+const ProfilePage = lazy(() => import('@/pages/profile/ProfilePage'));
 const LaunchPage = lazy(() => import('@/pages/launch/LaunchPage'));
 const LoginPage = lazy(() => import('@/pages/auth/login/LoginPage'));
+const GoogleRedirectPage = lazy(() => import('@/pages/auth/google-redirect/GoogleRedirectPage'));
+const EmailVerifyPage = lazy(() => import('@/pages/auth/email-verify/EmailVerifyPage'));
 const RegisterPage = lazy(() => import('@/pages/auth/register/RegisterPage'));
 const RegisterVerificationPage = lazy(() => import('@/pages/auth/register/RegisterVerificationPage'));
 const ForgotPasswordPage = lazy(() => import('@/pages/auth/forgot-password/ForgotPasswordPage'));
@@ -70,7 +73,7 @@ const LaunchRoute = () => {
     return <AppLoader variant="page" label="Checking session" />;
   }
 
-  return isAuthenticated || hasKnownUser ? <Navigate replace to={paths.home} /> : <LaunchPage />;
+  return isAuthenticated || hasKnownUser ? <Navigate replace to={paths.home} /> : <Navigate replace to={paths.register} />;
 };
 
 const RoutedApp = () => {
@@ -87,6 +90,7 @@ const RoutedApp = () => {
       <Suspense fallback={<RouteLoader />}>
         <Routes>
           <Route path={paths.launch} element={<LaunchRoute />} />
+          <Route path={paths.googleRedirect} element={<GoogleRedirectPage />} />
           <Route path={paths.bible} element={<BiblePage onBottomTabHiddenChange={setIsBibleBottomTabHidden} />} />
           <Route path={paths.hymnal} element={<HymnalPage />} />
           <Route element={<HomeRoute />}>
@@ -102,13 +106,14 @@ const RoutedApp = () => {
             <Route path={paths.resources} element={<AppPlaceholderPage title="Resources" />} />
             <Route path={paths.discipleship} element={<AppPlaceholderPage title="Discipleship" />} />
             <Route path={paths.wallet} element={<AppTabPage kind="wallet" />} />
-            <Route path={paths.profile} element={<AppTabPage kind="profile" />} />
+            <Route path={paths.profile} element={<ProfilePage />} />
             <Route path={paths.settings} element={<AppPlaceholderPage title="Settings" />} />
             <Route path={paths.devotional} element={<AppPlaceholderPage title="Devotional" />} />
             <Route path={paths.sundaySchool} element={<AppPlaceholderPage title="Sunday School" />} />
           </Route>
           <Route element={<PublicRoute />}>
             <Route path={paths.login} element={<LoginPage />} />
+            <Route path={paths.emailVerify} element={<EmailVerifyPage />} />
             <Route path={paths.register} element={<RegisterPage />} />
             <Route path={paths.registerVerification} element={<RegisterVerificationPage />} />
             <Route path={paths.forgotPassword} element={<ForgotPasswordPage />} />

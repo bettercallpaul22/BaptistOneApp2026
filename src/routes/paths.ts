@@ -17,6 +17,8 @@ export const paths = {
   devotional: '/devotional',
   sundaySchool: '/sunday-school',
   login: '/auth/login',
+  googleRedirect: '/google-redirect',
+  emailVerify: '/auth/email-verify',
   register: '/auth/register',
   registerVerification: '/auth/register/verify-email',
   forgotPassword: '/auth/forgot-password',

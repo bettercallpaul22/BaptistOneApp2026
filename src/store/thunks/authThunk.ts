@@ -3,7 +3,13 @@ import { storageKeys } from '@/constants/storage';
 import { tokenStore } from '@/services/api/tokenStore';
 import { toApiError } from '@/services/api/responseHandler';
 import { authService } from '@/services/auth/authService';
-import type { AuthData, LoginCredentials, RegisterPayload, RegistrationResult } from '@/types/auth';
+import type { AuthData, HandoffLoginPayload, IntentLoginPayload, LoginCredentials, RegisterPayload, RegistrationResult } from '@/types/auth';
+
+const persistAuthSession = (authData: AuthData) => {
+  tokenStore.setSession(authData.access.token, authData.access.refresh);
+  localStorage.setItem(storageKeys.authData, JSON.stringify(authData));
+  localStorage.setItem(storageKeys.user, JSON.stringify(authData.user));
+};
 
 export const loginThunk = createAsyncThunk<AuthData, LoginCredentials, { rejectValue: ReturnType<typeof toApiError> }>(
   'auth/login',
@@ -15,9 +21,45 @@ export const loginThunk = createAsyncThunk<AuthData, LoginCredentials, { rejectV
         return rejectWithValue({ message: response.message || 'Unable to sign in.' });
       }
 
-      tokenStore.setSession(response.data.access.token, response.data.access.refresh);
-      localStorage.setItem(storageKeys.authData, JSON.stringify(response.data));
-      localStorage.setItem(storageKeys.user, JSON.stringify(response.data.user));
+      persistAuthSession(response.data);
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(toApiError(error));
+    }
+  },
+);
+
+export const intentLogin = createAsyncThunk<AuthData, IntentLoginPayload, { rejectValue: ReturnType<typeof toApiError> }>(
+  'auth/intentLogin',
+  async (payload, { rejectWithValue }) => {
+    try {
+      const response = await authService.intentLogin(payload);
+
+      if (!response.status || !response.data?.access?.token) {
+        return rejectWithValue({ message: response.message || 'Unable to verify your email.' });
+      }
+
+      persistAuthSession(response.data);
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(toApiError(error));
+    }
+  },
+);
+
+export const handoffLoginThunk = createAsyncThunk<AuthData, HandoffLoginPayload, { rejectValue: ReturnType<typeof toApiError> }>(
+  'auth/handoffLogin',
+  async (payload, { rejectWithValue }) => {
+    try {
+      const response = await authService.handoffLogin(payload);
+
+      if (!response.status || !response.data?.access?.token) {
+        return rejectWithValue({ message: response.message || 'Unable to complete handoff login.' });
+      }
+
+      persistAuthSession(response.data);
 
       return response.data;
     } catch (error) {

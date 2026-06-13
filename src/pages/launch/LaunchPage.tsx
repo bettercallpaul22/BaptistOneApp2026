@@ -18,7 +18,7 @@ export default function LaunchPage() {
             Your church, faith, and community in one simple place.
           </AppText>
         </div>
-        <Link to={paths.login}>
+        <Link to={paths.register}>
           <AppButton variant="secondary" size="lg">
             Get Started
           </AppButton>

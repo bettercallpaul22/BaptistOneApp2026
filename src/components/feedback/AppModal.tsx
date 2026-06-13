@@ -29,24 +29,24 @@ export const AppModal = ({ open, title, children, footer, footerLayout = 'defaul
   return createPortal(
     <div className="fixed inset-0 z-50 grid place-items-center bg-[#0B1F4A]/60 p-4" role="presentation" onMouseDown={onClose}>
       <section
-        className="w-full max-w-[34rem] overflow-hidden rounded-xl bg-white shadow-[0_24px_60px_rgba(11,31,74,0.22)]"
+        className="flex max-h-[calc(100dvh-2rem)] w-full max-w-[34rem] flex-col overflow-hidden rounded-xl bg-white shadow-[0_24px_60px_rgba(11,31,74,0.22)]"
         role="dialog"
         aria-modal="true"
         aria-label={title}
         onMouseDown={(event) => event.stopPropagation()}
       >
-        <header className="flex items-center justify-between gap-4 border-b border-slate-100 p-4">
+        <header className="flex shrink-0 items-center justify-between gap-4 border-b border-slate-100 p-4">
           <h2 className="m-0 text-lg font-semibold text-[#0B1F4A]">{title}</h2>
           <AppButton aria-label="Close modal" size="sm" variant="ghost" onClick={onClose}>
             Close
           </AppButton>
         </header>
-        <div className="p-4 text-[#46556E]">{children}</div>
+        <div className="min-h-0 p-4 text-[#46556E]">{children}</div>
         {footer && (
           <footer
             className={clsx(
-              'flex items-center gap-4 border-t border-slate-100 p-4',
-              footerLayout === 'split' ? '[&>*]:flex-1' : 'justify-between',
+              'grid shrink-0 grid-cols-2 items-center gap-4 border-t border-slate-100 p-4 [&>*]:w-full',
+              footerLayout === 'split' && '[&>*]:min-w-0',
             )}
           >
             {footer}

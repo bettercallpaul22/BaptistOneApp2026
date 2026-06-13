@@ -12,6 +12,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { AppButton, AppText } from '@/components/common';
+import { AppAvatar } from '@/components/display';
 import { AppModal } from '@/components/feedback';
 import { AppMobileHeader, NotificationButton } from '@/components/navigation/AppMobileHeader';
 import { useDeviceProfile } from '@/hooks/useDeviceProfile';
@@ -39,6 +40,7 @@ const desktopNavItems: NavigationItem[] = [
 
 interface AppShellProps {
   children: ReactNode;
+  headerAvatar?: ReactNode;
 }
 
 type NativeWebViewWindow = Window & {
@@ -55,6 +57,9 @@ const postNativeLogout = () => {
   }
 };
 
+const getFirstAvailableName = (...names: Array<string | null | undefined>) =>
+  names.find((name) => typeof name === 'string' && name.trim())?.trim() ?? null;
+
 const DesktopHeader = ({ title }: { title: string }) => (
   <header className="fixed top-0 right-0 left-[18rem] z-20 flex min-h-20 items-center justify-between border-b border-[#E5E7EB] bg-white/95 px-8 backdrop-blur-xl">
     <div className="grid gap-1">
@@ -67,12 +72,13 @@ const DesktopHeader = ({ title }: { title: string }) => (
   </header>
 );
 
-export const AppShell = ({ children }: AppShellProps) => {
+export const AppShell = ({ children, headerAvatar }: AppShellProps) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { isDesktop } = useDeviceProfile();
-  const { hasKnownUser, isAuthenticated } = useAppSelector((state) => state.auth);
+  const { authData, hasKnownUser, isAuthenticated, user } = useAppSelector((state) => state.auth);
+  const memberAccount = useAppSelector((state) => state.member.data);
   const showSidebar = isDesktop;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMenuLoginPromptOpen, setIsMenuLoginPromptOpen] = useState(false);
@@ -90,6 +96,21 @@ export const AppShell = ({ children }: AppShellProps) => {
   }, [hasKnownUser, isAuthenticated, pathname]);
   const isRestrictedLoginPromptOpen = isRestrictedKnownUserPath && dismissedRestrictedPath !== pathname;
   const isLoginPromptOpen = isMenuLoginPromptOpen || isRestrictedLoginPromptOpen;
+  const defaultHeaderAvatarName = getFirstAvailableName(
+    memberAccount?.basicProfile?.displayName,
+    [memberAccount?.basicProfile?.firstName, memberAccount?.basicProfile?.lastName].filter(Boolean).join(' '),
+    authData?.profile?.displayName,
+    [authData?.user?.firstName, authData?.user?.lastName].filter(Boolean).join(' '),
+    [user?.firstName, user?.lastName].filter(Boolean).join(' '),
+  );
+  const defaultHeaderAvatar =
+    isAuthenticated && defaultHeaderAvatarName ? (
+      <AppAvatar
+        name={defaultHeaderAvatarName}
+        src={memberAccount?.basicProfile?.avatarUrl || authData?.profile?.avatarUrl || undefined}
+        size="md"
+      />
+    ) : null;
 
   const handleLogout = () => {
     dispatch(logout());
@@ -158,7 +179,11 @@ export const AppShell = ({ children }: AppShellProps) => {
         </aside>
       )}
 
-      {showSidebar ? <DesktopHeader title={headerTitle} /> : <AppMobileHeader title={headerTitle} onActionPress={handleMobileMenuPress} />}
+      {showSidebar ? (
+        <DesktopHeader title={headerTitle} />
+      ) : (
+        <AppMobileHeader avatar={headerAvatar ?? defaultHeaderAvatar} title={headerTitle} onActionPress={handleMobileMenuPress} />
+      )}
       {!showSidebar && <MenuScreen isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} onLogout={handleLogout} />}
       <AppModal
         open={isLoginPromptOpen}

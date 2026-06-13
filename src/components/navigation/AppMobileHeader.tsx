@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Bell, Menu, X } from 'lucide-react';
 
 type HeaderAction = 'menu' | 'close';
@@ -7,6 +8,7 @@ interface AppMobileHeaderProps {
   title: string;
   action?: HeaderAction;
   actionLabel?: string;
+  avatar?: ReactNode;
   position?: HeaderPosition;
   onActionPress?: () => void;
 }
@@ -26,6 +28,7 @@ export const AppMobileHeader = ({
   title,
   action = 'menu',
   actionLabel,
+  avatar,
   position = 'fixed',
   onActionPress,
 }: AppMobileHeaderProps) => {
@@ -36,15 +39,18 @@ export const AppMobileHeader = ({
     <header
       className={`${position === 'fixed' ? 'fixed inset-x-0 top-0' : 'relative'} z-40 flex min-h-16 items-center justify-between border-b border-[#E5E7EB] bg-white/95 px-4 py-3 backdrop-blur-xl`}
     >
-      <button
-        className="grid size-11 shrink-0 place-items-center rounded-full text-[#123B8D] transition hover:bg-[#EAF1FF]"
-        type="button"
-        aria-label={resolvedActionLabel}
-        onClick={onActionPress}
-      >
-        <ActionIcon className={action === 'close' ? 'size-6' : 'size-7'} strokeWidth={action === 'close' ? 2.6 : 2} aria-hidden />
-      </button>
-      <h1 className="absolute left-1/2 max-w-[calc(100%-8.5rem)] -translate-x-1/2 truncate text-center text-xl font-extrabold text-[#0B1F4A]">
+      <div className="flex min-w-0 shrink-0 items-center gap-1.5">
+        <button
+          className="grid size-11 shrink-0 place-items-center rounded-full text-[#123B8D] transition hover:bg-[#EAF1FF]"
+          type="button"
+          aria-label={resolvedActionLabel}
+          onClick={onActionPress}
+        >
+          <ActionIcon className={action === 'close' ? 'size-6' : 'size-7'} strokeWidth={action === 'close' ? 2.6 : 2} aria-hidden />
+        </button>
+        {avatar}
+      </div>
+      <h1 className="absolute left-1/2 max-w-[calc(100%-11rem)] -translate-x-1/2 truncate text-center text-xl font-extrabold text-[#0B1F4A]">
         {title}
       </h1>
       <NotificationButton />

@@ -1,0 +1,48 @@
+import { useCallback, useEffect, useState } from 'react';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { fetchMemberAccountThunk } from '@/store/thunks/memberThunk';
+
+const getBootstrapErrorMessage = (error: unknown) => {
+  if (error && typeof error === 'object' && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string' && message.trim()) return message;
+  }
+
+  return 'Unable to load home data.';
+};
+
+export const useHomeBootstrapApi = () => {
+  const dispatch = useAppDispatch();
+  const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const refetch = useCallback(async () => {
+    if (!isAuthenticated) {
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      await Promise.all([dispatch(fetchMemberAccountThunk()).unwrap()]);
+    } catch (requestError) {
+      setError(getBootstrapErrorMessage(requestError));
+    } finally {
+      setLoading(false);
+    }
+  }, [dispatch, isAuthenticated]);
+
+  useEffect(() => {
+    void refetch();
+  }, [refetch]);
+
+  return {
+    loading,
+    error,
+    refetch,
+  };
+};

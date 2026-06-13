@@ -85,6 +85,16 @@ export default function AppTabPage({ kind }: AppTabPageProps) {
   const content = tabContent[kind];
   const PageIcon = content.icon;
 
+  if (kind === 'church') {
+    return (
+      <AppShell>
+        <main className="mx-auto w-full max-w-[78rem] px-4 py-6 sm:px-6 md:px-9 md:py-9">
+          <AppText variant="h1">church</AppText>
+        </main>
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell>
       <div className="mx-auto grid max-w-[78rem] gap-6 px-4 py-6 sm:px-6 md:px-9 md:py-9">
