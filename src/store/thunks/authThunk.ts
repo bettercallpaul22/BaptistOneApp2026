@@ -3,7 +3,18 @@ import { storageKeys } from '@/constants/storage';
 import { tokenStore } from '@/services/api/tokenStore';
 import { toApiError } from '@/services/api/responseHandler';
 import { authService } from '@/services/auth/authService';
-import type { AuthData, HandoffLoginPayload, IntentLoginPayload, LoginCredentials, RegisterPayload, RegistrationResult } from '@/types/auth';
+import type {
+  AuthData,
+  ForgotPasswordPayload,
+  ForgotPasswordResult,
+  HandoffLoginPayload,
+  IntentLoginPayload,
+  LoginCredentials,
+  RegisterPayload,
+  RegistrationResult,
+  SetPasswordPayload,
+  SetPasswordResult,
+} from '@/types/auth';
 
 const persistAuthSession = (authData: AuthData) => {
   tokenStore.setSession(authData.access.token, authData.access.refresh);
@@ -91,3 +102,45 @@ export const registerThunk = createAsyncThunk<RegistrationResult, RegisterPayloa
     }
   },
 );
+
+export const forgotPasswordThunk = createAsyncThunk<
+  ForgotPasswordResult,
+  ForgotPasswordPayload,
+  { rejectValue: ReturnType<typeof toApiError> }
+>('auth/forgotPassword', async (payload, { rejectWithValue }) => {
+  try {
+    const response = await authService.forgotPassword(payload);
+
+    if (!response.status) {
+      return rejectWithValue({ message: response.message || 'Unable to send reset code.' });
+    }
+
+    return {
+      email: payload.email,
+      message: response.message || 'A password reset code has been sent to your email.',
+    };
+  } catch (error) {
+    return rejectWithValue(toApiError(error));
+  }
+});
+
+export const setPasswordThunk = createAsyncThunk<
+  SetPasswordResult,
+  SetPasswordPayload,
+  { rejectValue: ReturnType<typeof toApiError> }
+>('auth/setPassword', async (payload, { rejectWithValue }) => {
+  try {
+    const response = await authService.setPassword(payload);
+
+    if (!response.status) {
+      return rejectWithValue({ message: response.message || 'Unable to reset password.' });
+    }
+
+    return {
+      email: payload.email,
+      message: response.message || 'Your password has been reset successfully.',
+    };
+  } catch (error) {
+    return rejectWithValue(toApiError(error));
+  }
+});

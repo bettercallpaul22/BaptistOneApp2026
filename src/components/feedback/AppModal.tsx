@@ -41,7 +41,7 @@ export const AppModal = ({ open, title, children, footer, footerLayout = 'defaul
             Close
           </AppButton>
         </header>
-        <div className="min-h-0 p-4 text-[#46556E]">{children}</div>
+        <div className="min-h-0 overflow-y-auto p-4 text-[#46556E]">{children}</div>
         {footer && (
           <footer
             className={clsx(

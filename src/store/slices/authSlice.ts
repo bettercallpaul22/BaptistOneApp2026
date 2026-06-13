@@ -1,7 +1,14 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import { storageKeys } from '@/constants/storage';
 import { tokenStore } from '@/services/api/tokenStore';
-import { handoffLoginThunk, intentLogin, loginThunk, registerThunk } from '@/store/thunks/authThunk';
+import {
+  forgotPasswordThunk,
+  handoffLoginThunk,
+  intentLogin,
+  loginThunk,
+  registerThunk,
+  setPasswordThunk,
+} from '@/store/thunks/authThunk';
 import { getStoredAuthStatus, hasStoredUserData, readStoredAuthData, type StoredAuthStatus } from '@/utils/authToken';
 import type { AuthData, AuthUser, RegistrationResult } from '@/types/auth';
 
@@ -29,6 +36,8 @@ interface AuthState {
   hasKnownUser: boolean;
   loading: boolean;
   registerLoading: boolean;
+  forgotPasswordLoading: boolean;
+  setPasswordLoading: boolean;
   error: string | null;
   registration: RegistrationResult | null;
 }
@@ -42,6 +51,8 @@ const initialState: AuthState = {
   hasKnownUser: hasStoredUserData(),
   loading: false,
   registerLoading: false,
+  forgotPasswordLoading: false,
+  setPasswordLoading: false,
   error: null,
   registration: readStoredRegistration(),
 };
@@ -137,6 +148,28 @@ export const authSlice = createSlice({
       .addCase(registerThunk.rejected, (state, action) => {
         state.registerLoading = false;
         state.error = action.payload?.message ?? 'Unable to create account.';
+      })
+      .addCase(forgotPasswordThunk.pending, (state) => {
+        state.forgotPasswordLoading = true;
+        state.error = null;
+      })
+      .addCase(forgotPasswordThunk.fulfilled, (state) => {
+        state.forgotPasswordLoading = false;
+      })
+      .addCase(forgotPasswordThunk.rejected, (state, action) => {
+        state.forgotPasswordLoading = false;
+        state.error = action.payload?.message ?? 'Unable to send reset code.';
+      })
+      .addCase(setPasswordThunk.pending, (state) => {
+        state.setPasswordLoading = true;
+        state.error = null;
+      })
+      .addCase(setPasswordThunk.fulfilled, (state) => {
+        state.setPasswordLoading = false;
+      })
+      .addCase(setPasswordThunk.rejected, (state, action) => {
+        state.setPasswordLoading = false;
+        state.error = action.payload?.message ?? 'Unable to reset password.';
       });
   },
 });

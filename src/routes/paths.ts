@@ -12,6 +12,12 @@ export const paths = {
   resources: '/resources',
   discipleship: '/discipleship',
   wallet: '/wallet',
+  walletTransactions: (walletNumber: string) => `/wallet/${encodeURIComponent(walletNumber)}/transactions`,
+  walletTransactionsRoute: '/wallet/:walletNumber/transactions',
+  walletTransactionDetails: (walletNumber: string, transactionId: string) =>
+    `/wallet/${encodeURIComponent(walletNumber)}/transactions/${encodeURIComponent(transactionId)}`,
+  walletTransactionDetailsRoute: '/wallet/:walletNumber/transactions/:transactionId',
+  walletFundingCallback: '/wallet/funding/callback',
   profile: '/profile',
   settings: '/settings',
   devotional: '/devotional',

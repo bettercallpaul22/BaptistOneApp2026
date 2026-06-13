@@ -9,7 +9,7 @@ export const endpoints = {
     refresh: '/auth/refresh',
     forgotPassword: '/auth/forgot-password',
     verifyOtp: '/auth/verify-otp',
-    resetPassword: '/auth/reset-password',
+    setPassword: '/auth/set-password',
     me: '/auth/me',
   },
   user: {
@@ -46,5 +46,35 @@ export const endpoints = {
   },
   privateWallets: {
     wallets: '/private/wallets',
+    fund: (walletNumber: string) => `/private/wallets/${encodeURIComponent(walletNumber)}/fund`,
+    transactions: (
+      walletNumber: string,
+      {
+        channel,
+        currPage = 1,
+        perPage = 10,
+        status,
+        type,
+      }: {
+        currPage?: number;
+        perPage?: number;
+        type?: string;
+        channel?: string;
+        status?: string;
+      } = {},
+    ) => {
+      const params = new URLSearchParams();
+
+      params.set('currPage', String(currPage));
+      params.set('perPage', String(perPage));
+      if (type) params.set('type', type);
+      if (channel) params.set('channel', channel);
+      if (status) params.set('status', status);
+
+      return `/private/wallets/${encodeURIComponent(walletNumber)}/transactions?${params.toString()}`;
+    },
+  },
+  publicTransactions: {
+    verify: (reference: string) => `/public/transactions/${encodeURIComponent(reference)}/verify`,
   },
 } as const;

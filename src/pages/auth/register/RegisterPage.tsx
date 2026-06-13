@@ -74,7 +74,7 @@ export default function RegisterPage() {
   const dispatch = useAppDispatch();
   const { registerLoading, error } = useAppSelector((state) => state.auth);
 
-  const { register, handleSubmit, formState, setValue, control, watch } = useForm<RegisterForm>({
+  const { register, handleSubmit, formState, setValue, control } = useForm<RegisterForm>({
     resolver: zodResolver(schema),
     defaultValues: { fullName: '', email: '', phone: '', countryCode: 'NG', password: '' },
   });
@@ -83,7 +83,7 @@ export default function RegisterPage() {
   const selectedCountry = COUNTRY_OPTIONS.find((o) => o.value === selectedCountryCode) ?? COUNTRY_OPTIONS[0];
 
   // Track phone value for has-value border state
-  const phoneValue = watch('phone');
+  const phoneValue = useWatch({ control, name: 'phone' });
   const phoneHasValue = cleanLocalPhone(phoneValue ?? '').length > 0;
   const phoneHasError = Boolean(formState.errors.phone);
 

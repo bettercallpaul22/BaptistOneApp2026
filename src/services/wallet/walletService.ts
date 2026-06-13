@@ -1,6 +1,14 @@
 import { endpoints } from '@/services/api/endpoints';
 import { http } from '@/services/api/http';
-import type { CreateWalletPayload, CreateWalletResponse, WalletListResponse } from '@/types/wallet';
+import type {
+  CreateWalletPayload,
+  CreateWalletResponse,
+  FundWalletPayload,
+  FundWalletResponse,
+  WalletListResponse,
+  WalletTransactionsQuery,
+  WalletTransactionsResponse,
+} from '@/types/wallet';
 
 export const walletService = {
   getWallets: async () => {
@@ -18,6 +26,29 @@ export const walletService = {
 
     if (!response.status || !response.data) {
       throw new Error(response.message || 'Unable to create wallet.');
+    }
+
+    return response;
+  },
+
+  fundWallet: async (walletNumber: string, payload: FundWalletPayload) => {
+    const response = await http.post<FundWalletResponse, FundWalletPayload>(
+      endpoints.privateWallets.fund(walletNumber),
+      payload,
+    );
+
+    if (!response.status || !response.data?.checkoutUrl) {
+      throw new Error(response.message || 'Unable to initiate wallet funding.');
+    }
+
+    return response;
+  },
+
+  getWalletTransactions: async (walletNumber: string, query: WalletTransactionsQuery) => {
+    const response = await http.get<WalletTransactionsResponse>(endpoints.privateWallets.transactions(walletNumber, query));
+
+    if (!response.status || !response.data || !Array.isArray(response.data.items)) {
+      throw new Error(response.message || 'Unable to load wallet transactions.');
     }
 
     return response;

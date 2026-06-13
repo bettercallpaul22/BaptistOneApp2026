@@ -1,5 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
+import { Smartphone } from 'lucide-react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { AppText } from '@/components/common';
 import { MobileBottomTab } from '@/components/navigation';
 import { AppLoader } from '@/components/feedback';
 import { useDeviceProfile } from '@/hooks/useDeviceProfile';
@@ -22,7 +24,9 @@ const AppTabPage = lazy(() => import('@/pages/app/AppTabPage'));
 const AppPlaceholderPage = lazy(() => import('@/pages/app/AppPlaceholderPage'));
 const ProfilePage = lazy(() => import('@/pages/profile/ProfilePage'));
 const WalletPage = lazy(() => import('@/pages/wallet/WalletPage'));
-const LaunchPage = lazy(() => import('@/pages/launch/LaunchPage'));
+const WalletTransactionsPage = lazy(() => import('@/pages/wallet/transactions/WalletTransactionsPage'));
+const WalletTransactionDetailsPage = lazy(() => import('@/pages/wallet/transactions/WalletTransactionDetailsPage'));
+const WalletFundingCallbackPage = lazy(() => import('@/pages/wallet/funding-callback/WalletFundingCallbackPage'));
 const LoginPage = lazy(() => import('@/pages/auth/login/LoginPage'));
 const GoogleRedirectPage = lazy(() => import('@/pages/auth/google-redirect/GoogleRedirectPage'));
 const EmailVerifyPage = lazy(() => import('@/pages/auth/email-verify/EmailVerifyPage'));
@@ -32,6 +36,24 @@ const ForgotPasswordPage = lazy(() => import('@/pages/auth/forgot-password/Forgo
 const VerifyOtpPage = lazy(() => import('@/pages/auth/verify-otp/VerifyOtpPage'));
 const ResetPasswordPage = lazy(() => import('@/pages/auth/reset-password/ResetPasswordPage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
+
+const MobileOnlyScreen = () => (
+  <main className="grid min-h-screen place-items-center bg-[#F8FAFC] px-6 text-[#0B1F4A]">
+    <section className="grid w-full max-w-md justify-items-center gap-4 text-center">
+      <span className="grid size-16 place-items-center rounded-2xl bg-[#EAF1FF] text-[#123B8D]">
+        <Smartphone className="size-8" aria-hidden />
+      </span>
+      <div className="grid gap-2">
+        <AppText variant="h3" align="center">
+          Only available on mobile devices
+        </AppText>
+        <AppText variant="bodyMedium" color="textSecondary" align="center">
+          Please open BaptistOne on a phone, tablet, or iPad-sized screen to continue.
+        </AppText>
+      </div>
+    </section>
+  </main>
+);
 
 const AuthSessionGate = () => {
   const dispatch = useAppDispatch();
@@ -82,7 +104,13 @@ const RoutedApp = () => {
   const { isDesktop } = useDeviceProfile();
   useIsNativeShell();
   const [isBibleBottomTabHidden, setIsBibleBottomTabHidden] = useState(false);
-  const showWebBottomTab = !isDesktop && pathname !== paths.launch && !pathname.startsWith('/auth');
+
+  if (isDesktop) {
+    return <MobileOnlyScreen />;
+  }
+
+  const showWebBottomTab =
+    !isDesktop && pathname !== paths.launch && pathname !== paths.walletFundingCallback && !pathname.startsWith('/auth');
   const hideWebBottomTab = pathname === paths.bible && isBibleBottomTabHidden;
 
   return (
@@ -92,6 +120,7 @@ const RoutedApp = () => {
         <Routes>
           <Route path={paths.launch} element={<LaunchRoute />} />
           <Route path={paths.googleRedirect} element={<GoogleRedirectPage />} />
+          <Route path={paths.walletFundingCallback} element={<WalletFundingCallbackPage />} />
           <Route path={paths.bible} element={<BiblePage onBottomTabHiddenChange={setIsBibleBottomTabHidden} />} />
           <Route path={paths.hymnal} element={<HymnalPage />} />
           <Route element={<HomeRoute />}>
@@ -107,6 +136,8 @@ const RoutedApp = () => {
             <Route path={paths.resources} element={<AppPlaceholderPage title="Resources" />} />
             <Route path={paths.discipleship} element={<AppPlaceholderPage title="Discipleship" />} />
             <Route path={paths.wallet} element={<WalletPage />} />
+            <Route path={paths.walletTransactionsRoute} element={<WalletTransactionsPage />} />
+            <Route path={paths.walletTransactionDetailsRoute} element={<WalletTransactionDetailsPage />} />
             <Route path={paths.profile} element={<ProfilePage />} />
             <Route path={paths.settings} element={<AppPlaceholderPage title="Settings" />} />
             <Route path={paths.devotional} element={<AppPlaceholderPage title="Devotional" />} />

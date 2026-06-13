@@ -1,19 +1,40 @@
-import { useCallback, useEffect, type ReactNode } from 'react';
-import { AlertCircle, ArrowDownLeft, ArrowUpRight, CreditCard, Plus, RefreshCw, Wallet as WalletIcon } from 'lucide-react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import {
+  AlertCircle,
+  ArrowDownLeft,
+  ArrowUpRight,
+  CheckCircle2,
+  CreditCard,
+  ExternalLink,
+  List,
+  Plus,
+  RefreshCw,
+  Wallet as WalletIcon,
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { AppButton, AppText } from '@/components/common';
-import { AppLoader } from '@/components/feedback';
-import { AppDropdown } from '@/components/form';
+import { AppLoader, AppModal } from '@/components/feedback';
+import { AppDropdown, AppMoneyInput } from '@/components/form';
+import { callbackUrls } from '@/constants/callbackUrls';
 import { AppShell } from '@/layouts/AppShell';
+import { paths } from '@/routes/paths';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { clearCreateWalletStatus, clearWalletError, setWalletCurrency } from '@/store/slices/walletSlice';
+import {
+  clearCreateWalletStatus,
+  clearWalletError,
+  clearWalletFundingStatus,
+  setWalletCurrency,
+} from '@/store/slices/walletSlice';
 import { pushNotification } from '@/store/slices/notificationSlice';
-import { createWalletThunk, fetchWalletsThunk } from '@/store/thunks/walletThunk';
+import { createWalletThunk, fetchWalletsThunk, fundWalletThunk } from '@/store/thunks/walletThunk';
 import type { Wallet, WalletCreateCurrency } from '@/types/wallet';
 
 const currencyOptions: Array<{ label: string; value: WalletCreateCurrency }> = [
   { label: 'NGN', value: 'NGN' },
   { label: 'USD', value: 'USD' },
 ];
+
+const minorUnitMultiplier = 100;
 
 const formatMoney = (value: number, currency: string) => {
   try {
@@ -36,6 +57,10 @@ const getErrorMessage = (error: unknown, fallback: string) => {
   return fallback;
 };
 
+const toMinorCurrencyUnit = (amount: number) => Math.round(amount * minorUnitMultiplier);
+
+const formatMinorMoney = (value: number, currency: string) => formatMoney(value / minorUnitMultiplier, currency);
+
 const WalletMetric = ({
   icon,
   label,
@@ -56,7 +81,28 @@ const WalletMetric = ({
   </div>
 );
 
-const WalletSummary = ({ wallet, featured = false }: { wallet: Wallet; featured?: boolean }) => (
+const FundingDetailRow = ({ label, value }: { label: string; value: string }) => (
+  <div className="grid gap-1 border-b border-[#E5E7EB] py-3 last:border-b-0">
+    <AppText variant="caption" color="textMuted" weight="bold">
+      {label}
+    </AppText>
+    <AppText variant="bodyMedium" className="break-words">
+      {value || 'Not provided'}
+    </AppText>
+  </div>
+);
+
+const WalletSummary = ({
+  wallet,
+  featured = false,
+  onFundWallet,
+  onViewTransactions,
+}: {
+  wallet: Wallet;
+  featured?: boolean;
+  onFundWallet: (wallet: Wallet) => void;
+  onViewTransactions: (wallet: Wallet) => void;
+}) => (
   <section className="grid gap-4 rounded-xl border border-[#D6DEEB] bg-white p-4 shadow-[0_12px_28px_rgba(11,31,74,0.08)] sm:p-5">
     <div className="flex flex-wrap items-start justify-between gap-4">
       <div className="flex min-w-0 items-start gap-3">
@@ -80,23 +126,37 @@ const WalletSummary = ({ wallet, featured = false }: { wallet: Wallet; featured?
         Available Balance
       </AppText>
       <AppText variant={featured ? 'displaySmall' : 'h3'} color="textInverse">
-        {formatMoney(wallet.balance, wallet.currency)}
+        {formatMinorMoney(wallet.balance, wallet.currency)}
       </AppText>
       <AppText variant="bodySmall" color="#D8E4FF">
         {wallet.currency} wallet
       </AppText>
     </div>
 
+    <div className="grid gap-3">
+      <div className="grid grid-cols-2 gap-3">
+        <AppButton leftIcon={<Plus className="size-4" aria-hidden />} size="md" onClick={() => onFundWallet(wallet)}>
+          Fund wallet
+        </AppButton>
+        <AppButton leftIcon={<ArrowDownLeft className="size-4" aria-hidden />} size="md" variant="secondary">
+          Withdraw
+        </AppButton>
+      </div>
+      <AppButton leftIcon={<List className="size-4" aria-hidden />} size="md" variant="outline" onClick={() => onViewTransactions(wallet)}>
+        View transactions
+      </AppButton>
+    </div>
+
     <div className="grid gap-3 sm:grid-cols-2">
       <WalletMetric
         icon={<ArrowUpRight className="size-4" aria-hidden />}
         label="Total Credit"
-        value={formatMoney(wallet.totalCredit, wallet.currency)}
+        value={formatMinorMoney(wallet.totalCredit, wallet.currency)}
       />
       <WalletMetric
         icon={<ArrowDownLeft className="size-4" aria-hidden />}
         label="Total Debit"
-        value={formatMoney(wallet.totalDebit, wallet.currency)}
+        value={formatMinorMoney(wallet.totalDebit, wallet.currency)}
       />
     </div>
   </section>
@@ -104,18 +164,29 @@ const WalletSummary = ({ wallet, featured = false }: { wallet: Wallet; featured?
 
 export default function WalletPage() {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const {
     createError,
     createLoading,
     createSuccessMessage,
     error,
+    fundingError,
+    fundingLoading,
+    fundingResult,
     items,
     lastFetchedAt,
     loading,
     selectedCurrency,
   } = useAppSelector((state) => state.wallet);
+  const [fundingWallet, setFundingWallet] = useState<Wallet | null>(null);
+  const [fundingAmount, setFundingAmount] = useState('');
   const primaryWallet = items[0] ?? null;
   const otherWallets = items.slice(1);
+  const fundingAmountMajor = Number(fundingAmount || 0);
+  const fundingAmountMinor = toMinorCurrencyUnit(fundingAmountMajor);
+  const fundingTransaction = fundingResult?.data.transaction;
+  const fundingFees = fundingTransaction?.fees ?? [];
+  const canSubmitFunding = Boolean(fundingWallet?.walletNumber) && fundingAmountMajor > 0 && !fundingLoading;
 
   useEffect(() => {
     if (lastFetchedAt || loading) return;
@@ -126,6 +197,28 @@ export default function WalletPage() {
     dispatch(clearWalletError());
     dispatch(fetchWalletsThunk());
   }, [dispatch]);
+
+  const openFundingModal = useCallback(
+    (wallet: Wallet) => {
+      dispatch(clearWalletFundingStatus());
+      setFundingWallet(wallet);
+      setFundingAmount('');
+    },
+    [dispatch],
+  );
+
+  const closeFundingModal = useCallback(() => {
+    dispatch(clearWalletFundingStatus());
+    setFundingWallet(null);
+    setFundingAmount('');
+  }, [dispatch]);
+
+  const openTransactionsPage = useCallback(
+    (wallet: Wallet) => {
+      navigate(paths.walletTransactions(wallet.walletNumber), { state: { wallet } });
+    },
+    [navigate],
+  );
 
   const handleCreateWallet = async () => {
     dispatch(clearCreateWalletStatus());
@@ -149,6 +242,54 @@ export default function WalletPage() {
         }),
       );
     }
+  };
+
+  const handleFundWallet = async () => {
+    if (!fundingWallet?.walletNumber) {
+      dispatch(
+        pushNotification({
+          type: 'error',
+          title: 'Unable to fund wallet',
+          message: 'Wallet number is required to initiate funding.',
+        }),
+      );
+      return;
+    }
+
+    if (fundingAmountMajor <= 0) return;
+
+    try {
+      await dispatch(
+        fundWalletThunk({
+          walletNumber: fundingWallet.walletNumber,
+          payload: {
+            amount: fundingAmountMinor,
+            paymentMethod: 'paystack',
+            currency: fundingWallet.currency,
+            callbackUrl: callbackUrls.walletFunding(),
+          },
+        }),
+      ).unwrap();
+    } catch {
+      // The slice keeps the modal-level error visible for retry.
+    }
+  };
+
+  const continueToCheckout = () => {
+    const checkoutUrl = fundingResult?.data.checkoutUrl;
+
+    if (!checkoutUrl) {
+      dispatch(
+        pushNotification({
+          type: 'error',
+          title: 'Checkout unavailable',
+          message: 'The payment gateway did not return a checkout URL.',
+        }),
+      );
+      return;
+    }
+
+    window.location.assign(checkoutUrl);
   };
 
   if (loading && !lastFetchedAt) {
@@ -253,14 +394,26 @@ export default function WalletPage() {
           </section>
         ) : (
           <div className="grid gap-5">
-            {primaryWallet && <WalletSummary wallet={primaryWallet} featured />}
+            {primaryWallet && (
+              <WalletSummary
+                wallet={primaryWallet}
+                featured
+                onFundWallet={openFundingModal}
+                onViewTransactions={openTransactionsPage}
+              />
+            )}
 
             {otherWallets.length > 0 && (
               <section className="grid gap-3">
                 <AppText variant="h5">Other Wallets</AppText>
                 <div className="grid gap-4 lg:grid-cols-2">
                   {otherWallets.map((wallet) => (
-                    <WalletSummary wallet={wallet} key={wallet.id} />
+                    <WalletSummary
+                      wallet={wallet}
+                      key={wallet.id}
+                      onFundWallet={openFundingModal}
+                      onViewTransactions={openTransactionsPage}
+                    />
                   ))}
                 </div>
               </section>
@@ -268,6 +421,111 @@ export default function WalletPage() {
           </div>
         )}
       </main>
+      <AppModal
+        open={Boolean(fundingWallet)}
+        title={fundingResult ? 'Review funding' : 'Fund wallet'}
+        onClose={closeFundingModal}
+        footer={
+          fundingResult ? (
+            <>
+              <AppButton variant="secondary" onClick={closeFundingModal}>
+                Cancel
+              </AppButton>
+              <AppButton rightIcon={<ExternalLink className="size-4" aria-hidden />} onClick={continueToCheckout}>
+                Proceed
+              </AppButton>
+            </>
+          ) : (
+            <>
+              <AppButton variant="secondary" onClick={closeFundingModal}>
+                Cancel
+              </AppButton>
+              <AppButton loading={fundingLoading} disabled={!canSubmitFunding} onClick={handleFundWallet}>
+                Proceed
+              </AppButton>
+            </>
+          )
+        }
+      >
+        {fundingWallet && (
+          <div className="grid gap-4">
+            {fundingResult && fundingTransaction ? (
+              <>
+                <div className="flex items-start gap-3 rounded-xl bg-emerald-50 p-4 text-emerald-900">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-full bg-white text-emerald-700">
+                    <CheckCircle2 className="size-5" aria-hidden />
+                  </span>
+                  <div className="grid gap-1">
+                    <AppText variant="h5" color="#065F46">
+                      Wallet funding initiated
+                    </AppText>
+                    <AppText variant="bodySmall" color="#047857">
+                      Review the transaction details before continuing to payment.
+                    </AppText>
+                  </div>
+                </div>
+
+                <div className="grid rounded-xl border border-[#E5E7EB] px-4">
+                  <FundingDetailRow
+                    label="Funding amount"
+                    value={formatMinorMoney(fundingResult.data.fundingAmount, fundingTransaction.currency)}
+                  />
+                  <FundingDetailRow
+                    label="Total amount"
+                    value={formatMinorMoney(fundingTransaction.amountTotal, fundingTransaction.currency)}
+                  />
+                  <FundingDetailRow
+                    label="Fees"
+                    value={formatMinorMoney(fundingTransaction.feesAmountTotal, fundingTransaction.currency)}
+                  />
+                  <FundingDetailRow label="Payment method" value={fundingTransaction.paymentMethod} />
+                  <FundingDetailRow label="Status" value={fundingTransaction.status} />
+                </div>
+
+                {fundingFees.length > 0 && (
+                  <div className="grid gap-2">
+                    <AppText variant="caption" color="textMuted" weight="bold">
+                      Fee details
+                    </AppText>
+                    {fundingFees.map((fee) => (
+                      <div className="rounded-lg border border-[#E5E7EB] p-3" key={`${fee.name}-${fee.type}`}>
+                        <AppText variant="bodySmall" weight="bold">
+                          {fee.name}: {formatMinorMoney(fee.amountTotal, fundingTransaction.currency)}
+                        </AppText>
+                        {fee.description && (
+                          <AppText variant="caption" color="textSecondary">
+                            {fee.description}
+                          </AppText>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="rounded-xl border border-[#E5E7EB] bg-[#F8FAFC] p-4">
+                  <AppText variant="caption" color="textMuted" weight="bold">
+                    Funding wallet
+                  </AppText>
+                  <AppText variant="h5">{fundingWallet.displayName || `${fundingWallet.currency} Wallet`}</AppText>
+                  <AppText variant="bodySmall" color="textSecondary">
+                    Wallet No. {fundingWallet.walletNumber || 'Not provided'}
+                  </AppText>
+                </div>
+
+                <AppMoneyInput
+                  currency={fundingWallet.currency}
+                  disabled={fundingLoading}
+                  error={fundingError ?? undefined}
+                  value={fundingAmount}
+                  onChange={setFundingAmount}
+                />
+              </>
+            )}
+          </div>
+        )}
+      </AppModal>
     </AppShell>
   );
 }

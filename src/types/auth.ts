@@ -90,3 +90,23 @@ export interface RegistrationResult {
   email: string;
   message: string;
 }
+
+export interface ForgotPasswordPayload {
+  email: string;
+}
+
+export interface ForgotPasswordResult {
+  email: string;
+  message: string;
+}
+
+export interface SetPasswordPayload {
+  email: string;
+  password: string;
+  token: string;
+}
+
+export interface SetPasswordResult {
+  email: string;
+  message: string;
+}

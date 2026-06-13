@@ -870,7 +870,11 @@ const ProfileSectionEditModal = ({
   );
 
   useEffect(() => {
-    setFormValues(buildInitialFormValues(sectionData, fields));
+    const timeoutId = window.setTimeout(() => {
+      setFormValues(buildInitialFormValues(sectionData, fields));
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [fields, sectionData]);
 
   const setFieldValue = (name: string, value: EditableFieldValue) => {

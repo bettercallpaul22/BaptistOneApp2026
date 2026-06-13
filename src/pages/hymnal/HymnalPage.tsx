@@ -158,16 +158,18 @@ export default function HymnalPage() {
 
             <article className="grid gap-7">
               {selectedHymn.verses.map((verse) => (
-                <section className="grid gap-3" key={verse.number}>
-                  <div className="flex items-center gap-3">
+                <section className="grid grid-cols-[2.5rem_minmax(0,1fr)] gap-3" key={verse.number}>
+                  <div className="pt-1">
                     <span className="grid size-8 place-items-center rounded-full bg-[#123B8D] text-sm font-black text-white">
                       {verse.number}
                     </span>
-                    <div className="h-px flex-1 bg-[#EEF2F7]" />
                   </div>
-                  <div className="grid gap-1 pl-1 sm:pl-11">
+                  <div className="grid min-w-0 gap-1 border-t border-[#EEF2F7] pt-4">
                     {formatHymnVerseLines(verse.text).map((line, index) => (
-                      <p className="m-0 text-xl leading-9 text-[#24344D] sm:text-2xl sm:leading-10" key={`${verse.number}-${index}`}>
+                      <p
+                        className="m-0 text-lg leading-8 tracking-[0] text-[#24344D] sm:text-xl sm:leading-9"
+                        key={`${verse.number}-${index}`}
+                      >
                         {line}
                       </p>
                     ))}

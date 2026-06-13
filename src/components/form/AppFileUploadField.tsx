@@ -41,7 +41,7 @@ export const AppFileUploadField = ({
   const [uploadedFileNames, setUploadedFileNames] = useState<Record<string, string>>({});
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const values = Array.isArray(value) ? value : value ? [value] : [];
+  const values = useMemo(() => (Array.isArray(value) ? value : value ? [value] : []), [value]);
   const hasPendingFiles = pendingFiles.length > 0;
 
   useEffect(() => {

@@ -5,5 +5,7 @@ export const storageKeys = {
   memberAccount: 'newbaptist.memberAccount',
   profileCompletion: 'newbaptist.profileCompletion',
   registration: 'newbaptist.registration',
+  passwordResetEmail: 'newbaptist.passwordResetEmail',
+  passwordResetOtpExpiresAt: 'newbaptist.passwordResetOtpExpiresAt',
   user: 'newbaptist.user',
 } as const;

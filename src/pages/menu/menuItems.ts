@@ -20,5 +20,5 @@ export const menuItems: QuickAction[] = [
   { label: 'Prayer', icon: prayerIcon, tone: 'plain' },
   { label: 'Events', icon: eventIcon, tone: 'plain' },
   { label: 'Giving', icon: givingIcon, tone: 'plain' },
-  { label: 'Wallet', icon: walletIcon, tone: 'plain' },
+  { label: 'Wallet', icon: walletIcon, tone: 'plain', to: paths.wallet },
 ];

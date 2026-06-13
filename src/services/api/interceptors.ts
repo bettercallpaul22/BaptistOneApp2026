@@ -18,7 +18,7 @@ const publicAuthEndpoints = new Set<string>([
   endpoints.auth.refresh,
   endpoints.auth.forgotPassword,
   endpoints.auth.verifyOtp,
-  endpoints.auth.resetPassword,
+  endpoints.auth.setPassword,
 ]);
 
 const isEndpoint = (url: string | undefined, endpoint: string) => url === endpoint || url?.endsWith(endpoint);
