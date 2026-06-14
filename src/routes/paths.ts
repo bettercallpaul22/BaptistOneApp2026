@@ -10,6 +10,7 @@ export const paths = {
   media: '/media',
   church: '/church',
   family: '/family',
+  familyInvite: '/family/invite',
   familyMembers: '/family/members',
   familyRequests: '/family/requests',
   resources: '/resources',

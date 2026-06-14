@@ -7,6 +7,7 @@ import appleIcon from '@/assets/icons/apple_icon.svg';
 import googleIcon from '@/assets/icons/google_icon.svg';
 import { AppButton } from '@/components/common';
 import { AppCheckbox, AppInput } from '@/components/form';
+import { storageKeys } from '@/constants/storage';
 import { AuthLayout } from '@/layouts/AuthLayout';
 import { paths } from '@/routes/paths';
 import { loginThunk } from '@/store/thunks/authThunk';
@@ -21,6 +22,14 @@ const schema = z.object({
 });
 
 type LoginForm = z.infer<typeof schema>;
+
+type LoginLocationState = {
+  from?: {
+    pathname?: string;
+    search?: string;
+    hash?: string;
+  };
+} | null;
 
 const SocialIcon = ({ src, alt }: { src: string; alt: string }) => (
   <img className="size-4 shrink-0" src={src} alt={alt} />
@@ -42,7 +51,10 @@ export default function LoginPage() {
         await dispatch(loginThunk({ email, password })).unwrap();
         dispatch(pushNotification({ type: 'success', title: 'Signed in', message: 'Welcome back to BaptistOne.' }));
 
-        const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? paths.home;
+        const stateFrom = (location.state as LoginLocationState)?.from;
+        const sessionRedirect = sessionStorage.getItem(storageKeys.postAuthRedirect);
+        const from = sessionRedirect || `${stateFrom?.pathname ?? paths.home}${stateFrom?.search ?? ''}${stateFrom?.hash ?? ''}`;
+        sessionStorage.removeItem(storageKeys.postAuthRedirect);
         navigate(from, { replace: true });
       } catch (error) {
         const message = (error as { message?: string })?.message ?? 'Check your email and password, then try again.';

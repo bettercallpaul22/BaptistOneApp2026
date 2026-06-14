@@ -56,6 +56,10 @@ export const endpoints = {
       return `/private/members/family/search?${params.toString()}`;
     },
     familyInvite: '/private/members/family/invite',
+    familyInvitationAccept: (id: string) =>
+      `/private/members/family/invitations/${encodeURIComponent(id)}/accept`,
+    familyInvitationReject: (id: string) =>
+      `/private/members/family/invitations/${encodeURIComponent(id)}/reject`,
     familyLink: '/private/members/family/link',
     familyLinkRequests: '/private/members/family/link-requests',
     family: '/private/members/family',

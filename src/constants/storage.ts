@@ -7,5 +7,6 @@ export const storageKeys = {
   registration: 'newbaptist.registration',
   passwordResetEmail: 'newbaptist.passwordResetEmail',
   passwordResetOtpExpiresAt: 'newbaptist.passwordResetOtpExpiresAt',
+  postAuthRedirect: 'newbaptist.postAuthRedirect',
   user: 'newbaptist.user',
 } as const;

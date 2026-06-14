@@ -39,6 +39,12 @@ export interface InviteFamilyMemberResponse {
   data?: unknown;
 }
 
+export interface FamilyInvitationActionResponse {
+  status: boolean;
+  message?: string;
+  data?: unknown;
+}
+
 export type FamilyRelationship = 'SPOUSE' | 'CHILD' | 'DEPENDANT' | 'OTHER';
 
 export interface LinkFamilyMemberPayload {

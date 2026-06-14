@@ -23,6 +23,7 @@ const HymnalPage = lazy(() => import('@/pages/hymnal/HymnalPage'));
 const AppTabPage = lazy(() => import('@/pages/app/AppTabPage'));
 const AppPlaceholderPage = lazy(() => import('@/pages/app/AppPlaceholderPage'));
 const FamilyPage = lazy(() => import('@/pages/family/FamilyPage'));
+const FamilyInvitePage = lazy(() => import('@/pages/family/FamilyInvitePage'));
 const FamilyMembersPage = lazy(() => import('@/pages/family/FamilyMembersPage'));
 const FamilyRequestsPage = lazy(() => import('@/pages/family/FamilyRequestsPage'));
 const ProfilePage = lazy(() => import('@/pages/profile/ProfilePage'));
@@ -127,6 +128,7 @@ const RoutedApp = () => {
   const showWebBottomTab =
     !isDesktop &&
     pathname !== paths.launch &&
+    pathname !== paths.familyInvite &&
     pathname !== paths.walletFundingCallback &&
     !pathname.startsWith('/auth');
   const hideWebBottomTab = pathname === paths.bible && isBibleBottomTabHidden;
@@ -139,6 +141,7 @@ const RoutedApp = () => {
           <Route path={paths.launch} element={<LaunchRoute />} />
           <Route path={paths.googleRedirect} element={<GoogleRedirectPage />} />
           <Route path={paths.walletFundingCallback} element={<WalletFundingCallbackPage />} />
+          <Route path={paths.familyInvite} element={<FamilyInvitePage />} />
           <Route
             path={paths.bible}
             element={<BiblePage onBottomTabHiddenChange={setIsBibleBottomTabHidden} />}

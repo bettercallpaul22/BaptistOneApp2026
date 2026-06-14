@@ -2,6 +2,7 @@ import { endpoints } from '@/services/api/endpoints';
 import { http, type ApiRequestConfig } from '@/services/api/http';
 import type {
   FamilyMemberSearchResponse,
+  FamilyInvitationActionResponse,
   FamilyLinkRequestsResponse,
   InviteFamilyMemberPayload,
   InviteFamilyMemberResponse,
@@ -54,6 +55,30 @@ export const familyInviteService = {
 
     if (!response.status) {
       throw new Error(response.message || 'Unable to send invite.');
+    }
+
+    return response;
+  },
+
+  acceptInvitation: async (id: string) => {
+    const response = await http.post<FamilyInvitationActionResponse, undefined>(
+      endpoints.privateMembers.familyInvitationAccept(id),
+    );
+
+    if (!response.status) {
+      throw new Error(response.message || 'Unable to accept invite.');
+    }
+
+    return response;
+  },
+
+  rejectInvitation: async (id: string) => {
+    const response = await http.post<FamilyInvitationActionResponse, undefined>(
+      endpoints.privateMembers.familyInvitationReject(id),
+    );
+
+    if (!response.status) {
+      throw new Error(response.message || 'Unable to reject invite.');
     }
 
     return response;
