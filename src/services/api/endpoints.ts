@@ -42,6 +42,34 @@ export const endpoints = {
       return `/public/churches/connect-options?${params.toString()}`;
     },
   },
+  churches: {
+    leadership: ({ churchId, page = 1, limit = 20 }: { churchId: string; page?: number; limit?: number }) => {
+      const params = new URLSearchParams();
+
+      params.set('page', String(page));
+      params.set('limit', String(limit));
+
+      return `/churches/${encodeURIComponent(churchId)}/leadership?${params.toString()}`;
+    },
+  },
+  privateChurches: {
+    documents: ({ churchId, page = 1, limit = 25 }: { churchId: string; page?: number; limit?: number }) => {
+      const params = new URLSearchParams();
+
+      params.set('page', String(page));
+      params.set('limit', String(limit));
+
+      return `/private/churches/${encodeURIComponent(churchId)}/documents?${params.toString()}`;
+    },
+    events: ({ churchId, page = 1, limit = 25 }: { churchId: string; page?: number; limit?: number }) => {
+      const params = new URLSearchParams();
+
+      params.set('page', String(page));
+      params.set('limit', String(limit));
+
+      return `/private/churches/${encodeURIComponent(churchId)}/events?${params.toString()}`;
+    },
+  },
   privateMembers: {
     account: '/private/members/account',
     onboard: '/private/members/onboard',

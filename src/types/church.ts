@@ -112,6 +112,124 @@ export interface PublicChurchDetailsResponse {
   data: PublicChurchDetails;
 }
 
+export interface ChurchPaginatedMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface ChurchPaginatedData<TItem> {
+  items: TItem[];
+  meta: ChurchPaginatedMeta;
+}
+
+export interface ChurchFileAsset extends Record<string, ProfileSectionValue> {
+  id: string;
+  createdAt?: string;
+  updatedAt?: string;
+  key?: string | null;
+  contentType?: string | null;
+  size?: number | null;
+  checksum?: string | null;
+  altText?: string | null;
+  url?: string | null;
+  bucketName?: string | null;
+  region?: string | null;
+  versionId?: string | null;
+  metadata?: Record<string, ProfileSectionValue> | null;
+  tags?: Record<string, ProfileSectionValue> | null;
+  uploadedById?: string | null;
+  uploadedAt?: string | null;
+}
+
+export type ChurchLeadershipImage = ChurchFileAsset;
+
+export interface ChurchLeadershipItem extends Record<string, ProfileSectionValue> {
+  id: string;
+  createdAt?: string;
+  updatedAt?: string;
+  churchId: string;
+  type: string;
+  name: string;
+  title?: string | null;
+  bio?: string | null;
+  imageFileId?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  orderIndex?: number | null;
+  isActive?: boolean;
+  image?: ChurchLeadershipImage | null;
+}
+
+export type ChurchLeadershipMeta = ChurchPaginatedMeta;
+
+export type ChurchLeadershipResponse = ChurchPaginatedData<ChurchLeadershipItem>;
+
+export interface ChurchLeadershipApiResponse {
+  status?: boolean;
+  message?: string;
+  data?: ChurchLeadershipResponse;
+  items?: ChurchLeadershipItem[];
+  meta?: ChurchLeadershipMeta;
+}
+
+export interface ChurchDocumentItem extends Record<string, ProfileSectionValue> {
+  id: string;
+  createdAt?: string;
+  updatedAt?: string;
+  churchId: string;
+  name: string;
+  fileId?: string | null;
+  isActive?: boolean;
+  orderIndex?: number | null;
+  file?: ChurchFileAsset | null;
+}
+
+export type ChurchDocumentMeta = ChurchPaginatedMeta;
+export type ChurchDocumentsResponse = ChurchPaginatedData<ChurchDocumentItem>;
+
+export interface ChurchDocumentsApiResponse {
+  status?: boolean;
+  message?: string;
+  data?: ChurchDocumentsResponse;
+  items?: ChurchDocumentItem[];
+  meta?: ChurchDocumentMeta;
+}
+
+export interface ChurchEventLocation extends Record<string, ProfileSectionValue> {
+  name?: string | null;
+  address?: string | null;
+}
+
+export interface ChurchEventItem extends Record<string, ProfileSectionValue> {
+  id: string;
+  createdAt?: string;
+  updatedAt?: string;
+  churchId: string;
+  type: string;
+  title: string;
+  description?: string | null;
+  startAt?: string | null;
+  endAt?: string | null;
+  isAllDay?: boolean;
+  location?: ChurchEventLocation | null;
+  eventImageFileId?: string | null;
+  eventImage?: ChurchFileAsset | null;
+  orderIndex?: number | null;
+}
+
+export type ChurchEventMeta = ChurchPaginatedMeta;
+export type ChurchEventsResponse = ChurchPaginatedData<ChurchEventItem>;
+
+export interface ChurchEventsApiResponse {
+  status?: boolean;
+  message?: string;
+  data?: ChurchEventsResponse;
+  items?: ChurchEventItem[];
+  meta?: ChurchEventMeta;
+}
+
 export interface ChurchRegistrationOptionsMeta {
   page: number;
   limit: number;

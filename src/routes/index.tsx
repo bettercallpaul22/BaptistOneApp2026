@@ -22,6 +22,10 @@ const BiblePage = lazy(() => import('@/pages/bible/BiblePage'));
 const HymnalPage = lazy(() => import('@/pages/hymnal/HymnalPage'));
 const AppTabPage = lazy(() => import('@/pages/app/AppTabPage'));
 const AppPlaceholderPage = lazy(() => import('@/pages/app/AppPlaceholderPage'));
+const ChurchBrowsePage = lazy(() => import('@/pages/church/ChurchBrowsePage'));
+const ChurchDocumentsPage = lazy(() => import('@/pages/church/ChurchDocumentsPage'));
+const ChurchEventsPage = lazy(() => import('@/pages/church/ChurchEventsPage'));
+const ChurchLeadershipPage = lazy(() => import('@/pages/church/ChurchLeadershipPage'));
 const FamilyPage = lazy(() => import('@/pages/family/FamilyPage'));
 const FamilyInvitePage = lazy(() => import('@/pages/family/FamilyInvitePage'));
 const FamilyMembersPage = lazy(() => import('@/pages/family/FamilyMembersPage'));
@@ -157,6 +161,10 @@ const RoutedApp = () => {
             <Route path={paths.donation} element={<AppPlaceholderPage title="Donation" />} />
             <Route path={paths.media} element={<AppPlaceholderPage title="Media" />} />
             <Route path={paths.church} element={<AppTabPage kind="church" />} />
+            <Route path={paths.churchBrowse} element={<ChurchBrowsePage />} />
+            <Route path={paths.churchDocuments} element={<ChurchDocumentsPage />} />
+            <Route path={paths.churchEvents} element={<ChurchEventsPage />} />
+            <Route path={paths.churchLeadershipRoute} element={<ChurchLeadershipPage />} />
             <Route path={paths.family} element={<FamilyPage />} />
             <Route path={paths.familyMembers} element={<FamilyMembersPage />} />
             <Route path={paths.familyRequests} element={<FamilyRequestsPage />} />

@@ -1,6 +1,12 @@
 import { endpoints } from '@/services/api/endpoints';
 import { http } from '@/services/api/http';
 import type {
+  ChurchDocumentsApiResponse,
+  ChurchDocumentsResponse,
+  ChurchEventsApiResponse,
+  ChurchEventsResponse,
+  ChurchLeadershipApiResponse,
+  ChurchLeadershipResponse,
   ChurchRegistrationOptionsResponse,
   FetchChurchRegistrationOptionsPayload,
   OnboardMemberPayload,
@@ -9,6 +15,29 @@ import type {
   RevokeMembershipRequestPayload,
   RevokeMembershipRequestResponse,
 } from '@/types/church';
+
+const normalizePaginatedResponse = <TResponse extends { items: unknown[]; meta: unknown }>(
+  response: {
+    status?: boolean;
+    message?: string;
+    data?: TResponse;
+    items?: unknown[];
+    meta?: unknown;
+  },
+  fallbackMessage: string,
+) => {
+  const data = response.data ?? response;
+
+  if (response.status === false) {
+    throw new Error(response.message || fallbackMessage);
+  }
+
+  if (!Array.isArray(data.items) || !data.meta) {
+    throw new Error(response.message || fallbackMessage);
+  }
+
+  return data as TResponse;
+};
 
 export const churchService = {
   getChurch: async (id: string) => {
@@ -19,6 +48,30 @@ export const churchService = {
     }
 
     return response;
+  },
+
+  getLeadership: async (churchId: string, { page = 1, limit = 20 }: { page?: number; limit?: number } = {}) => {
+    const response = await http.get<ChurchLeadershipApiResponse>(
+      endpoints.churches.leadership({ churchId, page, limit }),
+    );
+
+    return normalizePaginatedResponse<ChurchLeadershipResponse>(response, 'Unable to load church leadership.');
+  },
+
+  getDocuments: async (churchId: string, { page = 1, limit = 25 }: { page?: number; limit?: number } = {}) => {
+    const response = await http.get<ChurchDocumentsApiResponse>(
+      endpoints.privateChurches.documents({ churchId, page, limit }),
+    );
+
+    return normalizePaginatedResponse<ChurchDocumentsResponse>(response, 'Unable to load church documents.');
+  },
+
+  getEvents: async (churchId: string, { page = 1, limit = 25 }: { page?: number; limit?: number } = {}) => {
+    const response = await http.get<ChurchEventsApiResponse>(
+      endpoints.privateChurches.events({ churchId, page, limit }),
+    );
+
+    return normalizePaginatedResponse<ChurchEventsResponse>(response, 'Unable to load church events.');
   },
 
   getRegistrationOptions: async ({ search = '', page = 1, limit = 20 }: FetchChurchRegistrationOptionsPayload = {}) => {

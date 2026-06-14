@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, CheckCircle2, Clock3, Mail } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Clock3, Mail, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { AppButton, AppText } from '@/components/common';
+import { AppButton, AppScrollableTabs, AppText } from '@/components/common';
 import { AppAvatar } from '@/components/display';
 import { AppStateFeedback } from '@/components/feedback';
 import { AppShell } from '@/layouts/AppShell';
@@ -13,9 +13,13 @@ import type {
   UserFamilyResponse,
 } from '@/pages/profile/types/familyInviteTypes';
 import { paths } from '@/routes/paths';
+import { useAppDispatch } from '@/store/hooks';
+import { pushNotification } from '@/store/slices/notificationSlice';
 import { formatDate } from '@/utils/formatDate';
 
 type FamilyRequestStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'SENT';
+type FamilyRequestTab = 'sent' | 'incoming';
+type FamilyRequestAction = 'accept' | 'reject';
 
 interface FamilyRequestListItem {
   id: string;
@@ -37,6 +41,11 @@ const statusClasses: Record<FamilyRequestStatus, string> = {
   REJECTED: 'border-red-100 bg-red-50 text-red-700',
   SENT: 'border-[#EAF1FF] bg-[#EAF1FF] text-[#123B8D]',
 };
+
+const requestTabs: Array<{ value: FamilyRequestTab; label: string }> = [
+  { value: 'sent', label: 'Request sent' },
+  { value: 'incoming', label: 'Incoming request' },
+];
 
 const relationshipLabels: Record<FamilyRelationship, string> = {
   CHILD: 'Child',
@@ -90,48 +99,118 @@ const normalizeFamilyInvitation = (invitation: UserFamilyInvitation): FamilyRequ
 });
 
 const FamilyRequestsPage = () => {
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const [activeRequestTab, setActiveRequestTab] = useState<FamilyRequestTab>('sent');
   const [familyData, setFamilyData] = useState<NonNullable<UserFamilyResponse['data']> | null>(
     null,
   );
   const [linkRequests, setLinkRequests] = useState<FamilyRequestListItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [familyLoading, setFamilyLoading] = useState(false);
+  const [familyError, setFamilyError] = useState<string | null>(null);
+  const [requestsLoading, setRequestsLoading] = useState(false);
+  const [requestsError, setRequestsError] = useState<string | null>(null);
+  const [requestActionLoading, setRequestActionLoading] = useState<{
+    id: string;
+    action: FamilyRequestAction;
+  } | null>(null);
 
-  const requests = useMemo(
-    () => [
-      ...(familyData?.invitations ?? []).map(normalizeFamilyInvitation),
-      ...linkRequests,
-    ],
-    [familyData?.invitations, linkRequests],
+  const sentRequests = useMemo(
+    () => (familyData?.invitations ?? []).map(normalizeFamilyInvitation),
+    [familyData?.invitations],
   );
+  const incomingRequests = linkRequests;
+  const requests = activeRequestTab === 'sent' ? sentRequests : incomingRequests;
+  const activeLoading = activeRequestTab === 'sent' ? familyLoading : requestsLoading;
+  const activeError = activeRequestTab === 'sent' ? familyError : requestsError;
+  const activeEmptyTitle =
+    activeRequestTab === 'sent' ? 'No sent requests' : 'No incoming requests';
+  const activeEmptyDescription =
+    activeRequestTab === 'sent'
+      ? 'Family invitations you send will appear here.'
+      : 'Family link requests sent to you will appear here.';
 
-  const fetchRequests = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const fetchFamily = useCallback(async () => {
+    setFamilyLoading(true);
+    setFamilyError(null);
 
     try {
-      const [familyResponse, linkRequestsResponse] = await Promise.all([
-        familyInviteService.getFamily(),
-        familyInviteService.listLinkRequests(),
-      ]);
-
+      const familyResponse = await familyInviteService.getFamily();
       setFamilyData(familyResponse.data ?? null);
+    } catch (fetchError) {
+      setFamilyError(getErrorMessage(fetchError, 'Unable to load sent requests.'));
+    } finally {
+      setFamilyLoading(false);
+    }
+  }, []);
+
+  const fetchLinkRequests = useCallback(async () => {
+    setRequestsLoading(true);
+    setRequestsError(null);
+
+    try {
+      const linkRequestsResponse = await familyInviteService.listLinkRequests();
       setLinkRequests((linkRequestsResponse.data?.items ?? []).map(normalizeLinkRequest));
     } catch (fetchError) {
-      setError(getErrorMessage(fetchError, 'Unable to load family requests.'));
+      setRequestsError(getErrorMessage(fetchError, 'Unable to load incoming requests.'));
     } finally {
-      setLoading(false);
+      setRequestsLoading(false);
     }
   }, []);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
-      void fetchRequests();
+      void fetchFamily();
+      void fetchLinkRequests();
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
-  }, [fetchRequests]);
+  }, [fetchFamily, fetchLinkRequests]);
+
+  const handleIncomingRequestAction = async (
+    request: FamilyRequestListItem,
+    action: FamilyRequestAction,
+  ) => {
+    setRequestActionLoading({ id: request.id, action });
+
+    try {
+      const response =
+        action === 'accept'
+          ? await familyInviteService.acceptInvitation(request.id)
+          : await familyInviteService.rejectInvitation(request.id);
+      const nextStatus: FamilyRequestStatus = action === 'accept' ? 'ACCEPTED' : 'REJECTED';
+
+      setLinkRequests((current) =>
+        current.map((item) => (item.id === request.id ? { ...item, status: nextStatus } : item)),
+      );
+      dispatch(
+        pushNotification({
+          type: 'success',
+          title: action === 'accept' ? 'Request accepted' : 'Request rejected',
+          message:
+            response.message ||
+            (action === 'accept'
+              ? `${request.name} has been accepted.`
+              : `${request.name} has been rejected.`),
+        }),
+      );
+    } catch (error) {
+      const message = getErrorMessage(
+        error,
+        action === 'accept' ? 'Unable to accept request.' : 'Unable to reject request.',
+      );
+
+      dispatch(
+        pushNotification({
+          type: 'error',
+          title: action === 'accept' ? 'Unable to accept request' : 'Unable to reject request',
+          message,
+        }),
+      );
+    } finally {
+      setRequestActionLoading(null);
+    }
+  };
 
   return (
     <AppShell>
@@ -154,24 +233,37 @@ const FamilyRequestsPage = () => {
         </div>
 
         <section className="grid gap-3 rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-[0_8px_18px_rgba(11,31,74,0.06)]">
-          {loading && !requests.length && (
+          <AppScrollableTabs
+            tabs={requestTabs.map((tab) => ({
+              ...tab,
+              badge: String(tab.value === 'sent' ? sentRequests.length : incomingRequests.length),
+            }))}
+            value={activeRequestTab}
+            ariaLabel="Family request types"
+            fullWidthTabs
+            onValueChange={(value) => setActiveRequestTab(value as FamilyRequestTab)}
+          />
+
+          {activeLoading && !requests.length && (
             <AppStateFeedback state="loading" label="Loading family requests" className="min-h-40" />
           )}
-          {error && !requests.length && (
+          {activeError && !requests.length && (
             <AppStateFeedback
               state="error"
               title="Unable to load requests"
-              description={error}
-              retrying={loading}
+              description={activeError}
+              retrying={activeLoading}
               className="min-h-44"
-              onRetry={() => void fetchRequests()}
+              onRetry={() =>
+                activeRequestTab === 'sent' ? void fetchFamily() : void fetchLinkRequests()
+              }
             />
           )}
-          {!loading && !error && !requests.length && (
+          {!activeLoading && !activeError && !requests.length && (
             <AppStateFeedback
               state="empty"
-              title="No pending requests"
-              description="Family requests will appear here."
+              title={activeEmptyTitle}
+              description={activeEmptyDescription}
               className="min-h-40"
             />
           )}
@@ -214,6 +306,37 @@ const FamilyRequestsPage = () => {
                   <span>-</span>
                   <span>{request.sentAt}</span>
                 </div>
+                {request.direction === 'incoming' && request.status === 'PENDING' && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <AppButton
+                      fullWidth
+                      leftIcon={<CheckCircle2 className="size-4" aria-hidden />}
+                      loading={
+                        requestActionLoading?.id === request.id &&
+                        requestActionLoading.action === 'accept'
+                      }
+                      size="sm"
+                      disabled={requestActionLoading !== null}
+                      onClick={() => void handleIncomingRequestAction(request, 'accept')}
+                    >
+                      Accept
+                    </AppButton>
+                    <AppButton
+                      fullWidth
+                      leftIcon={<XCircle className="size-4" aria-hidden />}
+                      loading={
+                        requestActionLoading?.id === request.id &&
+                        requestActionLoading.action === 'reject'
+                      }
+                      size="sm"
+                      variant="secondary"
+                      disabled={requestActionLoading !== null}
+                      onClick={() => void handleIncomingRequestAction(request, 'reject')}
+                    >
+                      Reject
+                    </AppButton>
+                  </div>
+                )}
               </div>
             );
           })}

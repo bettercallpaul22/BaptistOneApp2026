@@ -46,7 +46,6 @@ const FamilyInvitePage = () => {
   const [actionLoading, setActionLoading] = useState<InviteAction | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionStatus, setActionStatus] = useState<ActionStatus>('idle');
-  const [authAction, setAuthAction] = useState<InviteAction | null>(null);
   const requesterName = getRequesterName(request);
   const relationshipText = request ? relationshipLabels[request.relationship] : 'family member';
   const redirectPath = `${location.pathname}${location.search}${location.hash}`;
@@ -102,16 +101,11 @@ const FamilyInvitePage = () => {
     });
   };
 
-  const handleAuthRequiredAction = (action: InviteAction) => {
-    setAuthAction(action);
-    preserveRedirect();
-  };
-
   const handleInviteAction = async (action: InviteAction) => {
     if (!inviteId) return;
 
     if (!isAuthenticated) {
-      handleAuthRequiredAction(action);
+      preserveRedirect();
       return;
     }
 
@@ -232,13 +226,13 @@ const FamilyInvitePage = () => {
               </div>
             )}
 
-            {authAction && !isAuthenticated && (
+            {!isAuthenticated ? (
               <div className="grid gap-3 rounded-lg border border-[#EAF1FF] bg-[#F8FAFC] p-4">
                 <AppText variant="bodyMedium" weight="bold">
                   Login required
                 </AppText>
                 <AppText variant="bodySmall" color="textSecondary">
-                  Please login or create an account to {authAction} this family invitation.
+                  Please login or create an account to respond to this family invitation.
                 </AppText>
                 <div className="grid gap-2 sm:grid-cols-2">
                   <AppButton
@@ -256,27 +250,27 @@ const FamilyInvitePage = () => {
                   </AppButton>
                 </div>
               </div>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <AppButton
+                  disabled={Boolean(actionLoading) || !canAct}
+                  loading={actionLoading === 'accept'}
+                  leftIcon={<CheckCircle2 className="size-4" aria-hidden />}
+                  onClick={() => void handleInviteAction('accept')}
+                >
+                  Accept
+                </AppButton>
+                <AppButton
+                  disabled={Boolean(actionLoading) || !canAct}
+                  loading={actionLoading === 'reject'}
+                  leftIcon={<XCircle className="size-4" aria-hidden />}
+                  variant="secondary"
+                  onClick={() => void handleInviteAction('reject')}
+                >
+                  Reject
+                </AppButton>
+              </div>
             )}
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <AppButton
-                disabled={Boolean(actionLoading) || (!canAct && isAuthenticated)}
-                loading={actionLoading === 'accept'}
-                leftIcon={<CheckCircle2 className="size-4" aria-hidden />}
-                onClick={() => void handleInviteAction('accept')}
-              >
-                Accept
-              </AppButton>
-              <AppButton
-                disabled={Boolean(actionLoading) || (!canAct && isAuthenticated)}
-                loading={actionLoading === 'reject'}
-                leftIcon={<XCircle className="size-4" aria-hidden />}
-                variant="secondary"
-                onClick={() => void handleInviteAction('reject')}
-              >
-                Reject
-              </AppButton>
-            </div>
           </>
         )}
 

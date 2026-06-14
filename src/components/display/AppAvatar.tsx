@@ -3,7 +3,7 @@ import clsx from 'clsx';
 export interface AppAvatarProps {
   src?: string;
   name: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   online?: boolean;
 }
 
@@ -19,6 +19,7 @@ const sizeClasses = {
   sm: 'size-8 text-xs',
   md: 'size-11 text-sm',
   lg: 'size-16 text-xl',
+  xl: 'size-20 text-2xl',
 } as const;
 
 export const AppAvatar = ({ src, name, size = 'md', online = false }: AppAvatarProps) => (
