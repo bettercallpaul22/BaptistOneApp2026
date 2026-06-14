@@ -1,6 +1,6 @@
 import type { ProfileSectionValue } from '@/types/profile';
 
-export interface ChurchRegistrationAssociation {
+export interface ChurchRegistrationAssociation extends Record<string, ProfileSectionValue> {
   id: string;
   name: string | null;
 }
@@ -20,6 +20,96 @@ export interface ChurchRegistrationOption {
   hasAdmin?: boolean;
   membershipSize?: number;
   [key: string]: ProfileSectionValue | ChurchRegistrationAssociation | null | undefined;
+}
+
+export interface ChurchAddress extends Record<string, ProfileSectionValue> {
+  line1?: string | null;
+  line2?: string | null;
+  street?: string | null;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
+  postalCode?: string | null;
+  latitude?: number | string | null;
+  longitude?: number | string | null;
+}
+
+export interface ChurchSocialLinks extends Record<string, ProfileSectionValue> {
+  website?: string | null;
+  facebook?: string | null;
+  instagram?: string | null;
+  twitter?: string | null;
+  x?: string | null;
+  youtube?: string | null;
+  tiktok?: string | null;
+}
+
+export interface ChurchContactFields extends Record<string, ProfileSectionValue> {
+  email?: string | null;
+  phone?: string | null;
+  alternatePhone?: string | null;
+  contactEmail?: string | null;
+  contactPhone?: string | null;
+}
+
+export interface ChurchPerson extends Record<string, ProfileSectionValue> {
+  id?: string;
+  name?: string | null;
+  displayName?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  role?: string | null;
+  title?: string | null;
+  avatarUrl?: string | null;
+}
+
+export interface ChurchComplianceMetadata extends Record<string, ProfileSectionValue> {
+  registrationNumber?: string | null;
+  registrationState?: string | null;
+  registrationStatus?: string | null;
+  complianceStatus?: string | null;
+  registeredAt?: string | null;
+  approvedAt?: string | null;
+}
+
+export interface PublicChurchDetails extends Record<string, ProfileSectionValue> {
+  id: string;
+  name: string;
+  slug?: string | null;
+  image?: string | null;
+  logo?: string | null;
+  coverImage?: string | null;
+  coverImageUrl?: string | null;
+  about?: string | null;
+  status?: string | null;
+  registrationState?: string | null;
+  hasAdmin?: boolean;
+  membershipSize?: number | null;
+  memberCount?: number | null;
+  address?: ChurchAddress | null;
+  socialLinks?: ChurchSocialLinks | null;
+  contact?: ChurchContactFields | null;
+  contactEmail?: string | null;
+  contactPhone?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  admins?: ChurchPerson[];
+  pastors?: ChurchPerson[];
+  compliance?: ChurchComplianceMetadata | null;
+  registration?: ChurchComplianceMetadata | null;
+  association?: ChurchRegistrationAssociation | Record<string, ProfileSectionValue> | null;
+  conference?: ChurchRegistrationAssociation | Record<string, ProfileSectionValue> | null;
+  convention?: ChurchRegistrationAssociation | Record<string, ProfileSectionValue> | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface PublicChurchDetailsResponse {
+  status: boolean;
+  message?: string;
+  data: PublicChurchDetails;
 }
 
 export interface ChurchRegistrationOptionsMeta {

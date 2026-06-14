@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import bibleIcon from '@/assets/icons/app_bible.svg';
 import eventIcon from '@/assets/icons/app_event.svg';
+import familyIcon from '@/assets/icons/app_family.svg';
 import givingIcon from '@/assets/icons/app_giving.svg';
 import hymnIcon from '@/assets/icons/app_hymn.svg';
 import prayerIcon from '@/assets/icons/app_prayer.svg';
@@ -38,6 +39,7 @@ const quickActions: QuickAction[] = [
   { label: 'Events', icon: eventIcon, tone: 'plain' },
   { label: 'Giving', icon: givingIcon, tone: 'plain' },
   { label: 'Wallet', icon: walletIcon, tone: 'plain', to: paths.wallet, requiresAuth: true },
+  { label: 'Family', icon: familyIcon, tone: 'plain', to: paths.family, requiresAuth: true },
 ];
 
 const getTimeOfDayGreeting = () => {
@@ -196,7 +198,7 @@ export default function HomePage() {
         footerLayout="split"
         footer={
           <>
-            <AppButton variant="outline" onClick={closeLoginPrompt}>
+            <AppButton variant="secondary" onClick={closeLoginPrompt}>
               Cancel
             </AppButton>
             <AppButton onClick={handleLoginPromptConfirm}>Login</AppButton>

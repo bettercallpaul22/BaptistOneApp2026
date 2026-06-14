@@ -1,4 +1,4 @@
-import { type ReactNode, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import {
@@ -41,6 +41,7 @@ const desktopNavItems: NavigationItem[] = [
 interface AppShellProps {
   children: ReactNode;
   headerAvatar?: ReactNode;
+  mobileHeaderAddon?: ReactNode;
 }
 
 type NativeWebViewWindow = Window & {
@@ -72,18 +73,22 @@ const DesktopHeader = ({ title }: { title: string }) => (
   </header>
 );
 
-export const AppShell = ({ children, headerAvatar }: AppShellProps) => {
+export const AppShell = ({ children, headerAvatar, mobileHeaderAddon }: AppShellProps) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { isDesktop } = useDeviceProfile();
+  const mobileHeaderRef = useRef<HTMLDivElement>(null);
   const { authData, hasKnownUser, isAuthenticated, user } = useAppSelector((state) => state.auth);
   const memberAccount = useAppSelector((state) => state.member.data);
   const showSidebar = isDesktop;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMenuLoginPromptOpen, setIsMenuLoginPromptOpen] = useState(false);
   const [dismissedRestrictedPath, setDismissedRestrictedPath] = useState<string | null>(null);
+  const [mobileHeaderHeight, setMobileHeaderHeight] = useState(64);
   const headerTitle = useMemo(() => {
+    if (pathname.startsWith(paths.family)) return 'Family';
+
     const activeItem = [...desktopNavItems, ...menuItems].find((item) => pathname === item.to);
     return activeItem?.label ?? 'Home';
   }, [pathname]);
@@ -92,13 +97,18 @@ export const AppShell = ({ children, headerAvatar }: AppShellProps) => {
 
     const unrestrictedPaths = new Set<string>([paths.home, paths.bible, paths.hymnal]);
 
-    return !pathname.startsWith('/auth') && pathname !== paths.launch && !unrestrictedPaths.has(pathname);
+    return (
+      !pathname.startsWith('/auth') && pathname !== paths.launch && !unrestrictedPaths.has(pathname)
+    );
   }, [hasKnownUser, isAuthenticated, pathname]);
-  const isRestrictedLoginPromptOpen = isRestrictedKnownUserPath && dismissedRestrictedPath !== pathname;
+  const isRestrictedLoginPromptOpen =
+    isRestrictedKnownUserPath && dismissedRestrictedPath !== pathname;
   const isLoginPromptOpen = isMenuLoginPromptOpen || isRestrictedLoginPromptOpen;
   const defaultHeaderAvatarName = getFirstAvailableName(
     memberAccount?.basicProfile?.displayName,
-    [memberAccount?.basicProfile?.firstName, memberAccount?.basicProfile?.lastName].filter(Boolean).join(' '),
+    [memberAccount?.basicProfile?.firstName, memberAccount?.basicProfile?.lastName]
+      .filter(Boolean)
+      .join(' '),
     authData?.profile?.displayName,
     [authData?.user?.firstName, authData?.user?.lastName].filter(Boolean).join(' '),
     [user?.firstName, user?.lastName].filter(Boolean).join(' '),
@@ -116,7 +126,9 @@ export const AppShell = ({ children, headerAvatar }: AppShellProps) => {
     dispatch(logout());
     postNativeLogout();
     setIsMenuOpen(false);
-    dispatch(pushNotification({ type: 'info', title: 'Logged out', message: 'You have been signed out.' }));
+    dispatch(
+      pushNotification({ type: 'info', title: 'Logged out', message: 'You have been signed out.' }),
+    );
     navigate(paths.home, { replace: true });
   };
 
@@ -143,11 +155,32 @@ export const AppShell = ({ children, headerAvatar }: AppShellProps) => {
     navigate(paths.login);
   };
 
+  useEffect(() => {
+    if (showSidebar) return;
+
+    const headerElement = mobileHeaderRef.current;
+    if (!headerElement) return;
+
+    const updateHeaderHeight = () => {
+      setMobileHeaderHeight(headerElement.getBoundingClientRect().height);
+    };
+
+    updateHeaderHeight();
+
+    const resizeObserver = new ResizeObserver(updateHeaderHeight);
+    resizeObserver.observe(headerElement);
+
+    return () => resizeObserver.disconnect();
+  }, [mobileHeaderAddon, showSidebar]);
+
   return (
     <div className={clsx('min-h-screen bg-white text-[#0B1F4A]', !showSidebar && 'pb-24')}>
       {showSidebar && (
         <aside className="fixed inset-y-0 left-0 z-30 flex w-[18rem] flex-col border-r border-[#E5E7EB] bg-white">
-          <Link className="flex items-center gap-3 px-8 py-8 text-2xl font-extrabold text-[#123B8D]" to={paths.home}>
+          <Link
+            className="flex items-center gap-3 px-8 py-8 text-2xl font-extrabold text-[#123B8D]"
+            to={paths.home}
+          >
             <Church className="size-8 fill-[#123B8D]/10" aria-hidden />
             <span>Faith BC Lugbe</span>
           </Link>
@@ -159,7 +192,9 @@ export const AppShell = ({ children, headerAvatar }: AppShellProps) => {
               return (
                 <Link
                   className={`flex min-h-14 items-center gap-4 rounded-lg px-4 text-lg font-semibold ${
-                    active ? 'bg-[#E8EEF9] text-[#123B8D]' : 'text-[#46556E] hover:bg-slate-50 hover:text-[#123B8D]'
+                    active
+                      ? 'bg-[#E8EEF9] text-[#123B8D]'
+                      : 'text-[#46556E] hover:bg-slate-50 hover:text-[#123B8D]'
                   }`}
                   key={item.label}
                   to={item.to}
@@ -182,9 +217,23 @@ export const AppShell = ({ children, headerAvatar }: AppShellProps) => {
       {showSidebar ? (
         <DesktopHeader title={headerTitle} />
       ) : (
-        <AppMobileHeader avatar={headerAvatar ?? defaultHeaderAvatar} title={headerTitle} onActionPress={handleMobileMenuPress} />
+        <div ref={mobileHeaderRef} className="fixed inset-x-0 top-0 z-40">
+          <AppMobileHeader
+            avatar={headerAvatar ?? defaultHeaderAvatar}
+            title={headerTitle}
+            position="static"
+            onActionPress={handleMobileMenuPress}
+          />
+          {mobileHeaderAddon}
+        </div>
       )}
-      {!showSidebar && <MenuScreen isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} onLogout={handleLogout} />}
+      {!showSidebar && (
+        <MenuScreen
+          isOpen={isMenuOpen}
+          onClose={() => setIsMenuOpen(false)}
+          onLogout={handleLogout}
+        />
+      )}
       <AppModal
         open={isLoginPromptOpen}
         title="Login required"
@@ -192,17 +241,24 @@ export const AppShell = ({ children, headerAvatar }: AppShellProps) => {
         footerLayout="split"
         footer={
           <>
-            <AppButton variant="outline" onClick={closeLoginPrompt}>
+            <AppButton variant="secondary" onClick={closeLoginPrompt}>
               Cancel
             </AppButton>
             <AppButton onClick={handleLoginPromptConfirm}>Login</AppButton>
           </>
         }
       >
-        {isRestrictedLoginPromptOpen ? 'Please login to continue.' : 'Please login to view the menu.'}
+        {isRestrictedLoginPromptOpen
+          ? 'Please login to continue.'
+          : 'Please login to view the menu.'}
       </AppModal>
 
-      <main className={clsx(showSidebar ? 'ml-[18rem] pt-20' : 'pt-16')}>{children}</main>
+      <main
+        className={clsx(showSidebar && 'ml-[18rem] pt-20')}
+        style={!showSidebar ? { paddingTop: mobileHeaderHeight } : undefined}
+      >
+        {children}
+      </main>
     </div>
   );
 };

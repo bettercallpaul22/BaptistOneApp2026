@@ -9,10 +9,19 @@ export interface AppModalProps {
   children: ReactNode;
   footer?: ReactNode;
   footerLayout?: 'default' | 'split';
+  panelClassName?: string;
   onClose: () => void;
 }
 
-export const AppModal = ({ open, title, children, footer, footerLayout = 'default', onClose }: AppModalProps) => {
+export const AppModal = ({
+  open,
+  title,
+  children,
+  footer,
+  footerLayout = 'default',
+  panelClassName,
+  onClose,
+}: AppModalProps) => {
   useEffect(() => {
     if (!open) return undefined;
 
@@ -29,7 +38,10 @@ export const AppModal = ({ open, title, children, footer, footerLayout = 'defaul
   return createPortal(
     <div className="fixed inset-0 z-50 grid place-items-center bg-[#0B1F4A]/60 p-4" role="presentation" onMouseDown={onClose}>
       <section
-        className="flex max-h-[calc(100dvh-2rem)] w-full max-w-[34rem] flex-col overflow-hidden rounded-xl bg-white shadow-[0_24px_60px_rgba(11,31,74,0.22)]"
+        className={clsx(
+          'flex max-h-[calc(100dvh-2rem)] w-full max-w-[34rem] flex-col overflow-hidden rounded-xl bg-white shadow-[0_24px_60px_rgba(11,31,74,0.22)]',
+          panelClassName,
+        )}
         role="dialog"
         aria-modal="true"
         aria-label={title}

@@ -22,16 +22,27 @@ const BiblePage = lazy(() => import('@/pages/bible/BiblePage'));
 const HymnalPage = lazy(() => import('@/pages/hymnal/HymnalPage'));
 const AppTabPage = lazy(() => import('@/pages/app/AppTabPage'));
 const AppPlaceholderPage = lazy(() => import('@/pages/app/AppPlaceholderPage'));
+const FamilyPage = lazy(() => import('@/pages/family/FamilyPage'));
+const FamilyMembersPage = lazy(() => import('@/pages/family/FamilyMembersPage'));
+const FamilyRequestsPage = lazy(() => import('@/pages/family/FamilyRequestsPage'));
 const ProfilePage = lazy(() => import('@/pages/profile/ProfilePage'));
 const WalletPage = lazy(() => import('@/pages/wallet/WalletPage'));
-const WalletTransactionsPage = lazy(() => import('@/pages/wallet/transactions/WalletTransactionsPage'));
-const WalletTransactionDetailsPage = lazy(() => import('@/pages/wallet/transactions/WalletTransactionDetailsPage'));
-const WalletFundingCallbackPage = lazy(() => import('@/pages/wallet/funding-callback/WalletFundingCallbackPage'));
+const WalletTransactionsPage = lazy(
+  () => import('@/pages/wallet/transactions/WalletTransactionsPage'),
+);
+const WalletTransactionDetailsPage = lazy(
+  () => import('@/pages/wallet/transactions/WalletTransactionDetailsPage'),
+);
+const WalletFundingCallbackPage = lazy(
+  () => import('@/pages/wallet/funding-callback/WalletFundingCallbackPage'),
+);
 const LoginPage = lazy(() => import('@/pages/auth/login/LoginPage'));
 const GoogleRedirectPage = lazy(() => import('@/pages/auth/google-redirect/GoogleRedirectPage'));
 const EmailVerifyPage = lazy(() => import('@/pages/auth/email-verify/EmailVerifyPage'));
 const RegisterPage = lazy(() => import('@/pages/auth/register/RegisterPage'));
-const RegisterVerificationPage = lazy(() => import('@/pages/auth/register/RegisterVerificationPage'));
+const RegisterVerificationPage = lazy(
+  () => import('@/pages/auth/register/RegisterVerificationPage'),
+);
 const ForgotPasswordPage = lazy(() => import('@/pages/auth/forgot-password/ForgotPasswordPage'));
 const VerifyOtpPage = lazy(() => import('@/pages/auth/verify-otp/VerifyOtpPage'));
 const ResetPasswordPage = lazy(() => import('@/pages/auth/reset-password/ResetPasswordPage'));
@@ -96,7 +107,11 @@ const LaunchRoute = () => {
     return <AppLoader variant="page" label="Checking session" />;
   }
 
-  return isAuthenticated || hasKnownUser ? <Navigate replace to={paths.home} /> : <Navigate replace to={paths.register} />;
+  return isAuthenticated || hasKnownUser ? (
+    <Navigate replace to={paths.home} />
+  ) : (
+    <Navigate replace to={paths.register} />
+  );
 };
 
 const RoutedApp = () => {
@@ -110,7 +125,10 @@ const RoutedApp = () => {
   }
 
   const showWebBottomTab =
-    !isDesktop && pathname !== paths.launch && pathname !== paths.walletFundingCallback && !pathname.startsWith('/auth');
+    !isDesktop &&
+    pathname !== paths.launch &&
+    pathname !== paths.walletFundingCallback &&
+    !pathname.startsWith('/auth');
   const hideWebBottomTab = pathname === paths.bible && isBibleBottomTabHidden;
 
   return (
@@ -121,7 +139,10 @@ const RoutedApp = () => {
           <Route path={paths.launch} element={<LaunchRoute />} />
           <Route path={paths.googleRedirect} element={<GoogleRedirectPage />} />
           <Route path={paths.walletFundingCallback} element={<WalletFundingCallbackPage />} />
-          <Route path={paths.bible} element={<BiblePage onBottomTabHiddenChange={setIsBibleBottomTabHidden} />} />
+          <Route
+            path={paths.bible}
+            element={<BiblePage onBottomTabHiddenChange={setIsBibleBottomTabHidden} />}
+          />
           <Route path={paths.hymnal} element={<HymnalPage />} />
           <Route element={<HomeRoute />}>
             <Route path={paths.home} element={<HomePage />} />
@@ -133,15 +154,27 @@ const RoutedApp = () => {
             <Route path={paths.donation} element={<AppPlaceholderPage title="Donation" />} />
             <Route path={paths.media} element={<AppPlaceholderPage title="Media" />} />
             <Route path={paths.church} element={<AppTabPage kind="church" />} />
+            <Route path={paths.family} element={<FamilyPage />} />
+            <Route path={paths.familyMembers} element={<FamilyMembersPage />} />
+            <Route path={paths.familyRequests} element={<FamilyRequestsPage />} />
             <Route path={paths.resources} element={<AppPlaceholderPage title="Resources" />} />
-            <Route path={paths.discipleship} element={<AppPlaceholderPage title="Discipleship" />} />
+            <Route
+              path={paths.discipleship}
+              element={<AppPlaceholderPage title="Discipleship" />}
+            />
             <Route path={paths.wallet} element={<WalletPage />} />
             <Route path={paths.walletTransactionsRoute} element={<WalletTransactionsPage />} />
-            <Route path={paths.walletTransactionDetailsRoute} element={<WalletTransactionDetailsPage />} />
+            <Route
+              path={paths.walletTransactionDetailsRoute}
+              element={<WalletTransactionDetailsPage />}
+            />
             <Route path={paths.profile} element={<ProfilePage />} />
             <Route path={paths.settings} element={<AppPlaceholderPage title="Settings" />} />
             <Route path={paths.devotional} element={<AppPlaceholderPage title="Devotional" />} />
-            <Route path={paths.sundaySchool} element={<AppPlaceholderPage title="Sunday School" />} />
+            <Route
+              path={paths.sundaySchool}
+              element={<AppPlaceholderPage title="Sunday School" />}
+            />
           </Route>
           <Route element={<PublicRoute />}>
             <Route path={paths.login} element={<LoginPage />} />

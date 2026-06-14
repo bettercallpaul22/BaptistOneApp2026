@@ -9,10 +9,14 @@ export const paths = {
   donation: '/donation',
   media: '/media',
   church: '/church',
+  family: '/family',
+  familyMembers: '/family/members',
+  familyRequests: '/family/requests',
   resources: '/resources',
   discipleship: '/discipleship',
   wallet: '/wallet',
-  walletTransactions: (walletNumber: string) => `/wallet/${encodeURIComponent(walletNumber)}/transactions`,
+  walletTransactions: (walletNumber: string) =>
+    `/wallet/${encodeURIComponent(walletNumber)}/transactions`,
   walletTransactionsRoute: '/wallet/:walletNumber/transactions',
   walletTransactionDetails: (walletNumber: string, transactionId: string) =>
     `/wallet/${encodeURIComponent(walletNumber)}/transactions/${encodeURIComponent(transactionId)}`,

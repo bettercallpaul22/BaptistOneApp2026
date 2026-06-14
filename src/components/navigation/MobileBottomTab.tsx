@@ -91,7 +91,7 @@ export const MobileBottomTab = ({ hidden = false }: MobileBottomTabProps) => {
         footerLayout="split"
         footer={
           <>
-            <AppButton variant="outline" onClick={closeLoginPrompt}>
+            <AppButton variant="secondary" onClick={closeLoginPrompt}>
               Cancel
             </AppButton>
             <AppButton onClick={handleLoginPromptConfirm}>Login</AppButton>

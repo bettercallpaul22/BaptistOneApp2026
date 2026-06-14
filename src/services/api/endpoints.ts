@@ -23,7 +23,12 @@ export const endpoints = {
     stats: '/home/stats',
   },
   publicChurches: {
-    connectOptions: ({ search = '', page = 1, limit = 20 }: { search?: string; page?: number; limit?: number } = {}) => {
+    detail: (id: string) => `/public/churches/${encodeURIComponent(id)}`,
+    connectOptions: ({
+      search = '',
+      page = 1,
+      limit = 20,
+    }: { search?: string; page?: number; limit?: number } = {}) => {
       const params = new URLSearchParams();
       const query = search.trim();
 
@@ -40,9 +45,23 @@ export const endpoints = {
   privateMembers: {
     account: '/private/members/account',
     onboard: '/private/members/onboard',
-    revokeMembershipRequest: (requestId: string) => `/private/members/membership-requests/${requestId}/revoke`,
+    revokeMembershipRequest: (requestId: string) =>
+      `/private/members/membership-requests/${requestId}/revoke`,
+    familySearch: ({ q, limit = 20 }: { q: string; limit?: number }) => {
+      const params = new URLSearchParams();
+
+      params.set('q', q.trim());
+      params.set('limit', String(limit));
+
+      return `/private/members/family/search?${params.toString()}`;
+    },
+    familyInvite: '/private/members/family/invite',
+    familyLink: '/private/members/family/link',
+    familyLinkRequests: '/private/members/family/link-requests',
+    family: '/private/members/family',
     profileCompletion: '/private/members/profile-completion',
-    profileCompletionSection: (sectionKey: string) => `/private/members/profile-completion/sections/${sectionKey}`,
+    profileCompletionSection: (sectionKey: string) =>
+      `/private/members/profile-completion/sections/${sectionKey}`,
   },
   privateWallets: {
     wallets: '/private/wallets',

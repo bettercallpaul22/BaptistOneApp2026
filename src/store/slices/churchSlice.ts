@@ -1,21 +1,26 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import { logout } from '@/store/slices/authSlice';
 import {
+  fetchChurchDetailsThunk,
   fetchChurchRegistrationOptionsThunk,
   onboardMemberToChurchThunk,
   revokeMembershipRequestThunk,
 } from '@/store/thunks/churchThunk';
-import type { ChurchRegistrationOption, ChurchRegistrationOptionsMeta } from '@/types/church';
+import type { ChurchRegistrationOption, ChurchRegistrationOptionsMeta, PublicChurchDetails } from '@/types/church';
 
 interface ChurchState {
   items: ChurchRegistrationOption[];
   meta: ChurchRegistrationOptionsMeta | null;
+  details: PublicChurchDetails | null;
   query: string;
   selectedChurchId: string | null;
   loading: boolean;
   loadingMore: boolean;
   error: string | null;
   loadMoreError: string | null;
+  detailsLoading: boolean;
+  detailsError: string | null;
+  detailsLastFetchedAt: string | null;
   onboardingLoading: boolean;
   onboardingError: string | null;
   onboardingSuccessMessage: string | null;
@@ -28,12 +33,16 @@ interface ChurchState {
 const initialState: ChurchState = {
   items: [],
   meta: null,
+  details: null,
   query: '',
   selectedChurchId: null,
   loading: false,
   loadingMore: false,
   error: null,
   loadMoreError: null,
+  detailsLoading: false,
+  detailsError: null,
+  detailsLastFetchedAt: null,
   onboardingLoading: false,
   onboardingError: null,
   onboardingSuccessMessage: null,
@@ -58,6 +67,15 @@ export const churchSlice = createSlice({
     clearChurchError: (state) => {
       state.error = null;
       state.loadMoreError = null;
+    },
+    clearChurchDetails: (state) => {
+      state.details = null;
+      state.detailsLoading = false;
+      state.detailsError = null;
+      state.detailsLastFetchedAt = null;
+    },
+    clearChurchDetailsError: (state) => {
+      state.detailsError = null;
     },
     clearChurchOnboardingStatus: (state) => {
       state.onboardingError = null;
@@ -120,6 +138,20 @@ export const churchSlice = createSlice({
         state.loading = false;
         state.error = action.payload?.message ?? 'Unable to load churches.';
       })
+      .addCase(fetchChurchDetailsThunk.pending, (state) => {
+        state.detailsLoading = true;
+        state.detailsError = null;
+      })
+      .addCase(fetchChurchDetailsThunk.fulfilled, (state, action) => {
+        state.detailsLoading = false;
+        state.details = action.payload.details;
+        state.detailsLastFetchedAt = action.payload.lastFetchedAt;
+        state.detailsError = null;
+      })
+      .addCase(fetchChurchDetailsThunk.rejected, (state, action) => {
+        state.detailsLoading = false;
+        state.detailsError = action.payload?.message ?? 'Unable to load church details.';
+      })
       .addCase(onboardMemberToChurchThunk.pending, (state) => {
         state.onboardingLoading = true;
         state.onboardingError = null;
@@ -153,6 +185,8 @@ export const churchSlice = createSlice({
 });
 
 export const {
+  clearChurchDetails,
+  clearChurchDetailsError,
   clearChurchError,
   clearChurchOnboardingStatus,
   clearChurchRevokeStatus,

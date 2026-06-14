@@ -1,5 +1,6 @@
 import bibleIcon from '@/assets/icons/app_bible.svg';
 import eventIcon from '@/assets/icons/app_event.svg';
+import familyIcon from '@/assets/icons/app_family.svg';
 import givingIcon from '@/assets/icons/app_giving.svg';
 import hymnIcon from '@/assets/icons/app_hymn.svg';
 import prayerIcon from '@/assets/icons/app_prayer.svg';
@@ -19,6 +20,7 @@ export const menuItems: QuickAction[] = [
   { label: 'Hymns', icon: hymnIcon, tone: 'gold', to: paths.hymnal },
   { label: 'Prayer', icon: prayerIcon, tone: 'plain' },
   { label: 'Events', icon: eventIcon, tone: 'plain' },
+  { label: 'Family', icon: familyIcon, tone: 'plain', to: paths.family },
   { label: 'Giving', icon: givingIcon, tone: 'plain' },
   { label: 'Wallet', icon: walletIcon, tone: 'plain', to: paths.wallet },
 ];
