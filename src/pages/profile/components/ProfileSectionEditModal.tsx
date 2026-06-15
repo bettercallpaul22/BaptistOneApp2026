@@ -22,7 +22,6 @@ import {
   getVisibleFields,
   isStringArray,
 } from '../utils/profileFormUtils';
-import { SpouseInviteSearch } from './SpouseInviteSearch';
 
 export const ProfileSectionEditModal = ({
   sectionKey,
@@ -194,7 +193,6 @@ export const ProfileSectionEditModal = ({
             {submitError}
           </div>
         )}
-        {sectionKey === 'spouseInformation' && <SpouseInviteSearch />}
         {visibleFields.map((field) => {
           const fieldLabel = field.label ?? formatLabel(field.name);
           const value = formValues[field.name] ?? '';
