@@ -8,5 +8,7 @@ export const storageKeys = {
   passwordResetEmail: 'newbaptist.passwordResetEmail',
   passwordResetOtpExpiresAt: 'newbaptist.passwordResetOtpExpiresAt',
   postAuthRedirect: 'newbaptist.postAuthRedirect',
+  bibleCache: 'baptistone:bible-cache:v1',
+  hymnalCache: 'baptistone:hymnal-cache:v1',
   user: 'newbaptist.user',
 } as const;

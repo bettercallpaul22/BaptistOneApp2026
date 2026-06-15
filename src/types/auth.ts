@@ -84,6 +84,7 @@ export interface RegisterPayload {
   phone: string;
   countryCode: string;
   password: string;
+  redirectUrl:string;
 }
 
 export interface RegistrationResult {

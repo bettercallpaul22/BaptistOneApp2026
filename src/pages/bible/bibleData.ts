@@ -1,4 +1,6 @@
 import englishBooksData from '@/assets/bible/Extras/books_en.json';
+import { storageKeys } from '@/constants/storage';
+import { getContentCacheItem, setContentCacheItem } from '@/services/content/contentCache';
 
 export interface BibleBook {
   id: number;
@@ -57,6 +59,12 @@ interface BibleIndex {
   versesByChapter: Map<string, BibleVerse[]>;
 }
 
+interface BibleCacheMetadata {
+  version: string;
+  readyTranslations: BibleTranslationId[];
+  cachedAt: string;
+}
+
 const translationOrder: BibleTranslationId[] = [
   'kjv',
   'asv',
@@ -108,8 +116,62 @@ const chapterRefs: BibleChapterRef[] = [];
 const chapterCountByBook = new Map<number, number>();
 const loadedBibleModules: Partial<Record<BibleTranslationId, BibleModule>> = {};
 const bibleIndexes = new Map<BibleTranslationId, BibleIndex>();
+const bibleCacheVersion = 'v1';
+let remainingBibleCacheStarted = false;
 
 const getChapterKey = (book: number, chapter: number) => `${book}:${chapter}`;
+const getBibleCacheId = (id: BibleTranslationId) => `${bibleCacheVersion}:${id}`;
+
+const canUseLocalStorage = () => typeof window !== 'undefined' && 'localStorage' in window;
+
+const readBibleCacheMetadata = (): BibleCacheMetadata | null => {
+  if (!canUseLocalStorage()) return null;
+
+  try {
+    const value = window.localStorage.getItem(storageKeys.bibleCache);
+    if (!value) return null;
+
+    const metadata = JSON.parse(value) as Partial<BibleCacheMetadata>;
+    if (metadata.version !== bibleCacheVersion || !Array.isArray(metadata.readyTranslations)) return null;
+
+    return {
+      version: bibleCacheVersion,
+      readyTranslations: metadata.readyTranslations.filter((id): id is BibleTranslationId =>
+        translationOrder.includes(id as BibleTranslationId),
+      ),
+      cachedAt: typeof metadata.cachedAt === 'string' ? metadata.cachedAt : '',
+    };
+  } catch {
+    return null;
+  }
+};
+
+const writeBibleCacheMetadata = (metadata: BibleCacheMetadata) => {
+  if (!canUseLocalStorage()) return;
+
+  try {
+    window.localStorage.setItem(storageKeys.bibleCache, JSON.stringify(metadata));
+  } catch {
+    // Cache metadata is best effort; bundled JSON remains the fallback.
+  }
+};
+
+const isBibleTranslationCacheReady = (id: BibleTranslationId) =>
+  readBibleCacheMetadata()?.readyTranslations.includes(id) ?? false;
+
+export const isDefaultBibleCacheReady = () => isBibleTranslationCacheReady(defaultBibleTranslationId);
+
+const markBibleTranslationCacheReady = (id: BibleTranslationId) => {
+  const current = readBibleCacheMetadata();
+  const readyTranslations = new Set<BibleTranslationId>(current?.readyTranslations ?? []);
+
+  readyTranslations.add(id);
+  writeBibleCacheMetadata({
+    version: bibleCacheVersion,
+    readyTranslations: Array.from(readyTranslations),
+    cachedAt: new Date().toISOString(),
+  });
+};
 
 export const cleanBibleVerseText = (text: string) =>
   text
@@ -148,13 +210,48 @@ const createBibleIndex = (module: BibleModule) => {
   return { module, versesByChapter };
 };
 
+const readCachedBibleModule = async (id: BibleTranslationId) => {
+  if (!isBibleTranslationCacheReady(id)) return null;
+
+  try {
+    const cachedModule = await getContentCacheItem<BibleModule>('bibleTranslations', getBibleCacheId(id));
+
+    if (cachedModule?.version !== bibleCacheVersion) return null;
+
+    return cachedModule.value;
+  } catch {
+    return null;
+  }
+};
+
+const persistBibleModule = async (id: BibleTranslationId, module: BibleModule) => {
+  try {
+    await setContentCacheItem('bibleTranslations', {
+      id: getBibleCacheId(id),
+      version: bibleCacheVersion,
+      cachedAt: new Date().toISOString(),
+      value: module,
+    });
+    markBibleTranslationCacheReady(id);
+  } catch {
+    // IndexedDB is an optimization here. Keep the reader usable if it fails.
+  }
+};
+
 const getBibleModule = async (id: BibleTranslationId) => {
   const loadedModule = loadedBibleModules[id];
 
   if (loadedModule) return loadedModule;
 
+  const cachedModule = await readCachedBibleModule(id);
+  if (cachedModule) {
+    loadedBibleModules[id] = cachedModule;
+    return cachedModule;
+  }
+
   const module = await bibleModuleLoaders[id]();
   loadedBibleModules[id] = module;
+  void persistBibleModule(id, module);
 
   return module;
 };
@@ -187,6 +284,33 @@ export const defaultBibleReference: BibleChapterRef = {
 };
 
 export const defaultBibleTranslationId: BibleTranslationId = 'kjv';
+
+export const prepareDefaultBibleCache = async () => {
+  const cachedModule = await readCachedBibleModule(defaultBibleTranslationId);
+
+  if (cachedModule) {
+    loadedBibleModules[defaultBibleTranslationId] = cachedModule;
+    bibleIndexes.set(defaultBibleTranslationId, createBibleIndex(cachedModule));
+    return;
+  }
+
+  const module = await bibleModuleLoaders[defaultBibleTranslationId]();
+  loadedBibleModules[defaultBibleTranslationId] = module;
+  bibleIndexes.set(defaultBibleTranslationId, createBibleIndex(module));
+  await persistBibleModule(defaultBibleTranslationId, module);
+};
+
+export const prepareRemainingBibleCache = () => {
+  if (remainingBibleCacheStarted) return;
+
+  remainingBibleCacheStarted = true;
+
+  void (async () => {
+    for (const translationId of translationOrder.filter((id) => id !== defaultBibleTranslationId)) {
+      await getBibleModule(translationId);
+    }
+  })();
+};
 
 export const getBibleTranslation = (id: BibleTranslationId): BibleTranslation => translationMetadata[id];
 

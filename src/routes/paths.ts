@@ -3,6 +3,7 @@ export const paths = {
   home: '/home',
   bible: '/bible',
   hymnal: '/hymnal',
+  events: '/events',
   news: '/news',
   forum: '/forum',
   ministries: '/ministries',

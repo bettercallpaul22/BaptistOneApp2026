@@ -8,6 +8,7 @@ import appleIcon from '@/assets/icons/apple_icon.svg';
 import googleIcon from '@/assets/icons/google_icon.svg';
 import { AppButton } from '@/components/common';
 import { AppDropdown, AppInput } from '@/components/form';
+import { callbackUrls } from '@/constants/callbackUrls';
 import { AuthLayout } from '@/layouts/AuthLayout';
 import { paths } from '@/routes/paths';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -91,7 +92,11 @@ export default function RegisterPage() {
     async (values: RegisterForm) => {
       try {
         const result = await dispatch(
-          registerThunk({ ...values, phone: normalizePhone(values.phone, values.countryCode) }),
+          registerThunk({
+            ...values,
+            phone: normalizePhone(values.phone, values.countryCode),
+            redirectUrl: callbackUrls.registerVerification(),
+          }),
         ).unwrap();
         dispatch(pushNotification({ type: 'success', title: 'Check your email', message: result.message }));
         navigate(paths.registerVerification, { state: { email: values.email }, replace: true });

@@ -1,13 +1,18 @@
-import { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, ListMusic, Music2, Search, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { ChevronLeft, ChevronRight, ListMusic, Loader2, Music2, Search, X } from 'lucide-react';
 import { AppButton, AppText } from '@/components/common';
 import { useDeviceProfile } from '@/hooks/useDeviceProfile';
 import { AppShell } from '@/layouts/AppShell';
-import { formatHymnVerseLines, getHymns, searchHymns, type Hymn } from './hymnalData';
+import {
+  formatHymnVerseLines,
+  getCachedHymns,
+  isHymnalCacheReady,
+  prepareHymnalCache,
+  searchHymns,
+  type Hymn,
+} from './hymnalData';
 
-const hymns = getHymns();
-
-const getAdjacentHymn = (hymn: Hymn, direction: 'previous' | 'next') => {
+const getAdjacentHymn = (hymns: Hymn[], hymn: Hymn, direction: 'previous' | 'next') => {
   const index = hymns.findIndex((item) => item.id === hymn.id);
 
   if (index < 0) return null;
@@ -24,21 +29,106 @@ const getMatchLabel = (matchType: string) => {
 
 export default function HymnalPage() {
   const { isDesktop } = useDeviceProfile();
-  const [selectedHymn, setSelectedHymn] = useState<Hymn>(hymns[0]);
+  const [hymns, setHymns] = useState<Hymn[]>([]);
+  const [selectedHymn, setSelectedHymn] = useState<Hymn | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isReaderOpen, setIsReaderOpen] = useState(false);
+  const [isPreparingHymnalData, setIsPreparingHymnalData] = useState(() => !isHymnalCacheReady());
+  const [hymnalError, setHymnalError] = useState('');
 
-  const searchResults = useMemo(() => searchHymns(searchQuery), [searchQuery]);
-  const previousHymn = useMemo(() => getAdjacentHymn(selectedHymn, 'previous'), [selectedHymn]);
-  const nextHymn = useMemo(() => getAdjacentHymn(selectedHymn, 'next'), [selectedHymn]);
+  const searchResults = useMemo(() => searchHymns(hymns, searchQuery), [hymns, searchQuery]);
+  const previousHymn = useMemo(
+    () => (selectedHymn ? getAdjacentHymn(hymns, selectedHymn, 'previous') : null),
+    [hymns, selectedHymn],
+  );
+  const nextHymn = useMemo(
+    () => (selectedHymn ? getAdjacentHymn(hymns, selectedHymn, 'next') : null),
+    [hymns, selectedHymn],
+  );
   const showHymnList = isDesktop || !isReaderOpen;
-  const showReader = isDesktop || isReaderOpen;
+  const showReader = Boolean(selectedHymn) && (isDesktop || isReaderOpen);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadHymns = async () => {
+      try {
+        const nextHymns = isPreparingHymnalData ? await prepareHymnalCache() : await getCachedHymns();
+
+        if (!isMounted) return;
+        setHymns(nextHymns);
+        setSelectedHymn((currentHymn) => currentHymn ?? nextHymns[0] ?? null);
+        setHymnalError('');
+      } catch (error) {
+        if (!isMounted) return;
+        const message = error instanceof Error ? error.message : 'Unable to load hymnal data.';
+        setHymnalError(message);
+      } finally {
+        if (isMounted) setIsPreparingHymnalData(false);
+      }
+    };
+
+    void loadHymns();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isPreparingHymnalData]);
 
   const selectHymn = (hymn: Hymn) => {
     setSelectedHymn(hymn);
     setIsReaderOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  if (isPreparingHymnalData || (!hymnalError && !selectedHymn)) {
+    return (
+      <AppShell>
+        <div className="grid min-h-[calc(100vh-4rem)] place-items-center bg-[#F6F8FC] px-4 py-10">
+          <div className="grid max-w-sm justify-items-center gap-3 text-center">
+            <span className="grid size-14 place-items-center rounded-2xl bg-[#EAF1FF] text-[#123B8D]">
+              <Loader2 className="size-7 animate-spin" aria-hidden />
+            </span>
+            <div className="grid gap-1">
+              <AppText variant="h5" align="center">
+                Loading your hymnal data
+              </AppText>
+              <AppText variant="bodySmall" color="textSecondary" align="center">
+                Preparing hymns for faster singing next time.
+              </AppText>
+            </div>
+          </div>
+        </div>
+      </AppShell>
+    );
+  }
+
+  if (hymnalError) {
+    return (
+      <AppShell>
+        <div className="grid min-h-[calc(100vh-4rem)] place-items-center bg-[#F6F8FC] px-4 py-10">
+          <div className="grid max-w-sm justify-items-center gap-3 text-center">
+            <span className="grid size-14 place-items-center rounded-2xl bg-red-50 text-red-700">
+              <Music2 className="size-7" aria-hidden />
+            </span>
+            <div className="grid gap-1">
+              <AppText variant="h5" align="center">
+                Unable to load hymnal
+              </AppText>
+              <AppText variant="bodySmall" color="textSecondary" align="center">
+                {hymnalError}
+              </AppText>
+            </div>
+            <AppButton onClick={() => setIsPreparingHymnalData(true)}>Retry</AppButton>
+          </div>
+        </div>
+      </AppShell>
+    );
+  }
+
+  if (!selectedHymn) return null;
+
+  const activeHymn = selectedHymn;
 
   return (
     <AppShell>
@@ -83,7 +173,7 @@ export default function HymnalPage() {
               <div className="min-h-0 overflow-y-auto pr-1">
                 <div className="grid gap-2">
                   {searchResults.map(({ hymn, matchType, preview }) => {
-                    const active = hymn.id === selectedHymn.id;
+                    const active = hymn.id === activeHymn.id;
 
                     return (
                       <button
@@ -125,10 +215,10 @@ export default function HymnalPage() {
               )}
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="grid min-w-0 gap-2">
-                  <p className="m-0 text-sm font-black uppercase tracking-[0.18em] text-[#D4A017]">Hymn {selectedHymn.number}</p>
-                  <h1 className="m-0 text-3xl font-black tracking-[0] text-[#0B1F4A] sm:text-4xl">{selectedHymn.title}</h1>
+                  <p className="m-0 text-sm font-black uppercase tracking-[0.18em] text-[#D4A017]">Hymn {activeHymn.number}</p>
+                  <h1 className="m-0 text-3xl font-black tracking-[0] text-[#0B1F4A] sm:text-4xl">{activeHymn.title}</h1>
                   <AppText variant="bodyMedium" color="textSecondary">
-                    {selectedHymn.verses.length} verses
+                    {activeHymn.verses.length} verses
                   </AppText>
                 </div>
                 <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-[#EAF1FF] text-[#123B8D]">
@@ -157,7 +247,7 @@ export default function HymnalPage() {
             </header>
 
             <article className="grid gap-7">
-              {selectedHymn.verses.map((verse) => (
+              {activeHymn.verses.map((verse) => (
                 <section className="grid grid-cols-[2.5rem_minmax(0,1fr)] gap-3" key={verse.number}>
                   <div className="pt-1">
                     <span className="grid size-8 place-items-center rounded-full bg-[#123B8D] text-sm font-black text-white">

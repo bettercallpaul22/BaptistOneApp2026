@@ -13,6 +13,8 @@ export const env = {
   appName: required('VITE_APP_NAME'),
   appVersion: required('VITE_APP_VERSION'),
   googleMapsKey: import.meta.env.VITE_GOOGLE_MAPS_KEY ?? '',
+  registerRedirectPath: import.meta.env.VITE_REGISTER_REDIRECT_PATH ?? '',
+  walletRedirectPath: import.meta.env.VITE_WALLET_REDIRECT_PATH ?? '',
   isDevelopment: import.meta.env.DEV,
   isProduction: import.meta.env.PROD,
 } as const;

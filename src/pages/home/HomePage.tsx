@@ -1,10 +1,7 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   BookMarked,
-  Clock3,
-  MapPin,
-  Megaphone,
   Share2,
 } from 'lucide-react';
 import bibleIcon from '@/assets/icons/app_bible.svg';
@@ -12,10 +9,9 @@ import eventIcon from '@/assets/icons/app_event.svg';
 import familyIcon from '@/assets/icons/app_family.svg';
 import givingIcon from '@/assets/icons/app_giving.svg';
 import hymnIcon from '@/assets/icons/app_hymn.svg';
-import prayerIcon from '@/assets/icons/app_prayer.svg';
 import walletIcon from '@/assets/icons/app_wallet.svg';
 import { AppButton, AppText } from '@/components/common';
-import { AppCard, QuickActionCard, type QuickActionCardTone } from '@/components/display';
+import { QuickActionCard, type QuickActionCardTone } from '@/components/display';
 import { AppModal } from '@/components/feedback';
 import { useDeviceProfile } from '@/hooks/useDeviceProfile';
 import { useHomeBootstrapApi } from '@/hooks/useHomeBootstrapApi';
@@ -35,8 +31,7 @@ type QuickAction = {
 const quickActions: QuickAction[] = [
   { label: 'Bible', icon: bibleIcon, tone: 'primary', to: paths.bible },
   { label: 'Hymns', icon: hymnIcon, tone: 'gold', to: paths.hymnal },
-  { label: 'Prayer', icon: prayerIcon, tone: 'plain' },
-  { label: 'Events', icon: eventIcon, tone: 'plain', to: paths.churchEvents, requiresAuth: true },
+  { label: 'Events', icon: eventIcon, tone: 'plain', to: paths.events, requiresAuth: true },
   { label: 'Giving', icon: givingIcon, tone: 'plain', to: paths.donation, requiresAuth: true },
   { label: 'Wallet', icon: walletIcon, tone: 'plain', to: paths.wallet, requiresAuth: true },
   { label: 'Family', icon: familyIcon, tone: 'plain', to: paths.family, requiresAuth: true },
@@ -93,7 +88,7 @@ export default function HomePage() {
             <AppText variant={isSmallDevice ? 'h6' : 'h4'}>{greeting}, {displayName}</AppText>
           </header>
 
-          <div className="grid gap-7 xl:grid-cols-[minmax(0,1fr)_22rem]">
+          <div className="grid gap-7">
             <section className="grid gap-7">
               <article
                 className="relative min-h-[11.7rem] overflow-hidden rounded-2xl bg-[#06202B] p-4 text-white shadow-[0_14px_28px_rgba(11,31,74,0.15)] sm:min-h-[19.5rem] sm:p-6"
@@ -135,60 +130,7 @@ export default function HomePage() {
                 </div>
               </section>
 
-              <AppCard className="shadow-[0_10px_22px_rgba(11,31,74,0.08)]">
-                <div className="grid gap-5">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-2">
-                      <Megaphone className="size-5 text-[#D4A017]" aria-hidden />
-                      <AppText variant="h5">Church Updates</AppText>
-                    </div>
-                    <Link className="text-sm font-bold text-[#123B8D]" to={paths.home}>
-                      View all
-                    </Link>
-                  </div>
-                  <div className="grid gap-2">
-                    <AppText variant="bodySmall" color="textMuted">
-                      Yesterday • Pastor&apos;s Desk
-                    </AppText>
-                    <AppText variant="subtitle">Midweek Service Time Change</AppText>
-                    <AppText variant="bodyMedium" color="textSecondary">
-                      Please note that this week&apos;s Wednesday Bible study will commence at 6:00 PM instead of the usual 5:30 PM due to...
-                    </AppText>
-                  </div>
-                </div>
-              </AppCard>
             </section>
-
-            <aside className="grid content-start gap-7">
-              <AppCard>
-                <div className="grid gap-5">
-                  <AppText variant="h4">Upcoming Event</AppText>
-                  <div className="grid gap-5 rounded-lg border border-[#E5E7EB] bg-[#FBFCFE] p-5">
-                    <div className="grid grid-cols-[4rem_1fr] gap-4">
-                      <div className="grid size-16 place-items-center rounded-lg border border-[#E5E7EB] bg-white text-center">
-                        <span className="block text-sm font-extrabold text-red-500">Oct</span>
-                        <span className="block text-2xl font-extrabold text-[#0B1F4A]">15</span>
-                      </div>
-                      <div className="grid gap-2">
-                        <AppText variant="subtitle">Youth Harvest Thanksgiving</AppText>
-                        <div className="grid gap-1 text-sm text-[#79859A]">
-                          <span className="flex items-center gap-1.5">
-                            <Clock3 className="size-4" aria-hidden />
-                            09:00 AM - 01:00 PM
-                          </span>
-                          <span className="flex items-center gap-1.5">
-                            <MapPin className="size-4 fill-current/10" aria-hidden />
-                            Main Auditorium
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <AppButton variant="outline">RSVP Now</AppButton>
-                  </div>
-                </div>
-              </AppCard>
-
-            </aside>
           </div>
       </div>
       <AppModal

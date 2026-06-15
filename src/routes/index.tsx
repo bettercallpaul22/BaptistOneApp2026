@@ -20,6 +20,7 @@ import { paths } from './paths';
 const HomePage = lazy(() => import('@/pages/home/HomePage'));
 const BiblePage = lazy(() => import('@/pages/bible/BiblePage'));
 const HymnalPage = lazy(() => import('@/pages/hymnal/HymnalPage'));
+const EventsPage = lazy(() => import('@/pages/events/EventsPage'));
 const AppTabPage = lazy(() => import('@/pages/app/AppTabPage'));
 const AppPlaceholderPage = lazy(() => import('@/pages/app/AppPlaceholderPage'));
 const ChurchBrowsePage = lazy(() => import('@/pages/church/ChurchBrowsePage'));
@@ -162,6 +163,7 @@ const RoutedApp = () => {
             <Route path={paths.news} element={<AppPlaceholderPage title="News" />} />
             <Route path={paths.forum} element={<AppPlaceholderPage title="Forum" />} />
             <Route path={paths.ministries} element={<AppPlaceholderPage title="Ministries" />} />
+            <Route path={paths.events} element={<EventsPage />} />
             <Route path={paths.donation} element={<GivingPage />} />
             <Route path={paths.media} element={<AppPlaceholderPage title="Media" />} />
             <Route path={paths.church} element={<AppTabPage kind="church" />} />

@@ -17,6 +17,9 @@ import {
   getChaptersForBook,
   getNextChapterRef,
   getPreviousChapterRef,
+  isDefaultBibleCacheReady,
+  prepareDefaultBibleCache,
+  prepareRemainingBibleCache,
   searchBibleVerses,
   type BibleChapterRef,
   type BibleSearchResult,
@@ -53,6 +56,7 @@ export default function BibleReader({ onBottomTabHiddenChange }: BiblePageProps)
   const [reference, setReference] = useState<BibleChapterRef>(defaultBibleReference);
   const [translationId, setTranslationId] = useState<BibleTranslationId>(defaultBibleTranslationId);
   const [verses, setVerses] = useState<BibleVerse[]>([]);
+  const [isPreparingBibleData, setIsPreparingBibleData] = useState(() => !isDefaultBibleCacheReady());
   const [isChapterLoading, setIsChapterLoading] = useState(true);
   const [highlightedVerse, setHighlightedVerse] = useState<number | null>(null);
   const [pickerTab, setPickerTab] = useState<PickerTab>('book');
@@ -124,6 +128,27 @@ export default function BibleReader({ onBottomTabHiddenChange }: BiblePageProps)
   useEffect(() => {
     let isMounted = true;
 
+    if (!isPreparingBibleData) {
+      prepareRemainingBibleCache();
+      return undefined;
+    }
+
+    prepareDefaultBibleCache().finally(() => {
+      if (!isMounted) return;
+      setIsPreparingBibleData(false);
+      prepareRemainingBibleCache();
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isPreparingBibleData]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    if (isPreparingBibleData) return undefined;
+
     getChapterVerses(reference, translationId)
       .then((chapterVerses) => {
         if (!isMounted) return;
@@ -136,7 +161,7 @@ export default function BibleReader({ onBottomTabHiddenChange }: BiblePageProps)
     return () => {
       isMounted = false;
     };
-  }, [reference, translationId]);
+  }, [isPreparingBibleData, reference, translationId]);
 
   useEffect(() => {
     if (!highlightedVerse || isChapterLoading) return;
@@ -260,7 +285,23 @@ export default function BibleReader({ onBottomTabHiddenChange }: BiblePageProps)
               </div>
             </div>
 
-            {isChapterLoading ? (
+            {isPreparingBibleData ? (
+              <div className="grid min-h-[22rem] place-items-center rounded-2xl border border-[#E5EAF3] bg-[#F8FAFC] p-6 text-center">
+                <div className="grid justify-items-center gap-3">
+                  <span className="grid size-14 place-items-center rounded-2xl bg-[#EAF1FF] text-[#123B8D]">
+                    <Loader2 className="size-7 animate-spin" aria-hidden />
+                  </span>
+                  <div className="grid gap-1">
+                    <AppText variant="h6" align="center">
+                      Loading your Bible data
+                    </AppText>
+                    <AppText variant="bodySmall" color="textSecondary" align="center">
+                      Preparing scripture for faster reading next time.
+                    </AppText>
+                  </div>
+                </div>
+              </div>
+            ) : isChapterLoading ? (
               <VerseSkeleton />
             ) : (
               <article className="grid gap-4">

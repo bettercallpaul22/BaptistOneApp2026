@@ -1,4 +1,5 @@
-import hymnalData from '@/assets/hymnal/hymnal.json';
+import { storageKeys } from '@/constants/storage';
+import { getContentCacheItem, setContentCacheItem } from '@/services/content/contentCache';
 
 export interface HymnVerse {
   number: number;
@@ -18,7 +19,61 @@ export interface HymnSearchResult {
   preview: string;
 }
 
-const hymns = hymnalData as Hymn[];
+const hymnalCacheVersion = 'v1';
+const hymnalCacheId = `${hymnalCacheVersion}:hymnal`;
+let loadedHymns: Hymn[] | null = null;
+
+const canUseLocalStorage = () => typeof window !== 'undefined' && 'localStorage' in window;
+
+export const isHymnalCacheReady = () => {
+  if (!canUseLocalStorage()) return false;
+
+  try {
+    return window.localStorage.getItem(storageKeys.hymnalCache) === hymnalCacheVersion;
+  } catch {
+    return false;
+  }
+};
+
+const markHymnalCacheReady = () => {
+  if (!canUseLocalStorage()) return;
+
+  try {
+    window.localStorage.setItem(storageKeys.hymnalCache, hymnalCacheVersion);
+  } catch {
+    // Cache readiness is best effort; bundled JSON remains the fallback.
+  }
+};
+
+const loadBundledHymns = async () => ((await import('@/assets/hymnal/hymnal.json')).default as Hymn[]);
+
+const readCachedHymns = async () => {
+  if (!isHymnalCacheReady()) return null;
+
+  try {
+    const cachedHymns = await getContentCacheItem<Hymn[]>('hymnal', hymnalCacheId);
+
+    if (cachedHymns?.version !== hymnalCacheVersion) return null;
+
+    return cachedHymns.value;
+  } catch {
+    return null;
+  }
+};
+
+const persistHymns = async (hymns: Hymn[]) => {
+  try {
+    await setContentCacheItem('hymnal', {
+      id: hymnalCacheId,
+      version: hymnalCacheVersion,
+      cachedAt: new Date().toISOString(),
+      value: hymns,
+    });
+    markHymnalCacheReady();
+  } catch {
+    // IndexedDB is an optimization here. Keep the hymnal usable if it fails.
+  }
+};
 
 const normalizeText = (value: string) =>
   value
@@ -56,9 +111,32 @@ const splitLongLine = (line: string): string[] => {
   return lines;
 };
 
-export const getHymns = () => hymns;
+export const getCachedHymns = async () => {
+  if (loadedHymns) return loadedHymns;
 
-export const getHymnById = (id: string) => hymns.find((hymn) => hymn.id === id);
+  const cachedHymns = await readCachedHymns();
+  if (cachedHymns) {
+    loadedHymns = cachedHymns;
+    return cachedHymns;
+  }
+
+  const bundledHymns = await loadBundledHymns();
+  loadedHymns = bundledHymns;
+  void persistHymns(bundledHymns);
+
+  return bundledHymns;
+};
+
+export const prepareHymnalCache = async () => {
+  const hymns = await getCachedHymns();
+  await persistHymns(hymns);
+
+  return hymns;
+};
+
+export const getHymns = () => loadedHymns ?? [];
+
+export const getHymnById = (id: string) => getHymns().find((hymn) => hymn.id === id);
 
 export const formatHymnVerseLines = (text: string) => {
   const normalizedText = text.replace(/\s+/g, ' ').trim();
@@ -70,7 +148,7 @@ export const formatHymnVerseLines = (text: string) => {
   return phraseLines.flatMap(splitLongLine);
 };
 
-export const searchHymns = (query: string, limit = 50): HymnSearchResult[] => {
+export const searchHymns = (hymns: Hymn[], query: string, limit = 50): HymnSearchResult[] => {
   const normalizedQuery = normalizeText(query);
 
   if (!normalizedQuery) {

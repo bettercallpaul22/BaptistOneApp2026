@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { CalendarDays, MapPin } from 'lucide-react';
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import { CalendarDays, Clock3, MapPin, Tag } from 'lucide-react';
 import { AppButton, AppText } from '@/components/common';
-import { AppStateFeedback } from '@/components/feedback';
+import { AppModal, AppStateFeedback } from '@/components/feedback';
 import { churchService } from '@/services/church/churchService';
 import type { ChurchEventItem, ChurchEventMeta } from '@/types/church';
 import type { ChurchBootstrapState } from './ChurchLeadershipPanel';
@@ -13,7 +13,57 @@ import {
   sortByOrderAndDate,
 } from './churchResourceUtils';
 
-const ChurchEventCard = ({ event }: { event: ChurchEventItem }) => {
+const EventDetailRow = ({ children, icon, label }: { children: ReactNode; icon: ReactNode; label: string }) => (
+  <div className="flex min-w-0 items-start gap-3 rounded-lg border border-[#E5E7EB] bg-[#F8FAFC] p-3">
+    <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-full bg-[#EAF1FF] text-[#123B8D]">{icon}</span>
+    <div className="grid min-w-0 gap-1">
+      <span className="text-xs font-bold uppercase tracking-[0.08em] text-[#8A96AA]">{label}</span>
+      <div className="min-w-0 text-sm font-semibold leading-6 text-[#0B1F4A]">{children}</div>
+    </div>
+  </div>
+);
+
+const EventDetailsModal = ({ event, onClose }: { event: ChurchEventItem | null; onClose: () => void }) => {
+  const location = event ? getEventLocation(event) : '';
+
+  return (
+    <AppModal open={Boolean(event)} title="Event details" panelClassName="max-w-[32rem]" onClose={onClose}>
+      {event && (
+        <div className="grid gap-4">
+          <div className="grid gap-1">
+            <AppText variant="h5">{getEventTitle(event)}</AppText>
+            <AppText variant="caption" color="#D4A017" weight="bold">
+              {formatEventType(event.type)}
+            </AppText>
+          </div>
+
+          <div className="grid gap-3">
+            <EventDetailRow label="Date" icon={<Clock3 className="size-5" aria-hidden />}>
+              {formatEventDate(event)}
+            </EventDetailRow>
+            <EventDetailRow label="Location" icon={<MapPin className="size-5" aria-hidden />}>
+              {location || 'Location not provided'}
+            </EventDetailRow>
+            <EventDetailRow label="Type" icon={<Tag className="size-5" aria-hidden />}>
+              {formatEventType(event.type)}
+            </EventDetailRow>
+          </div>
+
+          <div className="grid gap-2">
+            <AppText variant="bodyMedium" weight="bold">
+              Description
+            </AppText>
+            <p className="m-0 whitespace-pre-line text-sm leading-6 text-[#5A6880]">
+              {event.description?.trim() || 'No description provided.'}
+            </p>
+          </div>
+        </div>
+      )}
+    </AppModal>
+  );
+};
+
+const ChurchEventCard = ({ event, onView }: { event: ChurchEventItem; onView: (event: ChurchEventItem) => void }) => {
   const location = getEventLocation(event);
 
   return (
@@ -45,12 +95,16 @@ const ChurchEventCard = ({ event }: { event: ChurchEventItem }) => {
           <span className="min-w-0 truncate">{location}</span>
         </span>
       )}
+      <AppButton size="sm" variant="outline" fullWidth onClick={() => onView(event)}>
+        View event
+      </AppButton>
     </article>
   );
 };
 
 export const ChurchEventsPanel = ({ bootstrap }: { bootstrap: ChurchBootstrapState }) => {
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const [selectedEvent, setSelectedEvent] = useState<ChurchEventItem | null>(null);
   const [extraEvents, setExtraEvents] = useState<{ churchId: string; items: ChurchEventItem[]; meta: ChurchEventMeta } | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadMoreError, setLoadMoreError] = useState<{ churchId: string; message: string } | null>(null);
@@ -136,7 +190,9 @@ export const ChurchEventsPanel = ({ bootstrap }: { bootstrap: ChurchBootstrapSta
           className="min-h-44"
         />
       )}
-      {!isLoading && !error && sortedEvents.map((event) => <ChurchEventCard event={event} key={event.id} />)}
+      {!isLoading &&
+        !error &&
+        sortedEvents.map((event) => <ChurchEventCard event={event} key={event.id} onView={setSelectedEvent} />)}
       {hasMore && !currentLoadMoreError && (
         <div ref={loadMoreRef} className="grid min-h-16 place-items-center">
           {loadingMore ? (
@@ -156,6 +212,7 @@ export const ChurchEventsPanel = ({ bootstrap }: { bootstrap: ChurchBootstrapSta
           </AppButton>
         </div>
       )}
+      <EventDetailsModal event={selectedEvent} onClose={() => setSelectedEvent(null)} />
     </section>
   );
 };
