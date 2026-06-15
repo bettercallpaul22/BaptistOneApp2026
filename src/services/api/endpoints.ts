@@ -24,6 +24,12 @@ export const endpoints = {
   },
   publicChurches: {
     detail: (id: string) => `/public/churches/${encodeURIComponent(id)}`,
+    registrationReview: (token: string) =>
+      `/public/churches/registration-reviews/${encodeURIComponent(token)}`,
+    registrationReviewApprove: (token: string) =>
+      `/public/churches/registration-reviews/${encodeURIComponent(token)}/approve`,
+    registrationReviewReject: (token: string) =>
+      `/public/churches/registration-reviews/${encodeURIComponent(token)}/reject`,
     connectOptions: ({
       search = '',
       page = 1,

@@ -74,6 +74,13 @@ export interface ChurchComplianceMetadata extends Record<string, ProfileSectionV
   approvedAt?: string | null;
 }
 
+export interface ChurchComplianceBadge extends Record<string, ProfileSectionValue> {
+  status?: string | null;
+  label?: string | null;
+  visible?: boolean | null;
+  kycStatus?: string | null;
+}
+
 export interface PublicChurchDetails extends Record<string, ProfileSectionValue> {
   id: string;
   name: string;
@@ -97,6 +104,7 @@ export interface PublicChurchDetails extends Record<string, ProfileSectionValue>
   phone?: string | null;
   admins?: ChurchPerson[];
   pastors?: ChurchPerson[];
+  complianceBadge?: ChurchComplianceBadge | null;
   compliance?: ChurchComplianceMetadata | null;
   registration?: ChurchComplianceMetadata | null;
   association?: ChurchRegistrationAssociation | Record<string, ProfileSectionValue> | null;
@@ -110,6 +118,40 @@ export interface PublicChurchDetailsResponse {
   status: boolean;
   message?: string;
   data: PublicChurchDetails;
+}
+
+export interface ChurchRegistrationReviewMetadata {
+  adminName?: string | null;
+  churchName?: string | null;
+  [key: string]: ProfileSectionValue;
+}
+
+export interface ChurchRegistrationReviewDetails {
+  id: string;
+  status: string;
+  pastorName: string;
+  pastorEmail: string;
+  requestedAt: string;
+  respondedAt: string | null;
+  reminderDueAt: string | null;
+  churchId: string;
+  churchName: string;
+  churchStatus: string;
+  adminProfileId: string;
+  metadata?: ChurchRegistrationReviewMetadata | null;
+}
+
+export interface ChurchRegistrationReviewDetailsResponse {
+  status: boolean;
+  message?: string;
+  data: ChurchRegistrationReviewDetails;
+}
+
+export interface ChurchRegistrationReviewActionResponse {
+  status?: boolean;
+  success?: boolean;
+  message?: string;
+  data?: ChurchRegistrationReviewDetails | null;
 }
 
 export interface ChurchPaginatedMeta {

@@ -4,6 +4,7 @@ import { AppButton, AppText } from '@/components/common';
 import { AppModal } from '@/components/feedback';
 import { AppDropdown, AppFileUploadField, AppInput, AppSwitch } from '@/components/form';
 import { useAppDispatch } from '@/store/hooks';
+import { pushNotification } from '@/store/slices/notificationSlice';
 import { updateProfileCompletionSectionThunk } from '@/store/thunks/profileThunk';
 import type { ProfileCompletion } from '@/types/profile';
 import { memberUploadDefaults } from '../config/profileConfig';
@@ -154,6 +155,13 @@ export const ProfileSectionEditModal = ({
           data: buildSectionPayload(visibleFields, formValues),
         }),
       ).unwrap();
+      dispatch(
+        pushNotification({
+          type: 'success',
+          title: 'Profile updated',
+          message: `${sectionTitle} has been updated successfully.`,
+        }),
+      );
       onClose();
     } catch (error) {
       setSubmitError(getSubmitErrorMessage(error));

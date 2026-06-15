@@ -7,6 +7,8 @@ import type {
   ChurchEventsResponse,
   ChurchLeadershipApiResponse,
   ChurchLeadershipResponse,
+  ChurchRegistrationReviewActionResponse,
+  ChurchRegistrationReviewDetailsResponse,
   ChurchRegistrationOptionsResponse,
   FetchChurchRegistrationOptionsPayload,
   OnboardMemberPayload,
@@ -39,12 +41,35 @@ const normalizePaginatedResponse = <TResponse extends { items: unknown[]; meta: 
   return data as TResponse;
 };
 
+const assertRegistrationReviewResponse = (
+  response: ChurchRegistrationReviewActionResponse,
+  fallbackMessage: string,
+) => {
+  if (response.status === false || response.success === false) {
+    throw new Error(response.message || fallbackMessage);
+  }
+
+  return response;
+};
+
 export const churchService = {
   getChurch: async (id: string) => {
     const response = await http.get<PublicChurchDetailsResponse>(endpoints.publicChurches.detail(id));
 
     if (!response.status || !response.data) {
       throw new Error(response.message || 'Unable to load church details.');
+    }
+
+    return response;
+  },
+
+  getRegistrationReview: async (token: string) => {
+    const response = await http.get<ChurchRegistrationReviewDetailsResponse>(
+      endpoints.publicChurches.registrationReview(token),
+    );
+
+    if (!response.status || !response.data) {
+      throw new Error(response.message || 'Unable to load church registration review.');
     }
 
     return response;
@@ -106,5 +131,21 @@ export const churchService = {
     }
 
     return response;
+  },
+
+  approveRegistrationReview: async (token: string) => {
+    const response = await http.post<ChurchRegistrationReviewActionResponse>(
+      endpoints.publicChurches.registrationReviewApprove(token),
+    );
+
+    return assertRegistrationReviewResponse(response, 'Unable to approve church registration.');
+  },
+
+  rejectRegistrationReview: async (token: string) => {
+    const response = await http.post<ChurchRegistrationReviewActionResponse>(
+      endpoints.publicChurches.registrationReviewReject(token),
+    );
+
+    return assertRegistrationReviewResponse(response, 'Unable to reject church registration.');
   },
 };

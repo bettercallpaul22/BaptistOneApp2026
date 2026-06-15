@@ -13,6 +13,10 @@ export const paths = {
   churchBrowse: '/church/browse',
   churchDocuments: '/church/documents',
   churchEvents: '/church/events',
+  churchRegistrationReview: '/church-registration/review',
+  churchRegistrationReviewWithToken: (token: string) =>
+    `/church-registration/review/${encodeURIComponent(token)}`,
+  churchRegistrationReviewTokenRoute: '/church-registration/review/:token',
   churchLeadership: (type: string) => `/church/leadership/${encodeURIComponent(type)}`,
   churchLeadershipRoute: '/church/leadership/:type',
   family: '/family',

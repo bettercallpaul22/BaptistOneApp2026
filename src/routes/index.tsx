@@ -27,6 +27,9 @@ const ChurchBrowsePage = lazy(() => import('@/pages/church/ChurchBrowsePage'));
 const ChurchDocumentsPage = lazy(() => import('@/pages/church/ChurchDocumentsPage'));
 const ChurchEventsPage = lazy(() => import('@/pages/church/ChurchEventsPage'));
 const ChurchLeadershipPage = lazy(() => import('@/pages/church/ChurchLeadershipPage'));
+const ChurchRegistrationReviewPage = lazy(
+  () => import('@/pages/church/ChurchRegistrationReviewPage'),
+);
 const FamilyPage = lazy(() => import('@/pages/family/FamilyPage'));
 const FamilyInvitePage = lazy(() => import('@/pages/family/FamilyInvitePage'));
 const FamilyMembersPage = lazy(() => import('@/pages/family/FamilyMembersPage'));
@@ -74,6 +77,10 @@ const MobileOnlyScreen = () => (
   </main>
 );
 
+const isChurchRegistrationReviewPath = (pathname: string) =>
+  pathname === paths.churchRegistrationReview ||
+  pathname.startsWith(`${paths.churchRegistrationReview}/`);
+
 const AuthSessionGate = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -99,7 +106,7 @@ const AuthSessionGate = () => {
         }),
       );
 
-      if (!pathname.startsWith('/auth')) {
+      if (!pathname.startsWith('/auth') && !isChurchRegistrationReviewPath(pathname)) {
         navigate(paths.login, { replace: true });
       }
     }
@@ -127,13 +134,15 @@ const RoutedApp = () => {
   const { isDesktop } = useDeviceProfile();
   useIsNativeShell();
   const [isBibleBottomTabHidden, setIsBibleBottomTabHidden] = useState(false);
+  const isRegistrationReviewRoute = isChurchRegistrationReviewPath(pathname);
 
-  if (isDesktop) {
+  if (isDesktop && !isRegistrationReviewRoute) {
     return <MobileOnlyScreen />;
   }
 
   const showWebBottomTab =
     !isDesktop &&
+    !isRegistrationReviewRoute &&
     pathname !== paths.launch &&
     pathname !== paths.familyInvite &&
     pathname !== paths.walletFundingCallback &&
@@ -151,6 +160,11 @@ const RoutedApp = () => {
           <Route path={paths.walletFundingCallback} element={<WalletFundingCallbackPage />} />
           <Route path={paths.givingCallback} element={<GivingCallbackPage />} />
           <Route path={paths.familyInvite} element={<FamilyInvitePage />} />
+          <Route path={paths.churchRegistrationReview} element={<ChurchRegistrationReviewPage />} />
+          <Route
+            path={paths.churchRegistrationReviewTokenRoute}
+            element={<ChurchRegistrationReviewPage />}
+          />
           <Route
             path={paths.bible}
             element={<BiblePage onBottomTabHiddenChange={setIsBibleBottomTabHidden} />}

@@ -128,6 +128,24 @@ const formatMembershipSize = (church: PublicChurchDetails) => {
   return `${new Intl.NumberFormat().format(size)} members`;
 };
 
+const getComplianceBadgeClasses = (status?: string | null) => {
+  const normalizedStatus = status?.trim().toUpperCase();
+
+  if (normalizedStatus === 'COMPLIANT' || normalizedStatus === 'VERIFIED' || normalizedStatus === 'APPROVED') {
+    return 'bg-emerald-50 text-emerald-700';
+  }
+
+  if (normalizedStatus === 'PENDING' || normalizedStatus === 'UNDER_REVIEW' || normalizedStatus === 'IN_REVIEW') {
+    return 'bg-amber-50 text-amber-700';
+  }
+
+  if (normalizedStatus === 'NON_COMPLIANT' || normalizedStatus === 'REJECTED' || normalizedStatus === 'FAILED') {
+    return 'bg-rose-50 text-rose-700';
+  }
+
+  return 'bg-[#F8FAFC] text-[#43536D]';
+};
+
 const ChurchStatusMessage = ({
   action,
   description,
@@ -162,6 +180,9 @@ const ChurchBanner = ({ church }: { church: PublicChurchDetails }) => {
   const email = getChurchEmail(church);
   const phone = getChurchPhone(church);
   const membershipSize = formatMembershipSize(church);
+  const complianceBadge = church.complianceBadge;
+  const complianceBadgeLabel =
+    complianceBadge?.visible && typeof complianceBadge.label === 'string' ? complianceBadge.label.trim() : '';
 
   return (
     <section className="overflow-hidden rounded-xl border border-[#D6DEEB] bg-white shadow-[0_12px_26px_rgba(11,31,74,0.08)]">
@@ -188,6 +209,17 @@ const ChurchBanner = ({ church }: { church: PublicChurchDetails }) => {
               <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F8FAFC] px-3 py-1 text-xs font-bold text-[#43536D]">
                 <Users className="size-3.5" aria-hidden />
                 {membershipSize}
+              </span>
+            )}
+            {complianceBadgeLabel && (
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${getComplianceBadgeClasses(
+                  complianceBadge?.status,
+                )}`}
+                title={complianceBadge?.kycStatus ? `KYC status: ${complianceBadge.kycStatus}` : undefined}
+              >
+                <AlertCircle className="size-3.5" aria-hidden />
+                {complianceBadgeLabel}
               </span>
             )}
           </div>
