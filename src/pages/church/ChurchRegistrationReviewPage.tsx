@@ -195,13 +195,6 @@ const ChurchRegistrationReviewPage = () => {
   const isPending = reviewStatus === 'PENDING';
   const content = getHeaderContent(review);
 
-  const displayToken = useMemo(() => {
-    if (!reviewToken) return '';
-    if (reviewToken.length <= 12) return reviewToken;
-
-    return `${reviewToken.slice(0, 6)}...${reviewToken.slice(-4)}`;
-  }, [reviewToken]);
-
   const fetchReviewDetails = useCallback(
     async ({ silent = false }: { silent?: boolean } = {}) => {
       if (!reviewToken) return;
@@ -382,9 +375,6 @@ const ChurchRegistrationReviewPage = () => {
                       Church
                     </AppText>
                     <AppText variant="h5">{review.churchName || 'Church registration'}</AppText>
-                    <AppText variant="bodySmall" color="textSecondary">
-                      Review token: <span className="font-mono font-bold">{displayToken}</span>
-                    </AppText>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <StatusBadge label="Review" status={review.status} />
@@ -396,7 +386,6 @@ const ChurchRegistrationReviewPage = () => {
                   <DetailItem icon={UserRound} label="Pastor" value={review.pastorName} />
                   <DetailItem icon={Mail} label="Pastor email" value={review.pastorEmail} />
                   <DetailItem icon={UserRound} label="Admin" value={adminName} />
-                  <DetailItem icon={Building2} label="Church ID" value={review.churchId} />
                   <DetailItem
                     icon={CalendarDays}
                     label="Requested"
