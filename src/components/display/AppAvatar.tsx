@@ -23,14 +23,17 @@ const sizeClasses = {
   xl: 'size-20 text-2xl',
 } as const;
 
+const normalizeAvatarSrc = (src?: string) => (src?.startsWith('http://') ? src.replace(/^http:\/\//, 'https://') : src);
+
 export const AppAvatar = ({ src, name, size = 'md', online = false }: AppAvatarProps) => {
+  const avatarSrc = normalizeAvatarSrc(src);
   const [imageState, setImageState] = useState<{ src?: string; loaded: boolean; failed: boolean }>({
     loaded: false,
     failed: false,
   });
-  const imageLoaded = imageState.src === src && imageState.loaded;
-  const imageFailed = imageState.src === src && imageState.failed;
-  const showImage = Boolean(src && !imageFailed);
+  const imageLoaded = imageState.src === avatarSrc && imageState.loaded;
+  const imageFailed = imageState.src === avatarSrc && imageState.failed;
+  const showImage = Boolean(avatarSrc && !imageFailed);
   const showSkeleton = showImage && !imageLoaded;
 
   return (
@@ -46,9 +49,9 @@ export const AppAvatar = ({ src, name, size = 'md', online = false }: AppAvatarP
         <img
           className={clsx('size-full object-cover transition-opacity duration-200', imageLoaded ? 'opacity-100' : 'opacity-0')}
           alt=""
-          src={src}
-          onError={() => setImageState({ src, loaded: false, failed: true })}
-          onLoad={() => setImageState({ src, loaded: true, failed: false })}
+          src={avatarSrc}
+          onError={() => setImageState({ src: avatarSrc, loaded: false, failed: true })}
+          onLoad={() => setImageState({ src: avatarSrc, loaded: true, failed: false })}
         />
       ) : (
         initials(name)
