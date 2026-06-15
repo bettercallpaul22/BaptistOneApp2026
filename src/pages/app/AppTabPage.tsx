@@ -221,7 +221,7 @@ const ChurchBanner = ({ church }: { church: PublicChurchDetails }) => {
           )}
         </div>
 
-        <AppButton variant="secondary" onClick={() => navigate(paths.churchBrowse)}>
+        <AppButton onClick={() => navigate(paths.churchBrowse)}>
           Browse church
         </AppButton>
       </div>
@@ -418,7 +418,7 @@ const ChurchDocumentPreviewCard = ({ document }: { document: ChurchDocumentItem 
         </div>
       </div>
       {document.file?.url && (
-        <AppButton className="min-h-8 px-3 text-xs" size="sm" variant="secondary" onClick={() => window.open(document.file?.url ?? '', '_blank', 'noopener,noreferrer')}>
+        <AppButton className="min-h-8 px-3 text-xs" size="sm" onClick={() => window.open(document.file?.url ?? '', '_blank', 'noopener,noreferrer')}>
           Open document
         </AppButton>
       )}

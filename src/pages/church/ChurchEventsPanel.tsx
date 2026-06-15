@@ -95,7 +95,7 @@ const ChurchEventCard = ({ event, onView }: { event: ChurchEventItem; onView: (e
           <span className="min-w-0 truncate">{location}</span>
         </span>
       )}
-      <AppButton size="sm" variant="outline" fullWidth onClick={() => onView(event)}>
+      <AppButton size="sm" fullWidth onClick={() => onView(event)}>
         View event
       </AppButton>
     </article>

@@ -31,7 +31,7 @@ const ChurchDocumentCard = ({ document }: { document: ChurchDocumentItem }) => {
         </div>
       </div>
       {document.file?.url && (
-        <AppButton variant="secondary" onClick={() => window.open(document.file?.url ?? '', '_blank', 'noopener,noreferrer')}>
+        <AppButton onClick={() => window.open(document.file?.url ?? '', '_blank', 'noopener,noreferrer')}>
           Open document
         </AppButton>
       )}
