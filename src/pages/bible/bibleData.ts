@@ -33,14 +33,8 @@ export interface BibleChapterRef {
 export type BibleTranslationId =
   | 'asv'
   | 'asvs'
-  | 'bishops'
-  | 'coverdale'
-  | 'geneva'
   | 'kjv'
-  | 'kjv_strongs'
-  | 'net'
-  | 'tyndale'
-  | 'web';
+  | 'kjv_strongs';
 
 export interface BibleTranslation {
   id: BibleTranslationId;
@@ -65,13 +59,7 @@ interface BibleIndex {
 
 const translationOrder: BibleTranslationId[] = [
   'kjv',
-  'web',
   'asv',
-  'net',
-  'geneva',
-  'bishops',
-  'coverdale',
-  'tyndale',
   'kjv_strongs',
   'asvs',
 ];
@@ -89,24 +77,6 @@ const translationMetadata: Record<BibleTranslationId, BibleTranslation> = {
     shortName: 'ASVs',
     module: 'asvs',
   },
-  bishops: {
-    id: 'bishops',
-    name: 'Bishops Bible',
-    shortName: 'Bishops',
-    module: 'bishops',
-  },
-  coverdale: {
-    id: 'coverdale',
-    name: 'Coverdale Bible',
-    shortName: 'Coverdale',
-    module: 'coverdale',
-  },
-  geneva: {
-    id: 'geneva',
-    name: 'Geneva Bible',
-    shortName: 'Geneva',
-    module: 'geneva',
-  },
   kjv: {
     id: 'kjv',
     name: 'King James Version',
@@ -119,37 +89,13 @@ const translationMetadata: Record<BibleTranslationId, BibleTranslation> = {
     shortName: 'KJV Strongs',
     module: 'kjv_strongs',
   },
-  net: {
-    id: 'net',
-    name: 'NET Bible',
-    shortName: 'NET',
-    module: 'net',
-  },
-  tyndale: {
-    id: 'tyndale',
-    name: 'Tyndale Bible',
-    shortName: 'Tyndale',
-    module: 'tyndale',
-  },
-  web: {
-    id: 'web',
-    name: 'World English Bible',
-    shortName: 'WEB',
-    module: 'web',
-  },
 };
 
 const bibleModuleLoaders: Record<BibleTranslationId, () => Promise<BibleModule>> = {
   asv: async () => ((await import('@/assets/bible/EN-English/asv.json')).default as BibleModule),
   asvs: async () => ((await import('@/assets/bible/EN-English/asvs.json')).default as BibleModule),
-  bishops: async () => ((await import('@/assets/bible/EN-English/bishops.json')).default as BibleModule),
-  coverdale: async () => ((await import('@/assets/bible/EN-English/coverdale.json')).default as BibleModule),
-  geneva: async () => ((await import('@/assets/bible/EN-English/geneva.json')).default as BibleModule),
   kjv: async () => ((await import('@/assets/bible/EN-English/kjv.json')).default as BibleModule),
   kjv_strongs: async () => ((await import('@/assets/bible/EN-English/kjv_strongs.json')).default as BibleModule),
-  net: async () => ((await import('@/assets/bible/EN-English/net.json')).default as BibleModule),
-  tyndale: async () => ((await import('@/assets/bible/EN-English/tyndale.json')).default as BibleModule),
-  web: async () => ((await import('@/assets/bible/EN-English/web.json')).default as BibleModule),
 };
 
 const bibleBooks = englishBooksData as BibleBook[];
