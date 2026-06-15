@@ -41,6 +41,8 @@ const WalletTransactionDetailsPage = lazy(
 const WalletFundingCallbackPage = lazy(
   () => import('@/pages/wallet/funding-callback/WalletFundingCallbackPage'),
 );
+const GivingPage = lazy(() => import('@/pages/giving/GivingPage'));
+const GivingCallbackPage = lazy(() => import('@/pages/giving/GivingCallbackPage'));
 const LoginPage = lazy(() => import('@/pages/auth/login/LoginPage'));
 const GoogleRedirectPage = lazy(() => import('@/pages/auth/google-redirect/GoogleRedirectPage'));
 const EmailVerifyPage = lazy(() => import('@/pages/auth/email-verify/EmailVerifyPage'));
@@ -134,6 +136,7 @@ const RoutedApp = () => {
     pathname !== paths.launch &&
     pathname !== paths.familyInvite &&
     pathname !== paths.walletFundingCallback &&
+    pathname !== paths.givingCallback &&
     !pathname.startsWith('/auth');
   const hideWebBottomTab = pathname === paths.bible && isBibleBottomTabHidden;
 
@@ -145,6 +148,7 @@ const RoutedApp = () => {
           <Route path={paths.launch} element={<LaunchRoute />} />
           <Route path={paths.googleRedirect} element={<GoogleRedirectPage />} />
           <Route path={paths.walletFundingCallback} element={<WalletFundingCallbackPage />} />
+          <Route path={paths.givingCallback} element={<GivingCallbackPage />} />
           <Route path={paths.familyInvite} element={<FamilyInvitePage />} />
           <Route
             path={paths.bible}
@@ -158,7 +162,7 @@ const RoutedApp = () => {
             <Route path={paths.news} element={<AppPlaceholderPage title="News" />} />
             <Route path={paths.forum} element={<AppPlaceholderPage title="Forum" />} />
             <Route path={paths.ministries} element={<AppPlaceholderPage title="Ministries" />} />
-            <Route path={paths.donation} element={<AppPlaceholderPage title="Donation" />} />
+            <Route path={paths.donation} element={<GivingPage />} />
             <Route path={paths.media} element={<AppPlaceholderPage title="Media" />} />
             <Route path={paths.church} element={<AppTabPage kind="church" />} />
             <Route path={paths.churchBrowse} element={<ChurchBrowsePage />} />

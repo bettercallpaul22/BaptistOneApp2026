@@ -128,4 +128,8 @@ export const endpoints = {
   publicTransactions: {
     verify: (reference: string) => `/public/transactions/${encodeURIComponent(reference)}/verify`,
   },
+  publicGiving: {
+    config: (churchId: string) => `/public/giving/config/${encodeURIComponent(churchId)}`,
+    create: '/public/giving',
+  },
 } as const;

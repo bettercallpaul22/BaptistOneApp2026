@@ -28,6 +28,7 @@ export const paths = {
     `/wallet/${encodeURIComponent(walletNumber)}/transactions/${encodeURIComponent(transactionId)}`,
   walletTransactionDetailsRoute: '/wallet/:walletNumber/transactions/:transactionId',
   walletFundingCallback: '/wallet/funding/callback',
+  givingCallback: '/giving/callback',
   profile: '/profile',
   settings: '/settings',
   devotional: '/devotional',

@@ -8,4 +8,5 @@ const getRuntimeOrigin = () => {
 
 export const callbackUrls = {
   walletFunding: () => `${getRuntimeOrigin()}${paths.walletFundingCallback}`,
+  giving: () => `${getRuntimeOrigin()}${paths.givingCallback}`,
 } as const;

@@ -5,7 +5,7 @@ import type { TransactionVerificationResponse } from '@/types/transaction';
 const verificationRequests = new Map<string, Promise<TransactionVerificationResponse>>();
 
 export const transactionService = {
-  verifyFunding: (reference: string) => {
+  verify: (reference: string) => {
     const normalizedReference = reference.trim();
     const cachedRequest = verificationRequests.get(normalizedReference);
 
@@ -31,4 +31,6 @@ export const transactionService = {
 
     return request;
   },
+
+  verifyFunding: (reference: string) => transactionService.verify(reference),
 };

@@ -19,8 +19,8 @@ export const menuItems: QuickAction[] = [
   { label: 'Bible', icon: bibleIcon, tone: 'primary', to: paths.bible },
   { label: 'Hymns', icon: hymnIcon, tone: 'gold', to: paths.hymnal },
   { label: 'Prayer', icon: prayerIcon, tone: 'plain' },
-  { label: 'Events', icon: eventIcon, tone: 'plain' },
+  { label: 'Events', icon: eventIcon, tone: 'plain', to: paths.churchEvents },
   { label: 'Family', icon: familyIcon, tone: 'plain', to: paths.family },
-  { label: 'Giving', icon: givingIcon, tone: 'plain' },
+  { label: 'Giving', icon: givingIcon, tone: 'plain', to: paths.donation },
   { label: 'Wallet', icon: walletIcon, tone: 'plain', to: paths.wallet },
 ];
