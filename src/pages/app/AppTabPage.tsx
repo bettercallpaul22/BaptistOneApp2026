@@ -105,6 +105,9 @@ const IconBadge = ({ children }: { children: ReactNode }) => (
 const getChurchImage = (church: PublicChurchDetails) =>
   church.coverImageUrl || church.coverImage || church.image || church.logo || null;
 
+const normalizeChurchImageSrc = (src?: string | null) =>
+  src?.startsWith('http://') ? src.replace(/^http:\/\//, 'https://') : src;
+
 const getChurchLocation = (church: PublicChurchDetails) =>
   [church.address?.city, church.address?.state, church.address?.country]
     .map((item) => (typeof item === 'string' ? item.trim() : ''))
@@ -154,7 +157,7 @@ const ChurchStatusMessage = ({
 
 const ChurchBanner = ({ church }: { church: PublicChurchDetails }) => {
   const navigate = useNavigate();
-  const image = getChurchImage(church);
+  const image = normalizeChurchImageSrc(getChurchImage(church));
   const location = getChurchLocation(church);
   const email = getChurchEmail(church);
   const phone = getChurchPhone(church);
