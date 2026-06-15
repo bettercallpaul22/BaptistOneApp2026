@@ -132,8 +132,13 @@ export default function RegisterPage() {
           />
           <AppInput
             autoComplete="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            inputMode="email"
             label="Email Address"
+            lowercase
             placeholder="maryjane@example.com"
+            spellCheck={false}
             error={formState.errors.email?.message}
             {...register('email')}
           />

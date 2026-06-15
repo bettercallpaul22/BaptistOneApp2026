@@ -1,4 +1,3 @@
-import kjvData from '@/assets/bible/EN-English/kjv.json';
 import englishBooksData from '@/assets/bible/Extras/books_en.json';
 
 export interface BibleBook {
@@ -77,8 +76,6 @@ const translationOrder: BibleTranslationId[] = [
   'asvs',
 ];
 
-const defaultBibleModule = kjvData as BibleModule;
-
 const translationMetadata: Record<BibleTranslationId, BibleTranslation> = {
   asv: {
     id: 'asv',
@@ -112,9 +109,9 @@ const translationMetadata: Record<BibleTranslationId, BibleTranslation> = {
   },
   kjv: {
     id: 'kjv',
-    name: defaultBibleModule.metadata.name,
-    shortName: defaultBibleModule.metadata.shortname,
-    module: defaultBibleModule.metadata.module,
+    name: 'King James Version',
+    shortName: 'KJV',
+    module: 'kjv',
   },
   kjv_strongs: {
     id: 'kjv_strongs',
@@ -148,7 +145,7 @@ const bibleModuleLoaders: Record<BibleTranslationId, () => Promise<BibleModule>>
   bishops: async () => ((await import('@/assets/bible/EN-English/bishops.json')).default as BibleModule),
   coverdale: async () => ((await import('@/assets/bible/EN-English/coverdale.json')).default as BibleModule),
   geneva: async () => ((await import('@/assets/bible/EN-English/geneva.json')).default as BibleModule),
-  kjv: async () => defaultBibleModule,
+  kjv: async () => ((await import('@/assets/bible/EN-English/kjv.json')).default as BibleModule),
   kjv_strongs: async () => ((await import('@/assets/bible/EN-English/kjv_strongs.json')).default as BibleModule),
   net: async () => ((await import('@/assets/bible/EN-English/net.json')).default as BibleModule),
   tyndale: async () => ((await import('@/assets/bible/EN-English/tyndale.json')).default as BibleModule),
@@ -156,11 +153,14 @@ const bibleModuleLoaders: Record<BibleTranslationId, () => Promise<BibleModule>>
 };
 
 const bibleBooks = englishBooksData as BibleBook[];
+const canonicalChapterCounts = [
+  50, 40, 27, 36, 34, 24, 21, 4, 31, 24, 22, 25, 29, 36, 10, 13, 10, 42, 150, 31, 12, 8,
+  66, 52, 5, 48, 12, 14, 3, 9, 1, 4, 7, 3, 3, 3, 2, 14, 4, 28, 16, 24, 21, 28, 16, 16,
+  13, 6, 6, 4, 4, 5, 3, 6, 4, 3, 1, 13, 5, 5, 3, 5, 1, 1, 1, 22,
+];
 const chapterRefs: BibleChapterRef[] = [];
 const chapterCountByBook = new Map<number, number>();
-const loadedBibleModules: Partial<Record<BibleTranslationId, BibleModule>> = {
-  kjv: defaultBibleModule,
-};
+const loadedBibleModules: Partial<Record<BibleTranslationId, BibleModule>> = {};
 const bibleIndexes = new Map<BibleTranslationId, BibleIndex>();
 
 const getChapterKey = (book: number, chapter: number) => `${book}:${chapter}`;
@@ -224,24 +224,14 @@ const getBibleIndex = async (id: BibleTranslationId) => {
   return index;
 };
 
-bibleIndexes.set('kjv', createBibleIndex(defaultBibleModule));
+bibleBooks.forEach((book, index) => {
+  const chapterCount = canonicalChapterCounts[index] ?? 0;
+  chapterCountByBook.set(book.id, chapterCount);
 
-const chapterRefKeys = new Set<string>();
-
-for (const verse of defaultBibleModule.verses) {
-  const key = getChapterKey(verse.book, verse.chapter);
-
-  if (!chapterRefKeys.has(key)) {
-    chapterRefKeys.add(key);
-    chapterRefs.push({ book: verse.book, chapter: verse.chapter });
+  for (let chapter = 1; chapter <= chapterCount; chapter += 1) {
+    chapterRefs.push({ book: book.id, chapter });
   }
-
-  const currentChapterCount = chapterCountByBook.get(verse.book) ?? 0;
-
-  if (verse.chapter > currentChapterCount) {
-    chapterCountByBook.set(verse.book, verse.chapter);
-  }
-}
+});
 
 const chapterIndexByKey = new Map(chapterRefs.map((chapterRef, index) => [getChapterKey(chapterRef.book, chapterRef.chapter), index]));
 

@@ -1,14 +1,15 @@
-import { forwardRef, type InputHTMLAttributes, useId, useState } from 'react';
+import { forwardRef, type ChangeEvent, type InputHTMLAttributes, useId, useState } from 'react';
 import clsx from 'clsx';
 
 export interface AppInputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   helperText?: string;
+  lowercase?: boolean;
 }
 
 export const AppInput = forwardRef<HTMLInputElement, AppInputProps>(
-  ({ id, label, error, helperText, className, type = 'text', disabled, value, defaultValue, onChange, ...props }, ref) => {
+  ({ id, label, error, helperText, className, type = 'text', disabled, value, defaultValue, onChange, lowercase = false, ...props }, ref) => {
     const generatedId = useId();
     const inputId = id ?? generatedId;
     const [showPassword, setShowPassword] = useState(false);
@@ -22,7 +23,11 @@ export const AppInput = forwardRef<HTMLInputElement, AppInputProps>(
       ? String(value).length > 0
       : String(internalValue).length > 0;
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+      if (lowercase) {
+        e.target.value = e.target.value.toLowerCase();
+      }
+
       if (value === undefined) setInternalValue(e.target.value);
       onChange?.(e);
     };

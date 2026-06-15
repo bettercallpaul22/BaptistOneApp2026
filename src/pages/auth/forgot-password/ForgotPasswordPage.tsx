@@ -62,6 +62,10 @@ export default function ForgotPasswordPage() {
             error={formState.errors.email?.message}
             inputMode="email"
             autoComplete="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            lowercase
+            spellCheck={false}
             {...register('email')}
           />
           <AppButton fullWidth loading={forgotPasswordLoading} type="submit">

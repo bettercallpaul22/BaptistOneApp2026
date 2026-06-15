@@ -71,8 +71,13 @@ export default function LoginPage() {
         <form className={authFormClass} onSubmit={handleSubmit(onSubmit)}>
           <AppInput
             autoComplete="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            inputMode="email"
             label="Email Address"
+            lowercase
             placeholder="johnpaul@example.com"
+            spellCheck={false}
             error={formState.errors.email?.message}
             {...register('email')}
           />
