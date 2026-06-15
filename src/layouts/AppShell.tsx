@@ -84,6 +84,7 @@ export const AppShell = ({ children, headerAvatar, mobileHeaderAddon }: AppShell
   const showSidebar = isDesktop;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMenuLoginPromptOpen, setIsMenuLoginPromptOpen] = useState(false);
+  const [pendingMenuPath, setPendingMenuPath] = useState<string | null>(null);
   const [dismissedRestrictedPath, setDismissedRestrictedPath] = useState<string | null>(null);
   const [mobileHeaderHeight, setMobileHeaderHeight] = useState(64);
   const headerTitle = useMemo(() => {
@@ -104,6 +105,8 @@ export const AppShell = ({ children, headerAvatar, mobileHeaderAddon }: AppShell
   const isRestrictedLoginPromptOpen =
     isRestrictedKnownUserPath && dismissedRestrictedPath !== pathname;
   const isLoginPromptOpen = isMenuLoginPromptOpen || isRestrictedLoginPromptOpen;
+  const isPendingMenuRouteReady = Boolean(pendingMenuPath && pathname === pendingMenuPath);
+  const showMobileMenu = isMenuOpen && !isPendingMenuRouteReady;
   const defaultHeaderAvatarName = getFirstAvailableName(
     memberAccount?.basicProfile?.displayName,
     [memberAccount?.basicProfile?.firstName, memberAccount?.basicProfile?.lastName]
@@ -126,6 +129,7 @@ export const AppShell = ({ children, headerAvatar, mobileHeaderAddon }: AppShell
     dispatch(logout());
     postNativeLogout();
     setIsMenuOpen(false);
+    setPendingMenuPath(null);
     dispatch(
       pushNotification({ type: 'info', title: 'Logged out', message: 'You have been signed out.' }),
     );
@@ -138,7 +142,25 @@ export const AppShell = ({ children, headerAvatar, mobileHeaderAddon }: AppShell
       return;
     }
 
+    setPendingMenuPath(null);
     setIsMenuOpen(true);
+  };
+
+  const closeMenu = () => {
+    setPendingMenuPath(null);
+    setIsMenuOpen(false);
+  };
+
+  const handleMenuNavigate = (to?: string) => {
+    if (!to) return;
+
+    if (pathname === to) {
+      closeMenu();
+      return;
+    }
+
+    setPendingMenuPath(to);
+    navigate(to);
   };
 
   const closeLoginPrompt = () => {
@@ -229,9 +251,11 @@ export const AppShell = ({ children, headerAvatar, mobileHeaderAddon }: AppShell
       )}
       {!showSidebar && (
         <MenuScreen
-          isOpen={isMenuOpen}
-          onClose={() => setIsMenuOpen(false)}
+          isOpen={showMobileMenu}
+          pendingPath={pendingMenuPath}
+          onClose={closeMenu}
           onLogout={handleLogout}
+          onNavigate={handleMenuNavigate}
         />
       )}
       <AppModal
