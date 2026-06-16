@@ -48,6 +48,20 @@ export const endpoints = {
       return `/public/churches/connect-options?${params.toString()}`;
     },
   },
+  publicPastors: {
+    list: ({ churchId, page = 1, limit = 25 }: { churchId?: string; page?: number; limit?: number } = {}) => {
+      const params = new URLSearchParams();
+
+      if (churchId) {
+        params.set('churchId', churchId);
+      }
+
+      params.set('page', String(page));
+      params.set('limit', String(limit));
+
+      return `/public/pastors?${params.toString()}`;
+    },
+  },
   churches: {
     leadership: ({ churchId, page = 1, limit = 20 }: { churchId: string; page?: number; limit?: number }) => {
       const params = new URLSearchParams();
@@ -100,6 +114,14 @@ export const endpoints = {
     profileCompletion: '/private/members/profile-completion',
     profileCompletionSection: (sectionKey: string) =>
       `/private/members/profile-completion/sections/${sectionKey}`,
+    myDepartments: '/private/members/my/departments',
+    myUnits: '/private/members/my/units',
+    forums: ({ page = 1, limit = 20 }: { page?: number; limit?: number } = {}) => {
+      const params = new URLSearchParams();
+      params.set('page', String(page));
+      params.set('limit', String(limit));
+      return `/private/member/forums?${params.toString()}`;
+    },
   },
   privateWallets: {
     wallets: '/private/wallets',

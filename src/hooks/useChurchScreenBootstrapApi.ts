@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { churchService } from '@/services/church/churchService';
 import { clearChurchDetails, clearChurchDetailsError } from '@/store/slices/churchSlice';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -11,6 +11,8 @@ import type {
   ChurchEventMeta,
   ChurchLeadershipItem,
   ChurchLeadershipMeta,
+  ChurchPastorItem,
+  ChurchPastorMeta,
 } from '@/types/church';
 import type { MemberAccount } from '@/types/member';
 
@@ -26,6 +28,76 @@ const getBootstrapErrorMessage = (error: unknown) => {
 const getApprovedChurchId = (memberAccount: MemberAccount | null) =>
   memberAccount?.membershipAndPreferences?.churchId || memberAccount?.basicProfile?.churchId || null;
 
+const formatPastorTitle = (pastorType: string | null | undefined) => {
+  const normalizedType = pastorType?.trim();
+
+  if (!normalizedType) return 'Pastor';
+
+  return normalizedType
+    .toLowerCase()
+    .split(/[_\s-]+/)
+    .filter(Boolean)
+    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
+    .join(' ');
+};
+
+const getPastorName = (pastor: ChurchPastorItem) => {
+  const profile = pastor.basicProfile;
+  const displayName = profile?.displayName?.trim();
+  const fullName = [profile?.firstName, profile?.otherName, profile?.lastName]
+    .map((name) => name?.trim())
+    .filter(Boolean)
+    .join(' ');
+
+  return displayName || fullName || 'Church pastor';
+};
+
+const getPastorAvatarUrl = (pastor: ChurchPastorItem) =>
+  pastor.basicProfile?.avatar?.url || pastor.basicProfile?.avatarUrl || null;
+
+const normalizePastorToLeader = (pastor: ChurchPastorItem, churchId: string): ChurchLeadershipItem => ({
+  id: pastor.id,
+  createdAt: pastor.createdAt,
+  churchId,
+  type: 'PASTOR',
+  name: getPastorName(pastor),
+  title: formatPastorTitle(pastor.preferences?.pastorType),
+  email: pastor.basicProfile?.email ?? null,
+  avatarUrl: getPastorAvatarUrl(pastor),
+  isActive: pastor.deletedAt ? false : true,
+});
+
+const getLeaderIdentityKeys = (leader: ChurchLeadershipItem) =>
+  [leader.id, leader.email?.trim().toLowerCase()].filter((key): key is string => Boolean(key));
+
+const mergeLeadershipWithPastors = (
+  leadership: ChurchLeadershipItem[],
+  pastors: ChurchPastorItem[],
+  churchId: string | null,
+) => {
+  if (!churchId) return leadership;
+
+  const seenKeys = new Set<string>();
+  const mergedLeadership: ChurchLeadershipItem[] = [];
+
+  const addLeader = (leader: ChurchLeadershipItem) => {
+    const identityKeys = getLeaderIdentityKeys(leader);
+
+    if (identityKeys.some((key) => seenKeys.has(key))) return;
+
+    mergedLeadership.push(leader);
+    identityKeys.forEach((key) => seenKeys.add(key));
+  };
+
+  leadership.forEach(addLeader);
+  pastors
+    .filter((pastor) => pastor.preferences?.churchId === churchId)
+    .map((pastor) => normalizePastorToLeader(pastor, churchId))
+    .forEach(addLeader);
+
+  return mergedLeadership;
+};
+
 export const useChurchScreenBootstrapApi = () => {
   const dispatch = useAppDispatch();
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
@@ -40,6 +112,10 @@ export const useChurchScreenBootstrapApi = () => {
   const [leadershipMeta, setLeadershipMeta] = useState<ChurchLeadershipMeta | null>(null);
   const [leadershipChurchId, setLeadershipChurchId] = useState<string | null>(null);
   const [leadershipLastFetchedAt, setLeadershipLastFetchedAt] = useState<string | null>(null);
+  const [pastors, setPastors] = useState<ChurchPastorItem[]>([]);
+  const [pastorsMeta, setPastorsMeta] = useState<ChurchPastorMeta | null>(null);
+  const [pastorsChurchId, setPastorsChurchId] = useState<string | null>(null);
+  const [pastorsLastFetchedAt, setPastorsLastFetchedAt] = useState<string | null>(null);
   const [documents, setDocuments] = useState<ChurchDocumentItem[]>([]);
   const [documentsMeta, setDocumentsMeta] = useState<ChurchDocumentMeta | null>(null);
   const [documentsChurchId, setDocumentsChurchId] = useState<string | null>(null);
@@ -55,6 +131,10 @@ export const useChurchScreenBootstrapApi = () => {
     setLeadershipMeta(null);
     setLeadershipChurchId(null);
     setLeadershipLastFetchedAt(null);
+    setPastors([]);
+    setPastorsMeta(null);
+    setPastorsChurchId(null);
+    setPastorsLastFetchedAt(null);
     setDocuments([]);
     setDocumentsMeta(null);
     setDocumentsChurchId(null);
@@ -89,6 +169,8 @@ export const useChurchScreenBootstrapApi = () => {
         detailsLastFetchedAt &&
         leadershipChurchId === currentChurchId &&
         leadershipLastFetchedAt &&
+        pastorsChurchId === currentChurchId &&
+        pastorsLastFetchedAt &&
         documentsChurchId === currentChurchId &&
         documentsLastFetchedAt &&
         eventsChurchId === currentChurchId &&
@@ -129,6 +211,8 @@ export const useChurchScreenBootstrapApi = () => {
           detailsLastFetchedAt &&
           leadershipChurchId === churchId &&
           leadershipLastFetchedAt &&
+          pastorsChurchId === churchId &&
+          pastorsLastFetchedAt &&
           documentsChurchId === churchId &&
           documentsLastFetchedAt &&
           eventsChurchId === churchId &&
@@ -148,6 +232,8 @@ export const useChurchScreenBootstrapApi = () => {
           force ||
           leadershipChurchId !== churchId ||
           !leadershipLastFetchedAt ||
+          pastorsChurchId !== churchId ||
+          !pastorsLastFetchedAt ||
           documentsChurchId !== churchId ||
           !documentsLastFetchedAt ||
           eventsChurchId !== churchId ||
@@ -156,18 +242,24 @@ export const useChurchScreenBootstrapApi = () => {
           resetLocalChurchResources();
         }
 
-        const [, leadershipResponse, documentsResponse, eventsResponse] = await Promise.all([
+        const [, leadershipResponse, pastorsResponse, documentsResponse, eventsResponse] = await Promise.all([
           dispatch(fetchChurchDetailsThunk(churchId)).unwrap(),
           churchService.getLeadership(churchId, { page: 1, limit: 20 }),
+          churchService.getPastors(churchId, { page: 1, limit: 25 }),
           churchService.getDocuments(churchId, { page: 1, limit: 25 }),
           churchService.getEvents(churchId, { page: 1, limit: 25 }),
         ]);
         const lastFetchedAt = new Date().toISOString();
+        const currentChurchPastors = pastorsResponse.items.filter((pastor) => pastor.preferences?.churchId === churchId);
 
         setLeadership(leadershipResponse.items);
         setLeadershipMeta(leadershipResponse.meta);
         setLeadershipChurchId(churchId);
         setLeadershipLastFetchedAt(lastFetchedAt);
+        setPastors(currentChurchPastors);
+        setPastorsMeta(pastorsResponse.meta);
+        setPastorsChurchId(churchId);
+        setPastorsLastFetchedAt(lastFetchedAt);
         setDocuments(documentsResponse.items);
         setDocumentsMeta(documentsResponse.meta);
         setDocumentsChurchId(churchId);
@@ -199,6 +291,8 @@ export const useChurchScreenBootstrapApi = () => {
       leadershipChurchId,
       leadershipLastFetchedAt,
       memberAccount,
+      pastorsChurchId,
+      pastorsLastFetchedAt,
       resetLocalChurchResources,
     ],
   );
@@ -211,6 +305,11 @@ export const useChurchScreenBootstrapApi = () => {
     return () => window.clearTimeout(timeoutId);
   }, [bootstrap]);
 
+  const mergedLeadership = useMemo(
+    () => mergeLeadershipWithPastors(leadership, pastors, pastorsChurchId ?? leadershipChurchId ?? getApprovedChurchId(memberAccount)),
+    [leadership, leadershipChurchId, memberAccount, pastors, pastorsChurchId],
+  );
+
   return {
     church: details,
     documents,
@@ -220,11 +319,14 @@ export const useChurchScreenBootstrapApi = () => {
     events,
     eventsMeta,
     eventsLoading: bootstrapLoading && !eventsMeta,
-    leadership,
+    leadership: mergedLeadership,
     leadershipMeta,
-    leadershipLoading: bootstrapLoading && !leadershipMeta,
+    leadershipLoading: bootstrapLoading && (!leadershipMeta || !pastorsMeta),
     loading: bootstrapLoading || memberLoading || detailsLoading,
     membershipStatus: memberAccount?.membershipStatus ?? null,
+    pastors,
+    pastorsMeta,
+    pastorsLoading: bootstrapLoading && !pastorsMeta,
     retry: () => void bootstrap(true),
   };
 };

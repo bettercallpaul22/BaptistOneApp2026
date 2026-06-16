@@ -7,6 +7,9 @@ import type {
   ChurchEventsResponse,
   ChurchLeadershipApiResponse,
   ChurchLeadershipResponse,
+  ChurchPaginatedMeta,
+  ChurchPastorsApiResponse,
+  ChurchPastorsResponse,
   ChurchRegistrationReviewActionResponse,
   ChurchRegistrationReviewDetailsResponse,
   ChurchRegistrationOptionsResponse,
@@ -18,14 +21,39 @@ import type {
   RevokeMembershipRequestResponse,
 } from '@/types/church';
 
-const normalizePaginatedResponse = <TResponse extends { items: unknown[]; meta: unknown }>(
-  response: {
-    status?: boolean;
-    message?: string;
-    data?: TResponse;
-    items?: unknown[];
+type NormalizablePaginatedResponse = {
+  status?: boolean;
+  message?: string;
+  data?: {
+    items?: unknown;
     meta?: unknown;
-  },
+  };
+  items?: unknown;
+  meta?: unknown;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+const normalizeInteger = (value: unknown, fallback: number) => {
+  const numberValue = typeof value === 'number' ? value : Number(value);
+
+  return Number.isFinite(numberValue) ? Math.max(0, Math.trunc(numberValue)) : fallback;
+};
+
+const normalizePaginatedMeta = (meta: unknown, itemsLength: number): ChurchPaginatedMeta => {
+  const metaRecord = isRecord(meta) ? meta : {};
+  const page = normalizeInteger(metaRecord.page, 1);
+  const limit = normalizeInteger(metaRecord.limit, itemsLength || 1);
+  const total = normalizeInteger(metaRecord.total, itemsLength);
+  const calculatedTotalPages = limit > 0 ? Math.ceil(total / limit) : 0;
+  const totalPages = normalizeInteger(metaRecord.totalPages, calculatedTotalPages);
+
+  return { page, limit, total, totalPages };
+};
+
+const normalizePaginatedResponse = <TResponse extends { items: unknown[]; meta: ChurchPaginatedMeta }>(
+  response: NormalizablePaginatedResponse,
   fallbackMessage: string,
 ) => {
   const data = response.data ?? response;
@@ -38,7 +66,11 @@ const normalizePaginatedResponse = <TResponse extends { items: unknown[]; meta: 
     throw new Error(response.message || fallbackMessage);
   }
 
-  return data as TResponse;
+  return {
+    ...data,
+    items: data.items,
+    meta: normalizePaginatedMeta(data.meta, data.items.length),
+  } as TResponse;
 };
 
 const assertRegistrationReviewResponse = (
@@ -81,6 +113,14 @@ export const churchService = {
     );
 
     return normalizePaginatedResponse<ChurchLeadershipResponse>(response, 'Unable to load church leadership.');
+  },
+
+  getPastors: async (churchId: string, { page = 1, limit = 25 }: { page?: number; limit?: number } = {}) => {
+    const response = await http.get<ChurchPastorsApiResponse>(
+      endpoints.publicPastors.list({ churchId, page, limit }),
+    );
+
+    return normalizePaginatedResponse<ChurchPastorsResponse>(response, 'Unable to load church pastors.');
   },
 
   getDocuments: async (churchId: string, { page = 1, limit = 25 }: { page?: number; limit?: number } = {}) => {

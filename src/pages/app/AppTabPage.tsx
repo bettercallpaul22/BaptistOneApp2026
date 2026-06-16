@@ -7,6 +7,7 @@ import { AppLoader, AppModal, AppStateFeedback } from '@/components/feedback';
 import { useChurchScreenBootstrapApi } from '@/hooks/useChurchScreenBootstrapApi';
 import { AppShell } from '@/layouts/AppShell';
 import {
+  getLeaderAvatarUrl,
   getLeaderGroupTitle,
   getLeaderName,
   getLeadershipGroups,
@@ -132,18 +133,18 @@ const getComplianceBadgeClasses = (status?: string | null) => {
   const normalizedStatus = status?.trim().toUpperCase();
 
   if (normalizedStatus === 'COMPLIANT' || normalizedStatus === 'VERIFIED' || normalizedStatus === 'APPROVED') {
-    return 'bg-emerald-50 text-emerald-700';
+    return 'border-emerald-100 bg-emerald-50 text-emerald-700';
   }
 
   if (normalizedStatus === 'PENDING' || normalizedStatus === 'UNDER_REVIEW' || normalizedStatus === 'IN_REVIEW') {
-    return 'bg-amber-50 text-amber-700';
+    return 'border-amber-100 bg-amber-50 text-amber-700';
   }
 
   if (normalizedStatus === 'NON_COMPLIANT' || normalizedStatus === 'REJECTED' || normalizedStatus === 'FAILED') {
-    return 'bg-rose-50 text-rose-700';
+    return 'border-rose-100 bg-rose-50 text-rose-700';
   }
 
-  return 'bg-[#F8FAFC] text-[#43536D]';
+  return 'border-[#E5E7EB] bg-[#F8FAFC] text-[#43536D]';
 };
 
 const ChurchStatusMessage = ({
@@ -213,7 +214,7 @@ const ChurchBanner = ({ church }: { church: PublicChurchDetails }) => {
             )}
             {complianceBadgeLabel && (
               <span
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${getComplianceBadgeClasses(
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold ${getComplianceBadgeClasses(
                   complianceBadge?.status,
                 )}`}
                 title={complianceBadge?.kycStatus ? `KYC status: ${complianceBadge.kycStatus}` : undefined}
@@ -278,7 +279,7 @@ const ChurchLeaderDetailsModal = ({ leader, onClose }: { leader: ChurchLeadershi
     {leader && (
       <div className="grid gap-5">
         <div className="grid justify-items-center gap-3 text-center">
-          <AppAvatar name={getLeaderName(leader)} src={leader.image?.url ?? undefined} size="xl" />
+          <AppAvatar name={getLeaderName(leader)} src={getLeaderAvatarUrl(leader)} size="xl" />
           <div className="grid gap-1">
             <AppText variant="h5" align="center">
               {getLeaderName(leader)}
@@ -354,7 +355,7 @@ const ChurchLeadersSection = ({
                     key={leader.id}
                     name={getLeaderName(leader)}
                     role={getLeaderRole(leader)}
-                    avatarUrl={leader.image?.url}
+                    avatarUrl={getLeaderAvatarUrl(leader)}
                     onViewDetails={() => setSelectedLeader(leader)}
                   />
                 ))}

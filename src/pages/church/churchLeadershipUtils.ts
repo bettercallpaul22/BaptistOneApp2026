@@ -38,6 +38,9 @@ export const getLeaderRole = (leader: Pick<ChurchLeadershipItem, 'title' | 'type
 export const getLeaderName = (leader: Pick<ChurchLeadershipItem, 'name'>) =>
   leader.name?.trim() || 'Church leader';
 
+export const getLeaderAvatarUrl = (leader: Pick<ChurchLeadershipItem, 'avatarUrl' | 'image'>) =>
+  leader.image?.url || leader.avatarUrl || undefined;
+
 export const getLeaderSortValue = (leader: Pick<ChurchLeadershipItem, 'orderIndex'>) =>
   typeof leader.orderIndex === 'number' ? leader.orderIndex : Number.MAX_SAFE_INTEGER;
 

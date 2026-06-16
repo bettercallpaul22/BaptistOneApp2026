@@ -166,6 +166,69 @@ export interface ChurchPaginatedData<TItem> {
   meta: ChurchPaginatedMeta;
 }
 
+export interface ChurchPastorApiMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages?: number;
+}
+
+export interface ChurchPastorBasicProfile extends Record<string, ProfileSectionValue> {
+  id: string;
+  displayName?: string | null;
+  email?: string | null;
+  avatarUrl?: string | null;
+  coverImageUrl?: string | null;
+  avatarFileId?: string | null;
+  coverImageFileId?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  otherName?: string | null;
+  avatar?: ChurchFileAsset | null;
+  coverImage?: ChurchFileAsset | null;
+}
+
+export interface ChurchPastorPreferences extends Record<string, ProfileSectionValue> {
+  pastorType?: string | null;
+  churchId?: string | null;
+  responsibilities?: string[];
+  dateOrdained?: string | null;
+  pastoralLicenseNumber?: string | null;
+}
+
+export interface ChurchPastorChurch extends Record<string, ProfileSectionValue> {
+  id: string;
+  name?: string | null;
+  image?: string | null;
+  about?: string | null;
+  address?: ChurchAddress | null;
+}
+
+export interface ChurchPastorItem extends Record<string, ProfileSectionValue> {
+  id: string;
+  createdAt?: string;
+  deletedAt?: string | null;
+  basicProfile?: ChurchPastorBasicProfile | null;
+  preferences?: ChurchPastorPreferences | null;
+  church?: ChurchPastorChurch | null;
+}
+
+export type ChurchPastorMeta = ChurchPaginatedMeta;
+export type ChurchPastorsResponse = ChurchPaginatedData<ChurchPastorItem>;
+
+export interface ChurchPastorsApiData {
+  items: ChurchPastorItem[];
+  meta: ChurchPastorApiMeta;
+}
+
+export interface ChurchPastorsApiResponse {
+  status?: boolean;
+  message?: string;
+  data?: ChurchPastorsApiData;
+  items?: ChurchPastorItem[];
+  meta?: ChurchPastorApiMeta;
+}
+
 export interface ChurchFileAsset extends Record<string, ProfileSectionValue> {
   id: string;
   createdAt?: string;
@@ -202,6 +265,7 @@ export interface ChurchLeadershipItem extends Record<string, ProfileSectionValue
   orderIndex?: number | null;
   isActive?: boolean;
   image?: ChurchLeadershipImage | null;
+  avatarUrl?: string | null;
 }
 
 export type ChurchLeadershipMeta = ChurchPaginatedMeta;

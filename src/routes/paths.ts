@@ -6,6 +6,8 @@ export const paths = {
   events: '/events',
   news: '/news',
   forum: '/forum',
+  forumDetails: (forumId: string) => `/forum/${encodeURIComponent(forumId)}`,
+  forumDetailsRoute: '/forum/:forumId',
   ministries: '/ministries',
   donation: '/donation',
   media: '/media',

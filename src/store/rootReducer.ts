@@ -6,6 +6,7 @@ import { givingReducer } from './slices/givingSlice';
 import { memberReducer } from './slices/memberSlice';
 import { notificationReducer } from './slices/notificationSlice';
 import { profileReducer } from './slices/profileSlice';
+import { forumReducer } from './slices/forumSlice';
 import { userReducer } from './slices/userSlice';
 import { walletReducer } from './slices/walletSlice';
 
@@ -17,6 +18,7 @@ export const rootReducer = combineReducers({
   member: memberReducer,
   notifications: notificationReducer,
   profile: profileReducer,
+  forum: forumReducer,
   user: userReducer,
   wallet: walletReducer,
 });
