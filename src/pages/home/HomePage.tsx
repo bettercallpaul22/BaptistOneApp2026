@@ -7,6 +7,7 @@ import {
 import bibleIcon from '@/assets/icons/app_bible.svg';
 import eventIcon from '@/assets/icons/app_event.svg';
 import familyIcon from '@/assets/icons/app_family.svg';
+import forumIcon from '@/assets/icons/app_forum.svg';
 import givingIcon from '@/assets/icons/app_giving.svg';
 import hymnIcon from '@/assets/icons/app_hymn.svg';
 import walletIcon from '@/assets/icons/app_wallet.svg';
@@ -32,6 +33,7 @@ const quickActions: QuickAction[] = [
   { label: 'Bible', icon: bibleIcon, tone: 'primary', to: paths.bible },
   { label: 'Hymns', icon: hymnIcon, tone: 'gold', to: paths.hymnal },
   { label: 'Events', icon: eventIcon, tone: 'plain', to: paths.events, requiresAuth: true },
+  { label: 'Forum', icon: forumIcon, tone: 'plain', to: paths.forum, requiresAuth: true },
   { label: 'Giving', icon: givingIcon, tone: 'plain', to: paths.donation, requiresAuth: true },
   { label: 'Wallet', icon: walletIcon, tone: 'plain', to: paths.wallet, requiresAuth: true },
   { label: 'Family', icon: familyIcon, tone: 'plain', to: paths.family, requiresAuth: true },
