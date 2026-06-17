@@ -1,6 +1,6 @@
 import type { TransactionVerification } from '@/types/transaction';
 
-export type GivingPaymentMethod = 'paystack';
+export type GivingPaymentMethod = 'paystack' | 'wallet';
 
 export interface GivingConfigWallet {
   id: string;
@@ -46,6 +46,7 @@ export interface CreateGivingPayload {
   memberId: string;
   callbackUrl: string;
   note?: string;
+  authKey?: string;
 }
 
 export interface GivingPaymentData {

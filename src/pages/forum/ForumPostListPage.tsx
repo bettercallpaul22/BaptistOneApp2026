@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Bell, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Bell, MessageSquare, Trash2 } from 'lucide-react';
 import { AppButton, AppText } from '@/components/common';
 import { AppScrollableTabs } from '@/components/common/AppScrollableTabs';
 import { AppAvatar, AppCard } from '@/components/display';
 import { AppShell } from '@/layouts/AppShell';
-import { AppStateFeedback } from '@/components/feedback';
+import { AppModal, AppStateFeedback } from '@/components/feedback';
+import { AppInput } from '@/components/form';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { fetchForumPostsThunk } from '@/store/slices/forumSlice';
+import { fetchForumPostsThunk, deletePostThunk, createPostThunk } from '@/store/thunks/forumThunk';
 import { paths } from '@/routes/paths';
 import type { ForumPost } from '@/services/forum/forumService';
 
@@ -17,6 +18,11 @@ const postTabs = [
   { value: 'announcements', label: 'Announcements', icon: Bell },
   { value: 'discussion', label: 'Discussion', icon: MessageSquare },
 ];
+
+const postTypeOptions = [
+  { value: 'ANNOUNCEMENT', label: 'Announcement' },
+  { value: 'DISCUSSION', label: 'Discussion' },
+] as const;
 
 const formatRelativeTime = (dateString: string): string => {
   const now = new Date();
@@ -46,7 +52,11 @@ const ForumPostListPage = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const loadMoreRef = useRef<HTMLDivElement>(null);
-  const [activeTab, setActiveTab] = useState<PostTab>('discussion');
+  const [activeTab, setActiveTab] = useState<PostTab>('announcements');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newPostTitle, setNewPostTitle] = useState('');
+  const [newPostContent, setNewPostContent] = useState('');
+  const [newPostType, setNewPostType] = useState<string>('DISCUSSION');
 
   const forums = useAppSelector((state) => state.forum.items);
   const posts = useAppSelector((state) => state.forum.posts);
@@ -55,6 +65,9 @@ const ForumPostListPage = () => {
   const postsLoadingMore = useAppSelector((state) => state.forum.postsLoadingMore);
   const postsError = useAppSelector((state) => state.forum.postsError);
   const postsLoadMoreError = useAppSelector((state) => state.forum.postsLoadMoreError);
+  const creatingPost = useAppSelector((state) => state.forum.creatingPost);
+  const createPostError = useAppSelector((state) => state.forum.createPostError);
+  const currentProfileId = useAppSelector((state) => state.member.data?.basicProfile.id);
 
   const forum = useMemo(() => forums.find((f) => f.id === forumId), [forums, forumId]);
 
@@ -66,17 +79,15 @@ const ForumPostListPage = () => {
   const hasMore = Boolean(postsMeta && postsMeta.page < postsMeta.totalPages);
   const nextPage = (postsMeta?.page ?? 1) + 1;
   const isInitialLoading = postsLoading && !posts.length;
-  console.log('ForumPostListPage render', {  posts, postsLoading, postsLoadingMore, postsError, postsLoadMoreError });
 
   useEffect(() => {
     if (forumId) {
       void dispatch(fetchForumPostsThunk({ forumId, page: 1, limit: 20 }));
     }
-  }, [dispatch, forumId]);
+  }, [dispatch, forumId, activeTab]);
 
   const loadMorePosts = useCallback(() => {
     if (!hasMore || postsLoadingMore || !forumId) return;
-
     void dispatch(fetchForumPostsThunk({ forumId, page: nextPage, limit: postsMeta?.limit ?? 20 }));
   }, [dispatch, forumId, hasMore, postsLoadingMore, postsMeta?.limit, nextPage]);
 
@@ -97,10 +108,32 @@ const ForumPostListPage = () => {
     return () => observer.disconnect();
   }, [hasMore, loadMorePosts, postsError, postsLoadMoreError, postsLoading, postsLoadingMore]);
 
+  const handleDeletePost = (e: React.MouseEvent, postId: string) => {
+    e.stopPropagation();
+    void dispatch(deletePostThunk({ postId }));
+  };
+
+  const handleCreatePost = () => {
+    if (!forumId || !newPostTitle.trim() || !newPostContent.trim()) return;
+    void dispatch(
+      createPostThunk({
+        forumId,
+        title: newPostTitle.trim(),
+        content: newPostContent.trim(),
+        postType: newPostType,
+      }),
+    );
+    setNewPostTitle('');
+    setNewPostContent('');
+    setNewPostType('DISCUSSION');
+    setIsCreateModalOpen(false);
+  };
+
   const renderPost = (post: ForumPost) => {
     const badge = postTypeBadge[post.postType] ?? postTypeBadge.GENERAL;
     const authorName = post.author?.displayName ?? 'Unknown';
     const avatarUrl = post.author?.avatarUrl ?? undefined;
+    const isOwn = post.author.id === currentProfileId;
 
     return (
       <div
@@ -130,6 +163,16 @@ const ForumPostListPage = () => {
                 <span className="text-xs text-[#8A96AA]">{formatRelativeTime(post.createdAt)}</span>
               </div>
             </div>
+            {isOwn && (
+              <button
+                className="shrink-0 grid size-8 place-items-center rounded-full text-[#DC2626] transition hover:bg-red-50"
+                type="button"
+                aria-label="Delete post"
+                onClick={(e) => handleDeletePost(e, post.id)}
+              >
+                <Trash2 className="size-4" />
+              </button>
+            )}
             <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${badge.className}`}>
               {badge.label}
             </span>
@@ -227,6 +270,72 @@ const ForumPostListPage = () => {
           )}
         </section>
       </main>
+
+      <AppModal
+        open={isCreateModalOpen}
+        title="New Post"
+        onClose={() => setIsCreateModalOpen(false)}
+        footer={
+          <>
+            <AppButton variant="secondary" onClick={() => setIsCreateModalOpen(false)}>
+              Cancel
+            </AppButton>
+            <AppButton
+              loading={creatingPost}
+              disabled={!newPostTitle.trim() || !newPostContent.trim()}
+              onClick={handleCreatePost}
+            >
+              Post
+            </AppButton>
+          </>
+        }
+      >
+        <div className="grid gap-4">
+          {createPostError && (
+            <AppText variant="bodySmall" color="#B91C1C">
+              {createPostError}
+            </AppText>
+          )}
+          <AppInput
+            label="Title"
+            placeholder="Post title"
+            value={newPostTitle}
+            onChange={(e) => setNewPostTitle(e.target.value)}
+          />
+          <div className="grid gap-1.5">
+            <AppText variant="label" className="font-medium text-[#0B1F4A]">
+              Type
+            </AppText>
+            <div className="flex gap-2">
+              {postTypeOptions.map((option) => (
+                <button
+                  key={option.value}
+                  className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${
+                    newPostType === option.value
+                      ? 'border-[#123B8D] bg-[#123B8D] text-white'
+                      : 'border-[#D6DEEB] bg-white text-[#123B8D] hover:bg-[#F8FAFE]'
+                  }`}
+                  type="button"
+                  onClick={() => setNewPostType(option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="grid gap-1.5">
+            <AppText variant="label" className="font-medium text-[#0B1F4A]">
+              Content
+            </AppText>
+            <textarea
+              className="min-h-[8rem] resize-none rounded-xl border border-[#D6DEEB] bg-[#F8FAFE] px-4 py-3 text-sm text-[#0B1F4A] placeholder-[#8A96AA] outline-none transition focus:border-[#123B8D] focus:ring-2 focus:ring-[#123B8D]/10"
+              placeholder="Write your post..."
+              value={newPostContent}
+              onChange={(e) => setNewPostContent(e.target.value)}
+            />
+          </div>
+        </div>
+      </AppModal>
     </AppShell>
   );
 };

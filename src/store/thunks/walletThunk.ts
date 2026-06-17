@@ -101,3 +101,39 @@ export const fetchWalletTransactionsThunk = createAsyncThunk<
     },
   },
 );
+
+export const setWalletPinThunk = createAsyncThunk<
+  { status: boolean; message: string },
+  { authKey: string },
+  { rejectValue: ReturnType<typeof toApiError> }
+>('wallet/setWalletPin', async ({ authKey }, { rejectWithValue }) => {
+  try {
+    const response = await walletService.setWalletPin(authKey);
+
+    if (!response.status) {
+      return rejectWithValue(toApiError(new Error(response.message || 'Failed to set wallet PIN.')));
+    }
+
+    return { status: response.status, message: response.message ?? 'PIN set successfully.' };
+  } catch (error) {
+    return rejectWithValue(toApiError(error));
+  }
+});
+
+export const verifyWalletPinThunk = createAsyncThunk<
+  { status: boolean; message: string },
+  { authKey: string },
+  { rejectValue: ReturnType<typeof toApiError> }
+>('wallet/verifyWalletPin', async ({ authKey }, { rejectWithValue }) => {
+  try {
+    const response = await walletService.verifyWalletPin(authKey);
+
+    if (!response.status) {
+      return rejectWithValue(toApiError(new Error(response.message || 'Failed to verify wallet PIN.')));
+    }
+
+    return { status: response.status, message: response.message ?? 'PIN verified successfully.' };
+  } catch (error) {
+    return rejectWithValue(toApiError(error));
+  }
+});

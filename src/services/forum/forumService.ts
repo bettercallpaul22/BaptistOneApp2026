@@ -117,4 +117,26 @@ export const forumService = {
       { content },
     );
   },
+
+  deleteComment: async (commentId: string) => {
+    return http.delete<ApiResponse<null>>(
+      `/private/posts/comments/${encodeURIComponent(commentId)}`,
+    );
+  },
+
+  deletePost: async (postId: string) => {
+    return http.delete<ApiResponse<null>>(
+      `/private/forums/posts/${encodeURIComponent(postId)}`,
+    );
+  },
+
+  createPost: async (
+    forumId: string,
+    data: { title: string; content: string; postType: string; mediaFileIds: string[] },
+  ) => {
+    return http.post<ApiResponse<ForumPost>, typeof data>(
+      `/private/forums/${encodeURIComponent(forumId)}/posts`,
+      data,
+    );
+  },
 };

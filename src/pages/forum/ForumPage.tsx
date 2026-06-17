@@ -106,7 +106,14 @@ const ForumPage = () => {
     return () => observer.disconnect();
   }, [currentLoadMoreError, error, hasMore, loadMoreForums, loading, loadingMore]);
 
-  const handleTabChange = (value: string) => setActiveTab(value as ForumTab);
+  const handleTabChange = (value: string) => {
+    setActiveTab(value as ForumTab);
+    if (value === 'departments') {
+      void dispatch(fetchUserDepartmentsThunk());
+    } else if (value === 'units') {
+      void dispatch(fetchUserUnitsThunk());
+    }
+  };
 
   const renderForumCard = (forum: ForumItem) => {
     return (

@@ -125,6 +125,7 @@ export const endpoints = {
   },
   privateWallets: {
     wallets: '/private/wallets',
+    authVerify: '/private/wallets/auth/verify',
     fund: (walletNumber: string) => `/private/wallets/${encodeURIComponent(walletNumber)}/fund`,
     transactions: (
       walletNumber: string,

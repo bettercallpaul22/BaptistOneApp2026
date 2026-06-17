@@ -1,12 +1,16 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Send } from 'lucide-react';
+import { ArrowLeft, Copy, Send, Trash2 } from 'lucide-react';
 import { AppButton, AppText } from '@/components/common';
 import { AppAvatar, AppCard } from '@/components/display';
 import { AppShell } from '@/layouts/AppShell';
 import { AppStateFeedback } from '@/components/feedback';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { fetchPostCommentsThunk, createCommentThunk } from '@/store/thunks/forumThunk';
+import {
+  fetchPostCommentsThunk,
+  createCommentThunk,
+  deleteCommentThunk,
+} from '@/store/thunks/forumThunk';
 import { paths } from '@/routes/paths';
 import type { ForumComment } from '@/services/forum/forumService';
 
@@ -43,12 +47,24 @@ const postTypeBadge: Record<string, { label: string; className: string }> = {
   EVENT: { label: 'Event', className: 'bg-purple-50 text-purple-700' },
 };
 
+interface ContextMenuState {
+  commentId: string;
+  content: string;
+  isOwn: boolean;
+  x: number;
+  y: number;
+}
+
+const LONG_PRESS_MS = 500;
+
 const ForumPostDetailPage = () => {
   const { forumId, postId } = useParams<{ forumId: string; postId: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout>>(null);
   const [commentText, setCommentText] = useState('');
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
 
   const posts = useAppSelector((state) => state.forum.posts);
   const comments = useAppSelector((state) => state.forum.comments);
@@ -70,18 +86,65 @@ const ForumPostDetailPage = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [comments.length]);
 
-  const handleSend = useCallback(() => {
+  useEffect(() => {
+    if (!contextMenu) return;
+    const close = () => setContextMenu(null);
+    window.addEventListener('scroll', close, { passive: true });
+    window.addEventListener('resize', close);
+    return () => {
+      window.removeEventListener('scroll', close);
+      window.removeEventListener('resize', close);
+    };
+  }, [contextMenu]);
+
+  const handleSend = () => {
     const trimmed = commentText.trim();
     if (!trimmed || !postId || creatingComment) return;
 
     void dispatch(createCommentThunk({ postId, content: trimmed }));
     setCommentText('');
-  }, [commentText, postId, creatingComment, dispatch]);
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
+    }
+  };
+
+  const handlePointerDown = (comment: ForumComment, isOwn: boolean, e: React.PointerEvent) => {
+    const target = e.currentTarget;
+    const rect = target.getBoundingClientRect();
+
+    longPressTimer.current = setTimeout(() => {
+      setContextMenu({
+        commentId: comment.id,
+        content: comment.content,
+        isOwn,
+        x: Math.min(e.clientX, window.innerWidth - 180),
+        y: rect.top - 8,
+      });
+    }, LONG_PRESS_MS);
+  };
+
+  const handlePointerUp = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  const handleCopy = async () => {
+    if (contextMenu) {
+      await navigator.clipboard.writeText(contextMenu.content);
+      setContextMenu(null);
+    }
+  };
+
+  const handleDelete = () => {
+    if (contextMenu) {
+      void dispatch(deleteCommentThunk({ commentId: contextMenu.commentId }));
+      setContextMenu(null);
     }
   };
 
@@ -96,20 +159,34 @@ const ForumPostDetailPage = () => {
       <div key={comment.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
         <div className={`flex max-w-[80%] items-end gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
           {!isOwn && <AppAvatar name={authorName} src={avatarUrl} size="sm" />}
-          <div className="min-w-0">
+          <div className="min-w-0 select-none">
             {!isOwn && (
               <AppText variant="caption" className="mb-1 font-semibold text-[#0B1F4A]">
                 {authorName}
               </AppText>
             )}
             <div
-              className={`rounded-2xl px-4 py-2.5 ${
+              className={`touch-none rounded-2xl px-4 py-2.5 ${
                 isOwn
                   ? 'rounded-br-md bg-[#D4AF37] text-white'
                   : 'rounded-bl-md bg-[#123B8D] text-white'
               }`}
+              onPointerDown={(e) => handlePointerDown(comment, isOwn, e)}
+              onPointerUp={handlePointerUp}
+              onPointerLeave={handlePointerUp}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                const rect = e.currentTarget.getBoundingClientRect();
+                setContextMenu({
+                  commentId: comment.id,
+                  content: comment.content,
+                  isOwn,
+                  x: Math.min(e.clientX, window.innerWidth - 180),
+                  y: rect.top - 8,
+                });
+              }}
             >
-              <AppText variant="bodySmall" color="inherit">
+              <AppText variant="bodySmall" color="inherit" weight="medium">
                 {comment.content}
               </AppText>
             </div>
@@ -245,6 +322,42 @@ const ForumPostDetailPage = () => {
           </div>
         </div>
       </main>
+
+      {contextMenu && (
+        <>
+          <div
+            className="fixed inset-0 z-[80]"
+            onClick={() => setContextMenu(null)}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              setContextMenu(null);
+            }}
+          />
+          <div
+            className="fixed z-[81] min-w-[10rem] overflow-hidden rounded-xl border border-[#E5E7EB] bg-white py-1 shadow-[0_8px_24px_rgba(11,31,74,0.18)]"
+            style={{ left: contextMenu.x, top: contextMenu.y }}
+          >
+            <button
+              className="flex w-full items-center gap-3 px-4 py-2.5 text-sm font-medium text-[#0B1F4A] transition hover:bg-[#F8FAFE]"
+              type="button"
+              onClick={handleCopy}
+            >
+              <Copy className="size-4 text-[#123B8D]" />
+              Copy
+            </button>
+            {contextMenu.isOwn && (
+              <button
+                className="flex w-full items-center gap-3 px-4 py-2.5 text-sm font-medium text-[#DC2626] transition hover:bg-red-50"
+                type="button"
+                onClick={handleDelete}
+              >
+                <Trash2 className="size-4" />
+                Delete
+              </button>
+            )}
+          </div>
+        </>
+      )}
     </AppShell>
   );
 };

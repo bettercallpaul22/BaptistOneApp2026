@@ -135,3 +135,80 @@ export const createCommentThunk = createAsyncThunk<
     return rejectWithValue(toApiError(error));
   }
 });
+
+interface DeleteCommentArgs {
+  commentId: string;
+}
+
+export const deleteCommentThunk = createAsyncThunk<
+  { commentId: string },
+  DeleteCommentArgs,
+  { rejectValue: ReturnType<typeof toApiError> }
+>('forum/deleteComment', async ({ commentId }, { rejectWithValue }) => {
+  try {
+    const response = await forumService.deleteComment(commentId);
+
+    if (!response.status) {
+      return rejectWithValue(toApiError(new Error(response.message || 'Unable to delete comment.')));
+    }
+
+    return { commentId };
+  } catch (error) {
+    return rejectWithValue(toApiError(error));
+  }
+});
+
+interface DeletePostArgs {
+  postId: string;
+}
+
+export const deletePostThunk = createAsyncThunk<
+  { postId: string },
+  DeletePostArgs,
+  { rejectValue: ReturnType<typeof toApiError> }
+>('forum/deletePost', async ({ postId }, { rejectWithValue }) => {
+  try {
+    const response = await forumService.deletePost(postId);
+
+    if (!response.status) {
+      return rejectWithValue(toApiError(new Error(response.message || 'Unable to delete post.')));
+    }
+
+    return { postId };
+  } catch (error) {
+    return rejectWithValue(toApiError(error));
+  }
+});
+
+interface CreatePostArgs {
+  forumId: string;
+  title: string;
+  content: string;
+  postType: string;
+}
+
+export const createPostThunk = createAsyncThunk<
+  { post: ForumPost; lastFetchedAt: string },
+  CreatePostArgs,
+  { rejectValue: ReturnType<typeof toApiError> }
+>('forum/createPost', async ({ forumId, title, content, postType }, { rejectWithValue }) => {
+  try {
+    const response = await forumService.createPost(forumId, {
+      title,
+      content,
+      postType,
+      mediaFileIds: [],
+    });
+
+    if (!response.status || !response.data) {
+      return rejectWithValue(toApiError(new Error(response.message || 'Unable to create post.')));
+    }
+
+    return {
+      post: response.data,
+      lastFetchedAt: new Date().toISOString(),
+    };
+  } catch (error) {
+    return rejectWithValue(toApiError(error));
+  }
+});

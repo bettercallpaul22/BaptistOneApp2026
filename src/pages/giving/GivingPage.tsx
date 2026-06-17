@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   AlertCircle,
   CheckCircle2,
@@ -13,7 +13,7 @@ import clsx from 'clsx';
 import { useNavigate } from 'react-router-dom';
 import { AppButton, AppText } from '@/components/common';
 import { AppLoader, AppModal } from '@/components/feedback';
-import { AppMoneyInput } from '@/components/form';
+import { AppInput, AppMoneyInput } from '@/components/form';
 import { callbackUrls } from '@/constants/callbackUrls';
 import { AppShell } from '@/layouts/AppShell';
 import { paths } from '@/routes/paths';
@@ -24,7 +24,7 @@ import { clearGivingConfigStatus, clearGivingPaymentStatus } from '@/store/slice
 import { pushNotification } from '@/store/slices/notificationSlice';
 import { fetchGivingConfigThunk, createGivingThunk } from '@/store/thunks/givingThunk';
 import { fetchMemberAccountThunk } from '@/store/thunks/memberThunk';
-import { fetchWalletsThunk } from '@/store/thunks/walletThunk';
+import { fetchWalletsThunk, setWalletPinThunk, verifyWalletPinThunk } from '@/store/thunks/walletThunk';
 import type { GivingBucket } from '@/types/giving';
 import type { MemberAccount } from '@/types/member';
 
@@ -160,6 +160,14 @@ export default function GivingPage() {
   const [selectedBucketId, setSelectedBucketId] = useState<string | null>(null);
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+  const [pinValue, setPinValue] = useState('');
+  const [confirmPinValue, setConfirmPinValue] = useState('');
+  const [pinError, setPinError] = useState('');
+  const [settingPin, setSettingPin] = useState(false);
+  const [pinMode, setPinMode] = useState<'set' | 'verify'>('set');
+  const [walletPin, setWalletPin] = useState('');
+  const pendingGivingRef = useRef<(() => void) | null>(null);
   const churchId = getChurchId(memberAccount);
   const memberId = getMemberId(memberAccount);
   const supportedCurrencies = useMemo(
@@ -212,6 +220,8 @@ export default function GivingPage() {
         ? `Maximum amount is ${formatMinorMoney(maxAmount, selectedCurrency)}.`
         : undefined;
   const canSubmit = Boolean(churchId && memberId && selectedWallet && selectedBucket && amountMajor > 0 && !amountError && !paymentLoading);
+  const walletInsufficientBalance = Boolean(selectedWallet && amountMinor > selectedWallet.balance);
+  const canSubmitWallet = canSubmit && !walletInsufficientBalance && walletPin.length === 4;
   const transaction = paymentResult?.data.transaction;
   const givingAmount = paymentResult?.data.givingAmount ?? paymentResult?.data.amount ?? amountMinor;
 
@@ -251,31 +261,59 @@ export default function GivingPage() {
     }
   }, [churchId, dispatch, memberError, memberLastFetchedAt, walletError, walletsLastFetchedAt]);
 
-  const handleSubmit = async () => {
-    if (!churchId || !memberId || !selectedWallet || !selectedBucket || !canSubmit) return;
+  const handleSubmit = async (method: 'wallet' | 'paystack') => {
+    if (!churchId || !memberId || !selectedWallet || !selectedBucket) return;
+    if (amountMajor <= 0 || amountError) return;
+    if (method === 'wallet' && walletInsufficientBalance) return;
+    if (method === 'wallet' && walletPin.length !== 4) return;
 
     dispatch(clearGivingPaymentStatus());
 
     try {
-      await dispatch(
+      const result = await dispatch(
         createGivingThunk({
           churchId,
           amount: amountMinor,
           currency: selectedWallet.currency,
           type: selectedBucket.code,
-          paymentMethod: 'paystack',
+          paymentMethod: method,
           bucketId: selectedBucket.id,
           memberId,
-          callbackUrl: callbackUrls.giving(),
+          callbackUrl: method === 'paystack' ? callbackUrls.giving() : '',
           ...(note.trim() ? { note: note.trim() } : {}),
+          ...(method === 'wallet' ? { authKey: walletPin } : {}),
         }),
       ).unwrap();
+
+      if (method === 'wallet') {
+        dispatch(
+          pushNotification({
+            type: 'success',
+            title: 'Giving successful',
+            message: `Your gift of ${formatMinorMoney(amountMinor, selectedWallet.currency)} has been processed from your wallet.`,
+          }),
+        );
+        setAmount('');
+        setNote('');
+        setWalletPin('');
+        void dispatch(fetchWalletsThunk());
+      } else if (result.data.checkoutUrl) {
+        window.location.assign(result.data.checkoutUrl);
+      }
     } catch (requestError) {
+      const errorMessage = getErrorMessage(requestError, 'Unable to initiate giving payment.');
+
+      if (errorMessage.toLowerCase().includes('authkey')) {
+        pendingGivingRef.current = () => void handleSubmit(method);
+        setIsPinModalOpen(true);
+        return;
+      }
+
       dispatch(
         pushNotification({
           type: 'error',
           title: 'Unable to start giving',
-          message: getErrorMessage(requestError, 'Unable to initiate giving payment.'),
+          message: errorMessage,
         }),
       );
     }
@@ -300,6 +338,96 @@ export default function GivingPage() {
     }
 
     window.location.assign(checkoutUrl);
+  };
+
+  const handlePinChange = (value: string) => {
+    const numeric = value.replace(/[^0-9]/g, '').slice(0, 4);
+    setPinValue(numeric);
+    if (confirmPinValue && numeric !== confirmPinValue) {
+      setPinError('PINs do not match');
+    } else {
+      setPinError('');
+    }
+  };
+
+  const handleConfirmPinChange = (value: string) => {
+    const numeric = value.replace(/[^0-9]/g, '').slice(0, 4);
+    setConfirmPinValue(numeric);
+    if (pinValue && numeric !== pinValue) {
+      setPinError('PINs do not match');
+    } else {
+      setPinError('');
+    }
+  };
+
+  const canSetPin = pinValue.length === 4 && confirmPinValue.length === 4 && pinValue === confirmPinValue && !settingPin;
+
+  const handleSetPin = async () => {
+    if (!canSetPin) return;
+
+    setSettingPin(true);
+    setPinError('');
+
+    try {
+      await dispatch(setWalletPinThunk({ authKey: pinValue })).unwrap();
+      dispatch(pushNotification({ type: 'success', title: 'PIN set', message: 'Your wallet PIN has been set successfully.' }));
+      setIsPinModalOpen(false);
+      setPinValue('');
+      setConfirmPinValue('');
+      setPinError('');
+      setPinMode('set');
+      void dispatch(fetchWalletsThunk());
+      if (pendingGivingRef.current) {
+        pendingGivingRef.current();
+        pendingGivingRef.current = null;
+      }
+    } catch (err) {
+      const msg = getErrorMessage(err, 'Failed to set PIN.');
+      if (msg.toLowerCase().includes('already set')) {
+        setPinMode('verify');
+        setPinError('');
+      } else {
+        setPinError(msg);
+      }
+    } finally {
+      setSettingPin(false);
+    }
+  };
+
+  const handleVerifyPin = async () => {
+    if (pinValue.length !== 4) return;
+
+    setSettingPin(true);
+    setPinError('');
+
+    try {
+      await dispatch(verifyWalletPinThunk({ authKey: pinValue })).unwrap();
+      dispatch(pushNotification({ type: 'success', title: 'PIN verified', message: 'Your wallet PIN has been verified successfully.' }));
+      setIsPinModalOpen(false);
+      setPinValue('');
+      setConfirmPinValue('');
+      setPinError('');
+      setPinMode('set');
+      void dispatch(fetchWalletsThunk());
+      if (pendingGivingRef.current) {
+        pendingGivingRef.current();
+        pendingGivingRef.current = null;
+      }
+    } catch (err) {
+      const msg = getErrorMessage(err, 'Failed to verify PIN.');
+      setPinError(msg);
+    } finally {
+      setSettingPin(false);
+    }
+  };
+
+  const closePinModal = () => {
+    setIsPinModalOpen(false);
+    setPinValue('');
+    setConfirmPinValue('');
+    setPinError('');
+    setPinMode('set');
+    pendingGivingRef.current = null;
   };
 
   if ((memberLoading && !memberLastFetchedAt) || (walletsLoading && !walletsLastFetchedAt)) {
@@ -540,6 +668,11 @@ export default function GivingPage() {
                   setAmount(value);
                 }}
               />
+              {walletInsufficientBalance && amountMajor > 0 && (
+                <AppText variant="caption" color="#B91C1C">
+                  Insufficient wallet balance. Your balance is {formatMinorMoney(selectedWallet?.balance ?? 0, selectedCurrency)}.
+                </AppText>
+              )}
               <label className="grid gap-2">
                 <span className="text-[11px] font-semibold uppercase tracking-wide text-[#5A6880]">Note</span>
                 <textarea
@@ -551,14 +684,38 @@ export default function GivingPage() {
                   onChange={(event) => setNote(event.target.value)}
                 />
               </label>
-              <AppButton
-                fullWidth
-                loading={paymentLoading}
-                disabled={!canSubmit}
-                onClick={handleSubmit}
-              >
-                Continue
-              </AppButton>
+              <AppInput
+                label="Wallet PIN"
+                type="password"
+                inputMode="numeric"
+                maxLength={4}
+                placeholder="4-digit PIN"
+                disabled={paymentLoading}
+                value={walletPin}
+                onChange={(e) => {
+                  const numeric = e.target.value.replace(/[^0-9]/g, '').slice(0, 4);
+                  setWalletPin(numeric);
+                }}
+              />
+              <div className="grid grid-cols-2 gap-3">
+                <AppButton
+                  fullWidth
+                  variant="secondary"
+                  loading={paymentLoading}
+                  disabled={!canSubmitWallet}
+                  onClick={() => void handleSubmit('wallet')}
+                >
+                  Give via Wallet
+                </AppButton>
+                <AppButton
+                  fullWidth
+                  loading={paymentLoading}
+                  disabled={!canSubmit}
+                  onClick={() => void handleSubmit('paystack')}
+                >
+                  Pay with Bank
+                </AppButton>
+              </div>
             </section>
           </aside>
         </section>
@@ -622,6 +779,71 @@ export default function GivingPage() {
             </div>
           </div>
         )}
+      </AppModal>
+
+      <AppModal
+        open={isPinModalOpen}
+        title={pinMode === 'verify' ? 'Verify Wallet PIN' : 'Set Wallet PIN'}
+        onClose={closePinModal}
+        footer={
+          <>
+            <AppButton variant="secondary" onClick={closePinModal}>
+              Cancel
+            </AppButton>
+            {pinMode === 'verify' ? (
+              <AppButton
+                variant="primary"
+                loading={settingPin}
+                disabled={pinValue.length !== 4}
+                onClick={() => void handleVerifyPin()}
+              >
+                Verify PIN
+              </AppButton>
+            ) : (
+              <AppButton
+                variant="primary"
+                loading={settingPin}
+                disabled={!canSetPin}
+                onClick={() => void handleSetPin()}
+              >
+                Set PIN
+              </AppButton>
+            )}
+          </>
+        }
+      >
+        <div className="grid gap-4">
+          <AppText variant="bodyMedium" color="textSecondary">
+            {pinMode === 'verify'
+              ? 'Enter your existing 4-digit PIN to verify your identity.'
+              : 'Create a 4-digit PIN to secure your wallet transactions.'}
+          </AppText>
+          {pinError && (
+            <AppText variant="bodySmall" color="#B91C1C">
+              {pinError}
+            </AppText>
+          )}
+          <AppInput
+            label="Enter PIN"
+            type="password"
+            inputMode="numeric"
+            maxLength={4}
+            placeholder="4-digit PIN"
+            value={pinValue}
+            onChange={(e) => handlePinChange(e.target.value)}
+          />
+          {pinMode === 'set' && (
+            <AppInput
+              label="Confirm PIN"
+              type="password"
+              inputMode="numeric"
+              maxLength={4}
+              placeholder="Confirm PIN"
+              value={confirmPinValue}
+              onChange={(e) => handleConfirmPinChange(e.target.value)}
+            />
+          )}
+        </div>
       </AppModal>
     </AppShell>
   );

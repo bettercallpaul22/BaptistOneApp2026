@@ -1,5 +1,6 @@
 import { endpoints } from '@/services/api/endpoints';
 import { http } from '@/services/api/http';
+import type { ApiResponse } from '@/types/api';
 import type {
   CreateWalletPayload,
   CreateWalletResponse,
@@ -52,5 +53,19 @@ export const walletService = {
     }
 
     return response;
+  },
+
+  setWalletPin: async (authKey: string) => {
+    return http.put<ApiResponse<{ status: boolean; message: string }>, { authKey: string }>(
+      '/private/wallets/auth',
+      { authKey },
+    );
+  },
+
+  verifyWalletPin: async (authKey: string) => {
+    return http.post<ApiResponse<{ status: boolean; message: string }>, { authKey: string }>(
+      '/private/wallets/auth/verify',
+      { authKey },
+    );
   },
 };

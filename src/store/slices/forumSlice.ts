@@ -5,7 +5,7 @@ import { http } from '@/services/api/http';
 import type { ApiResponse } from '@/types/api';
 import { type ForumItem, type ForumPost, type ForumComment } from '@/services/forum/forumService';
 import type { ForumDepartment, ForumUnit } from '@/pages/forum/forumData';
-import { fetchForumsThunk, fetchForumPostsThunk, fetchPostCommentsThunk, createCommentThunk } from '@/store/thunks/forumThunk';
+import { fetchForumsThunk, fetchForumPostsThunk, fetchPostCommentsThunk, createCommentThunk, deleteCommentThunk, deletePostThunk, createPostThunk } from '@/store/thunks/forumThunk';
 
 interface UserDepartmentResponse {
   membershipId: string;
@@ -114,6 +114,12 @@ interface ForumState {
   commentsError: string | null;
   creatingComment: boolean;
   createCommentError: string | null;
+  deletingCommentId: string | null;
+  deleteCommentError: string | null;
+  deletingPostId: string | null;
+  deletePostError: string | null;
+  creatingPost: boolean;
+  createPostError: string | null;
 }
 
 const initialState: ForumState = {
@@ -142,6 +148,12 @@ const initialState: ForumState = {
   commentsError: null,
   creatingComment: false,
   createCommentError: null,
+  deletingCommentId: null,
+  deleteCommentError: null,
+  deletingPostId: null,
+  deletePostError: null,
+  creatingPost: false,
+  createPostError: null,
 };
 
 export const forumSlice = createSlice({
@@ -294,6 +306,45 @@ export const forumSlice = createSlice({
       .addCase(createCommentThunk.rejected, (state, action) => {
         state.creatingComment = false;
         state.createCommentError = action.payload?.message ?? 'Unable to post comment.';
+      })
+      .addCase(deleteCommentThunk.pending, (state, action) => {
+        state.deletingCommentId = action.meta.arg.commentId;
+        state.deleteCommentError = null;
+      })
+      .addCase(deleteCommentThunk.fulfilled, (state, action) => {
+        state.deletingCommentId = null;
+        state.comments = state.comments.filter((c) => c.id !== action.payload.commentId);
+        state.deleteCommentError = null;
+      })
+      .addCase(deleteCommentThunk.rejected, (state, action) => {
+        state.deletingCommentId = null;
+        state.deleteCommentError = action.payload?.message ?? 'Unable to delete comment.';
+      })
+      .addCase(deletePostThunk.pending, (state, action) => {
+        state.deletingPostId = action.meta.arg.postId;
+        state.deletePostError = null;
+      })
+      .addCase(deletePostThunk.fulfilled, (state, action) => {
+        state.deletingPostId = null;
+        state.posts = state.posts.filter((p) => p.id !== action.payload.postId);
+        state.deletePostError = null;
+      })
+      .addCase(deletePostThunk.rejected, (state, action) => {
+        state.deletingPostId = null;
+        state.deletePostError = action.payload?.message ?? 'Unable to delete post.';
+      })
+      .addCase(createPostThunk.pending, (state) => {
+        state.creatingPost = true;
+        state.createPostError = null;
+      })
+      .addCase(createPostThunk.fulfilled, (state, action) => {
+        state.creatingPost = false;
+        state.posts.unshift(action.payload.post);
+        state.createPostError = null;
+      })
+      .addCase(createPostThunk.rejected, (state, action) => {
+        state.creatingPost = false;
+        state.createPostError = action.payload?.message ?? 'Unable to create post.';
       })
       .addCase(logout, () => initialState);
   },
