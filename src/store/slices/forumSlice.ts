@@ -2,10 +2,11 @@ import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/tool
 import { logout } from '@/store/slices/authSlice';
 import { endpoints } from '@/services/api/endpoints';
 import { http } from '@/services/api/http';
-import { fetchForumsThunk } from '@/store/thunks/forumThunk';
 import type { ApiResponse } from '@/types/api';
-import type { ForumItem } from '@/services/forum/forumService';
+import { type ForumItem, type ForumPost } from '@/services/forum/forumService';
 import type { ForumDepartment, ForumUnit } from '@/pages/forum/forumData';
+import { toApiError } from '@/services/api/responseHandler';
+import { fetchForumsThunk, fetchForumPostsThunk } from '@/store/thunks/forumThunk';
 
 interface UserDepartmentResponse {
   membershipId: string;
@@ -86,6 +87,8 @@ export const fetchUserUnitsThunk = createAsyncThunk<
   }
 });
 
+export { fetchForumsThunk, fetchForumPostsThunk };
+
 interface ForumState {
   items: ForumItem[];
   meta: { page: number; limit: number; total: number; totalPages: number } | null;
@@ -100,6 +103,13 @@ interface ForumState {
   departmentsError: string | null;
   unitsLoading: boolean;
   unitsError: string | null;
+  posts: ForumPost[];
+  postsMeta: { page: number; limit: number; total: number; totalPages: number } | null;
+  postsLoading: boolean;
+  postsLoadingMore: boolean;
+  postsError: string | null;
+  postsLoadMoreError: string | null;
+  currentForumId: string | null;
 }
 
 const initialState: ForumState = {
@@ -116,6 +126,13 @@ const initialState: ForumState = {
   departmentsError: null,
   unitsLoading: false,
   unitsError: null,
+  posts: [],
+  postsMeta: null,
+  postsLoading: false,
+  postsLoadingMore: false,
+  postsError: null,
+  postsLoadMoreError: null,
+  currentForumId: null,
 };
 
 export const forumSlice = createSlice({
@@ -125,6 +142,10 @@ export const forumSlice = createSlice({
     clearForumError: (state) => {
       state.error = null;
       state.loadMoreError = null;
+    },
+    clearForumPostsError: (state) => {
+      state.postsError = null;
+      state.postsLoadMoreError = null;
     },
     clearForumState: () => initialState,
   },
@@ -169,6 +190,52 @@ export const forumSlice = createSlice({
         state.loading = false;
         state.error = action.payload?.message ?? 'Unable to load forums.';
       })
+      .addCase(fetchForumPostsThunk.pending, (state, action) => {
+        console.log('fetchForumPostsThunk.pending', action);
+        const page = action.meta.arg?.page ?? 1;
+        const forumId = action.meta.arg.forumId;
+
+        if (page > 1) {
+          state.postsLoadingMore = true;
+          state.postsLoadMoreError = null;
+          return;
+        }
+
+        state.postsLoading = true;
+        state.postsError = null;
+        state.postsLoadMoreError = null;
+        state.currentForumId = forumId;
+        state.posts = [];
+      })
+      .addCase(fetchForumPostsThunk.fulfilled, (state, action) => {
+        const { posts = [], meta } = action.payload;
+        // Safely check page number to prevent TypeError
+        const shouldAppend = (meta?.page ?? 1) > 1;
+
+        state.postsLoading = false;
+        state.postsLoadingMore = false;
+
+        state.posts = shouldAppend
+          ? [...state.posts, ...posts.filter((nextPost) => !state.posts.some((current) => current.id === nextPost.id))]
+          : posts;
+        state.postsMeta = meta;
+        state.postsError = null;
+        state.postsLoadMoreError = null;
+      })
+      .addCase(fetchForumPostsThunk.rejected, (state, action) => {
+        console.log('fetchForumPostsThunk.rejected', action);
+
+        const page = action.meta.arg?.page ?? 1;
+
+        if (page > 1) {
+          state.postsLoadingMore = false;
+          state.postsLoadMoreError = action.payload?.message ?? 'Unable to load more posts.';
+          return;
+        }
+
+        state.postsLoading = false;
+        state.postsError = action.payload?.message ?? 'Unable to load posts.';
+      })
       .addCase(fetchUserDepartmentsThunk.pending, (state) => {
         state.departmentsLoading = true;
         state.departmentsError = null;
@@ -197,5 +264,5 @@ export const forumSlice = createSlice({
   },
 });
 
-export const { clearForumError, clearForumState } = forumSlice.actions;
+export const { clearForumError, clearForumPostsError, clearForumState } = forumSlice.actions;
 export const forumReducer = forumSlice.reducer;

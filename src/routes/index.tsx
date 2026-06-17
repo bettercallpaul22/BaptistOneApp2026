@@ -48,7 +48,7 @@ const WalletFundingCallbackPage = lazy(
 const GivingPage = lazy(() => import('@/pages/giving/GivingPage'));
 const GivingCallbackPage = lazy(() => import('@/pages/giving/GivingCallbackPage'));
 const ForumPage = lazy(() => import('@/pages/forum/ForumPage'));
-const ForumDetailPage = lazy(() => import('@/pages/forum/ForumDetailPage'));
+const ForumPostListPage = lazy(() => import('@/pages/forum/ForumPostListPage'));
 const LoginPage = lazy(() => import('@/pages/auth/login/LoginPage'));
 const GoogleRedirectPage = lazy(() => import('@/pages/auth/google-redirect/GoogleRedirectPage'));
 const EmailVerifyPage = lazy(() => import('@/pages/auth/email-verify/EmailVerifyPage'));
@@ -178,7 +178,7 @@ const RoutedApp = () => {
           <Route element={<ProtectedRoute />}>
             <Route path={paths.news} element={<AppPlaceholderPage title="News" />} />
             <Route path={paths.forum} element={<ForumPage />} />
-            <Route path={paths.forumDetailsRoute} element={<ForumDetailPage />} />
+            <Route path={paths.forumDetailsRoute} element={<ForumPostListPage />} />
             <Route path={paths.ministries} element={<AppPlaceholderPage title="Ministries" />} />
             <Route path={paths.events} element={<EventsPage />} />
             <Route path={paths.donation} element={<GivingPage />} />

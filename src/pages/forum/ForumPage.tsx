@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { AppButton, AppScrollableTabs, AppText } from '@/components/common';
 import { AppAvatar, AppCard } from '@/components/display';
@@ -9,6 +8,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchForumsThunk } from '@/store/thunks/forumThunk';
 import { fetchUserDepartmentsThunk, fetchUserUnitsThunk } from '@/store/slices/forumSlice';
 import { paths } from '@/routes/paths';
+import { useChurchScreenBootstrapApi } from '@/hooks/useChurchScreenBootstrapApi';
 import type { ForumItem } from '@/services/forum/forumService';
 
 const tabItems = [
@@ -24,6 +24,11 @@ const ForumPage = () => {
   const dispatch = useAppDispatch();
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState<ForumTab>('forums');
+
+  useChurchScreenBootstrapApi();
+
+  const memberAccount = useAppSelector((state) => state.member.data);
+  const churchDetails = useAppSelector((state) => state.church.details);
 
   const {
     items: forums,
@@ -44,6 +49,21 @@ const ForumPage = () => {
   const nextPage = (meta?.page ?? 1) + 1;
   const isInitialLoading = loading && !forums.length;
   const currentLoadMoreError = loadMoreError;
+
+  const memberName =
+    memberAccount?.basicProfile?.displayName ||
+    [memberAccount?.basicProfile?.firstName, memberAccount?.basicProfile?.lastName]
+      .filter(Boolean)
+      .join(' ') ||
+    'Member';
+
+  const memberAvatar = memberAccount?.basicProfile?.avatarUrl || undefined;
+  const churchLogoSrc = useMemo(() => {
+    if (!churchDetails) return undefined;
+    return (
+      churchDetails.coverImageUrl || churchDetails.coverImage || churchDetails.image || churchDetails.logo || undefined
+    );
+  }, [churchDetails]);
 
   useEffect(() => {
     if (!forums.length && !loading && !error) {
@@ -86,33 +106,13 @@ const ForumPage = () => {
     return () => observer.disconnect();
   }, [currentLoadMoreError, error, hasMore, loadMoreForums, loading, loadingMore]);
 
-  const forumsByDepartment = useMemo(
-    () =>
-      departments.map((department) => ({
-        ...department,
-        forums: forums.filter((forum) => forum.departmentId === department.id),
-      })),
-    [departments, forums],
-  );
-
-  const forumsByUnit = useMemo(
-    () =>
-      units.map((unit) => ({
-        ...unit,
-        forums: forums.filter((forum) => forum.unitId === unit.id),
-      })),
-    [units, forums],
-  );
-
   const handleTabChange = (value: string) => setActiveTab(value as ForumTab);
 
   const renderForumCard = (forum: ForumItem) => {
-    const memberPreview = forum.members?.slice(0, 4) ?? [];
-
     return (
       <div
         key={forum.id}
-        className="cursor-pointer"
+        className="cursor-pointer transition-transform hover:scale-105"
         role="button"
         tabIndex={0}
         onClick={() => navigate(paths.forumDetails(forum.id))}
@@ -123,35 +123,19 @@ const ForumPage = () => {
           }
         }}
       >
-        <AppCard
-          className="shadow-[0_10px_24px_rgba(11,31,74,0.05)]"
-          header={
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <AppText variant="h6">{forum.title}</AppText>
-                <AppText variant="caption" color="textSecondary">
-                  {forum.description}
-                </AppText>
+        <AppCard className="shadow-[0_4px_12px_rgba(11,31,74,0.08)] hover:shadow-[0_8px_16px_rgba(11,31,74,0.12)] transition-shadow">
+          <div className="p-4">
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <div className="min-w-0 flex-1">
+                <AppText variant="h6" className="line-clamp-2">{forum.title}</AppText>
               </div>
-            </div>
-          }
-          footer={
-            <div className="flex flex-wrap gap-2">
-              <span className="rounded-full bg-[#EEF4FF] px-2 py-1 text-xs font-semibold text-[#123B8D]">
+              <span className="rounded-full bg-[#D4AF37] px-3 py-1 text-xs font-semibold text-[#123B8D] whitespace-nowrap flex-shrink-0">
                 {forum.forumType}
               </span>
             </div>
-          }
-        >
-          <div className="flex flex-wrap items-center gap-3">
-            {memberPreview.map((member) => (
-              <div key={member.id} className="grid items-center gap-2 text-center">
-                <AppAvatar name={member.name} size="sm" />
-                <AppText variant="caption" color="textMuted" className="truncate max-w-[5.5rem]">
-                  {member.name}
-                </AppText>
-              </div>
-            ))}
+            <AppText variant="caption" color="textSecondary" className="line-clamp-2">
+              {forum.description}
+            </AppText>
           </div>
         </AppCard>
       </div>
@@ -161,23 +145,29 @@ const ForumPage = () => {
   return (
     <AppShell
       mobileHeaderAddon={
-        <div className="min-w-0 bg-white/95 shadow-[0_8px_18px_rgba(11,31,74,0.04)] backdrop-blur-xl">
-          <div className="min-w-0 overflow-hidden border-b border-[#E5E7EB]">
-            <div className="mx-auto max-w-[78rem] px-4 py-5 sm:px-6 md:px-9">
-              <section className="grid gap-4 rounded-3xl border border-[#E5E7EB] bg-[#F8FAFD] p-5 shadow-[0_12px_28px_rgba(11,31,74,0.08)]">
-                <div className="space-y-3">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-[#EAF1FF] px-3 py-2 text-sm font-semibold text-[#123B8D]">
-                    <MessageSquare className="size-4" aria-hidden />
-                    Forum overview
-                  </div>
-                  <AppText variant="h3">Forum, department, and unit conversations</AppText>
-                  <AppText variant="bodyMedium" color="textSecondary">
-                    Browse all forum spaces, see forums grouped by department, or find discussions inside a unit.
+        <div className="min-w-0 bg-white/95 backdrop-blur-xl">
+          <div className="min-w-0 border-b border-[#E5E7EB]">
+            <div className="mx-auto max-w-[78rem] px-4 py-6 sm:px-6 md:px-9">
+              <div className="grid gap-6">
+                {/* Top row: Member greeting stacked below avatar */}
+                <div className="flex flex-col items-start gap-3">
+                  <AppAvatar name={memberName} src={memberAvatar} size="lg" />
+                  <AppText variant="h5" className="font-bold text-[#0B1F4A]">
+                    Hi, {memberName.split(' ')[0]}!
                   </AppText>
                 </div>
-              </section>
+
+                {/* Center: Church name and slug */}
+                <div className="grid gap-2 text-center">
+                  <AppText variant="h2" className="text-4xl font-extrabold">
+                    Welcome to{'\n'}{churchDetails?.name}
+                  </AppText>
+                 
+                </div>
+              </div>
             </div>
-            <div className="mx-auto max-w-[78rem] px-4 py-4 sm:px-6 md:px-9">
+
+            <div className="mx-auto max-w-[78rem] px-4 sm:px-6 md:px-9">
               <AppScrollableTabs
                 tabs={tabItems.map((item) => ({ value: item.value, label: item.label }))}
                 value={activeTab}

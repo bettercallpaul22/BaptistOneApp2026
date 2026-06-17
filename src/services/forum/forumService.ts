@@ -8,11 +8,50 @@ export interface ForumMember {
   avatarUrl?: string;
 }
 
+export interface ForumPostAuthor {
+  id: string;
+  type: string;
+  displayName: string;
+  avatarUrl: string | null;
+  firstName: string;
+  lastName: string;
+}
+
+export interface ForumPostMediaFile {
+  id: string;
+  url: string;
+  type: string;
+}
+
 export interface ForumPost {
   id: string;
-  authorName: string;
+  forumId: string;
+  authorType: string;
+  authorId: string;
+  title: string;
   content: string;
+  postType: string;
+  moderationStatus: string;
+  moderationReason: string | null;
+  moderatedAt: string | null;
+  moderatedByProfileId: string | null;
+  mediaFileIds: string[];
+  isPinned: boolean;
+  isLocked: boolean;
   createdAt: string;
+  updatedAt: string;
+  author: ForumPostAuthor;
+  mediaFiles: ForumPostMediaFile[];
+}
+
+export interface ForumPostsResponseData {
+  items: ForumPost[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 export interface ForumItem {
@@ -47,5 +86,11 @@ interface ForumsResponseData {
 export const forumService = {
   getForums: async (page = 1, limit = 20) => {
     return http.get<ApiResponse<ForumsResponseData>>(endpoints.privateMembers.forums({ page, limit }));
+  },
+
+  getForumPosts: async (forumId: string, page = 1, limit = 20, includePending = 'no') => {
+    return http.get<ApiResponse<ForumPostsResponseData>>(
+      `/private/forums/${encodeURIComponent(forumId)}/posts?page=${page}&limit=${limit}&includePending=${includePending}`,
+    );
   },
 };
