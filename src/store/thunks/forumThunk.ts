@@ -1,6 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { toApiError } from '@/services/api/responseHandler';
-import { forumService, type ForumItem, type ForumPost } from '@/services/forum/forumService';
+import { forumService, type ForumItem, type ForumPost, type ForumComment } from '@/services/forum/forumService';
 
 interface FetchForumsArgs {
   page?: number;
@@ -82,3 +82,56 @@ export const fetchForumPostsThunk = createAsyncThunk<
     }
   },
 );
+
+interface FetchPostCommentsArgs {
+  postId: string;
+}
+
+export const fetchPostCommentsThunk = createAsyncThunk<
+  { comments: ForumComment[]; lastFetchedAt: string },
+  FetchPostCommentsArgs,
+  { rejectValue: ReturnType<typeof toApiError> }
+>('forum/fetchPostComments', async ({ postId }, { rejectWithValue }) => {
+  try {
+    const response = await forumService.getPostComments(postId);
+
+    if (!response.status || !response.data) {
+      return rejectWithValue(toApiError(new Error(response.message || 'Unable to load comments.')));
+    }
+
+    const comments = Array.isArray(response.data) ? response.data : [];
+
+    return {
+      comments,
+      lastFetchedAt: new Date().toISOString(),
+    };
+  } catch (error) {
+    return rejectWithValue(toApiError(error));
+  }
+});
+
+interface CreateCommentArgs {
+  postId: string;
+  content: string;
+}
+
+export const createCommentThunk = createAsyncThunk<
+  { comment: ForumComment; lastFetchedAt: string },
+  CreateCommentArgs,
+  { rejectValue: ReturnType<typeof toApiError> }
+>('forum/createComment', async ({ postId, content }, { rejectWithValue }) => {
+  try {
+    const response = await forumService.createComment(postId, content);
+
+    if (!response.status || !response.data) {
+      return rejectWithValue(toApiError(new Error(response.message || 'Unable to post comment.')));
+    }
+
+    return {
+      comment: response.data,
+      lastFetchedAt: new Date().toISOString(),
+    };
+  } catch (error) {
+    return rejectWithValue(toApiError(error));
+  }
+});

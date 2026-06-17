@@ -49,6 +49,7 @@ const GivingPage = lazy(() => import('@/pages/giving/GivingPage'));
 const GivingCallbackPage = lazy(() => import('@/pages/giving/GivingCallbackPage'));
 const ForumPage = lazy(() => import('@/pages/forum/ForumPage'));
 const ForumPostListPage = lazy(() => import('@/pages/forum/ForumPostListPage'));
+const ForumPostDetailPage = lazy(() => import('@/pages/forum/ForumPostDetailPage'));
 const LoginPage = lazy(() => import('@/pages/auth/login/LoginPage'));
 const GoogleRedirectPage = lazy(() => import('@/pages/auth/google-redirect/GoogleRedirectPage'));
 const EmailVerifyPage = lazy(() => import('@/pages/auth/email-verify/EmailVerifyPage'));
@@ -179,6 +180,7 @@ const RoutedApp = () => {
             <Route path={paths.news} element={<AppPlaceholderPage title="News" />} />
             <Route path={paths.forum} element={<ForumPage />} />
             <Route path={paths.forumDetailsRoute} element={<ForumPostListPage />} />
+            <Route path={paths.forumPostDetailRoute} element={<ForumPostDetailPage />} />
             <Route path={paths.ministries} element={<AppPlaceholderPage title="Ministries" />} />
             <Route path={paths.events} element={<EventsPage />} />
             <Route path={paths.donation} element={<GivingPage />} />

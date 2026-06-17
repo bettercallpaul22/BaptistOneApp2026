@@ -1,12 +1,11 @@
-import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { logout } from '@/store/slices/authSlice';
 import { endpoints } from '@/services/api/endpoints';
 import { http } from '@/services/api/http';
 import type { ApiResponse } from '@/types/api';
-import { type ForumItem, type ForumPost } from '@/services/forum/forumService';
+import { type ForumItem, type ForumPost, type ForumComment } from '@/services/forum/forumService';
 import type { ForumDepartment, ForumUnit } from '@/pages/forum/forumData';
-import { toApiError } from '@/services/api/responseHandler';
-import { fetchForumsThunk, fetchForumPostsThunk } from '@/store/thunks/forumThunk';
+import { fetchForumsThunk, fetchForumPostsThunk, fetchPostCommentsThunk, createCommentThunk } from '@/store/thunks/forumThunk';
 
 interface UserDepartmentResponse {
   membershipId: string;
@@ -110,6 +109,11 @@ interface ForumState {
   postsError: string | null;
   postsLoadMoreError: string | null;
   currentForumId: string | null;
+  comments: ForumComment[];
+  commentsLoading: boolean;
+  commentsError: string | null;
+  creatingComment: boolean;
+  createCommentError: string | null;
 }
 
 const initialState: ForumState = {
@@ -133,6 +137,11 @@ const initialState: ForumState = {
   postsError: null,
   postsLoadMoreError: null,
   currentForumId: null,
+  comments: [],
+  commentsLoading: false,
+  commentsError: null,
+  creatingComment: false,
+  createCommentError: null,
 };
 
 export const forumSlice = createSlice({
@@ -259,6 +268,32 @@ export const forumSlice = createSlice({
       .addCase(fetchUserUnitsThunk.rejected, (state, action) => {
         state.unitsLoading = false;
         state.unitsError = action.payload ?? 'Unable to load units.';
+      })
+      .addCase(fetchPostCommentsThunk.pending, (state) => {
+        state.commentsLoading = true;
+        state.commentsError = null;
+      })
+      .addCase(fetchPostCommentsThunk.fulfilled, (state, action) => {
+        state.commentsLoading = false;
+        state.comments = action.payload.comments;
+        state.commentsError = null;
+      })
+      .addCase(fetchPostCommentsThunk.rejected, (state, action) => {
+        state.commentsLoading = false;
+        state.commentsError = action.payload?.message ?? 'Unable to load comments.';
+      })
+      .addCase(createCommentThunk.pending, (state) => {
+        state.creatingComment = true;
+        state.createCommentError = null;
+      })
+      .addCase(createCommentThunk.fulfilled, (state, action) => {
+        state.creatingComment = false;
+        state.comments.push(action.payload.comment);
+        state.createCommentError = null;
+      })
+      .addCase(createCommentThunk.rejected, (state, action) => {
+        state.creatingComment = false;
+        state.createCommentError = action.payload?.message ?? 'Unable to post comment.';
       })
       .addCase(logout, () => initialState);
   },

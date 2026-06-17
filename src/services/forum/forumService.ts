@@ -23,6 +23,17 @@ export interface ForumPostMediaFile {
   type: string;
 }
 
+export interface ForumComment {
+  id: string;
+  postId: string;
+  authorType: string;
+  authorId: string;
+  content: string;
+  parentCommentId: string;
+  createdAt: string;
+  author: ForumPostAuthor;
+}
+
 export interface ForumPost {
   id: string;
   forumId: string;
@@ -91,6 +102,19 @@ export const forumService = {
   getForumPosts: async (forumId: string, page = 1, limit = 20, includePending = 'no') => {
     return http.get<ApiResponse<ForumPostsResponseData>>(
       `/private/forums/${encodeURIComponent(forumId)}/posts?page=${page}&limit=${limit}&includePending=${includePending}`,
+    );
+  },
+
+  getPostComments: async (postId: string) => {
+    return http.get<ApiResponse<ForumComment[]>>(
+      `/private/posts/${encodeURIComponent(postId)}/comments`,
+    );
+  },
+
+  createComment: async (postId: string, content: string) => {
+    return http.post<ApiResponse<ForumComment>, { content: string }>(
+      `/private/posts/${encodeURIComponent(postId)}/comments`,
+      { content },
     );
   },
 };

@@ -8,6 +8,9 @@ export const paths = {
   forum: '/forum',
   forumDetails: (forumId: string) => `/forum/${encodeURIComponent(forumId)}`,
   forumDetailsRoute: '/forum/:forumId',
+  forumPostDetail: (forumId: string, postId: string) =>
+    `/forum/${encodeURIComponent(forumId)}/post/${encodeURIComponent(postId)}`,
+  forumPostDetailRoute: '/forum/:forumId/post/:postId',
   ministries: '/ministries',
   donation: '/donation',
   media: '/media',

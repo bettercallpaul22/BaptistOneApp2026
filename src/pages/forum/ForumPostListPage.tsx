@@ -103,8 +103,20 @@ const ForumPostListPage = () => {
     const avatarUrl = post.author?.avatarUrl ?? undefined;
 
     return (
-      <AppCard key={post.id} className="shadow-[0_4px_12px_rgba(11,31,74,0.08)]">
-        <div className="p-4">
+      <div
+        key={post.id}
+        className="cursor-pointer transition-transform active:scale-[0.98]"
+        role="button"
+        tabIndex={0}
+        onClick={() => navigate(paths.forumPostDetail(post.forumId, post.id))}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            navigate(paths.forumPostDetail(post.forumId, post.id));
+          }
+        }}
+      >
+        <AppCard className="shadow-[0_4px_12px_rgba(11,31,74,0.08)]">
           <div className="flex items-start gap-3 mb-3">
             <AppAvatar name={authorName} src={avatarUrl} size="sm" />
             <div className="min-w-0 flex-1">
@@ -128,8 +140,8 @@ const ForumPostListPage = () => {
           <AppText variant="bodySmall" color="textSecondary" className="line-clamp-3">
             {post.content}
           </AppText>
-        </div>
-      </AppCard>
+        </AppCard>
+      </div>
     );
   };
 
