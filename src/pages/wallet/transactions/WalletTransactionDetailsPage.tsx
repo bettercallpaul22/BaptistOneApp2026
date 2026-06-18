@@ -12,7 +12,7 @@ const minorUnitMultiplier = 100;
 
 const formatMoney = (value: number, currency: string) => {
   try {
-    return new Intl.NumberFormat(undefined, {
+    return new Intl.NumberFormat('en-NG', {
       style: 'currency',
       currency,
       maximumFractionDigits: 2,

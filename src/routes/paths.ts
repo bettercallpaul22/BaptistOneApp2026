@@ -42,6 +42,8 @@ export const paths = {
   profile: '/profile',
   settings: '/settings',
   devotional: '/devotional',
+  devotionalDetail: (id: string) => `/devotional/${encodeURIComponent(id)}`,
+  devotionalDetailRoute: '/devotional/:id',
   sundaySchool: '/sunday-school',
   login: '/auth/login',
   googleRedirect: '/google-redirect',

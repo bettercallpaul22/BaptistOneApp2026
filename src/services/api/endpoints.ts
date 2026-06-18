@@ -93,6 +93,15 @@ export const endpoints = {
   privateMembers: {
     account: '/private/members/account',
     onboard: '/private/members/onboard',
+    churchContent: (type: string, { page = 1, limit = 20 }: { page?: number; limit?: number } = {}) => {
+      const params = new URLSearchParams();
+
+      params.set('type', type);
+      params.set('page', String(page));
+      params.set('limit', String(limit));
+
+      return `/private/member/church-content?${params.toString()}`;
+    },
     revokeMembershipRequest: (requestId: string) =>
       `/private/members/membership-requests/${requestId}/revoke`,
     familySearch: ({ q, limit = 20 }: { q: string; limit?: number }) => {
@@ -116,6 +125,8 @@ export const endpoints = {
       `/private/members/profile-completion/sections/${sectionKey}`,
     myDepartments: '/private/members/my/departments',
     myUnits: '/private/members/my/units',
+    myMinistries: '/private/members/my/ministries',
+    churchMinistries: '/private/members/my/church/ministries',
     forums: ({ page = 1, limit = 20 }: { page?: number; limit?: number } = {}) => {
       const params = new URLSearchParams();
       params.set('page', String(page));

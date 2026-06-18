@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { type CSSProperties, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   BookMarked,
@@ -10,6 +10,7 @@ import familyIcon from '@/assets/icons/app_family.svg';
 import forumIcon from '@/assets/icons/app_forum.svg';
 import givingIcon from '@/assets/icons/app_giving.svg';
 import hymnIcon from '@/assets/icons/app_hymn.svg';
+import ministryIcon from '@/assets/icons/app_ministry.svg';
 import walletIcon from '@/assets/icons/app_wallet.svg';
 import { AppButton, AppText } from '@/components/common';
 import { QuickActionCard, type QuickActionCardTone } from '@/components/display';
@@ -34,6 +35,7 @@ const quickActions: QuickAction[] = [
   { label: 'Hymns', icon: hymnIcon, tone: 'gold', to: paths.hymnal },
   { label: 'Events', icon: eventIcon, tone: 'plain', to: paths.events, requiresAuth: true },
   { label: 'Forum', icon: forumIcon, tone: 'plain', to: paths.forum, requiresAuth: true },
+  { label: 'Ministry', icon: ministryIcon, tone: 'plain', to: paths.ministries, requiresAuth: true },
   { label: 'Giving', icon: givingIcon, tone: 'plain', to: paths.donation, requiresAuth: true },
   { label: 'Wallet', icon: walletIcon, tone: 'plain', to: paths.wallet, requiresAuth: true },
   { label: 'Family', icon: familyIcon, tone: 'plain', to: paths.family, requiresAuth: true },
@@ -50,11 +52,20 @@ const getTimeOfDayGreeting = () => {
 
 const getFirstName = (name?: string | null) => name?.trim().split(/\s+/)[0] || null;
 
+const defaultDevotionalBanner = {
+  source: 'daily-scripture',
+  text: 'For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.',
+  reference: 'John 3:16 (NIV)',
+  imageUrl: null,
+  overlay: null,
+} as const;
+
 export default function HomePage() {
   const navigate = useNavigate();
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
   const { authData, isAuthenticated } = useAppSelector((state) => state.auth);
   const memberAccount = useAppSelector((state) => state.member.data);
+  const devotionalBanner = useAppSelector((state) => state.home.devotionalBanner);
   useHomeBootstrapApi();
 
   const { isDesktop, isFoldableDevice, isIPad, isMediumDevice, isSmallDevice, isTablet } = useDeviceProfile();
@@ -76,6 +87,20 @@ export default function HomePage() {
         : 'h2';
   const verseReferenceVariant: TypographyVariant = isDesktop ? 'bodyLarge' : 'bodySmall';
   const verseLineClamp = isDesktop ? undefined : isTablet || isIPad ? 4 : 3;
+  const banner = devotionalBanner ?? defaultDevotionalBanner;
+  const bannerImageUrl = banner.imageUrl?.trim() || null;
+  const bannerStyle: CSSProperties = bannerImageUrl
+    ? {
+        backgroundImage: `url(${JSON.stringify(bannerImageUrl)})`,
+        backgroundPosition: 'center',
+        backgroundSize: 'cover',
+      }
+    : {};
+  const bannerOverlay = bannerImageUrl
+    ? banner.overlay?.enabled
+      ? banner.overlay
+      : { color: '#000000', opacity: 0.38 }
+    : null;
   const closeLoginPrompt = () => setIsLoginPromptOpen(false);
 
   const handleLoginPromptConfirm = () => {
@@ -93,8 +118,27 @@ export default function HomePage() {
           <div className="grid gap-7">
             <section className="grid gap-7">
               <article
-                className="relative min-h-[11.7rem] overflow-hidden rounded-2xl bg-[#06202B] p-4 text-white shadow-[0_14px_28px_rgba(11,31,74,0.15)] sm:min-h-[19.5rem] sm:p-6"
+                className="relative min-h-[11.7rem] cursor-pointer overflow-hidden rounded-2xl bg-[#06202B] p-4 text-white shadow-[0_14px_28px_rgba(11,31,74,0.15)] transition-transform duration-200 active:scale-[0.98] sm:min-h-[19.5rem] sm:p-6"
+                style={bannerStyle}
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate(paths.devotional)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    navigate(paths.devotional);
+                  }
+                }}
               >
+                {bannerOverlay ? (
+                  <div
+                    aria-hidden
+                    className="absolute inset-0"
+                    style={{
+                      backgroundColor: bannerOverlay.color,
+                      opacity: bannerOverlay.opacity,
+                    }}
+                  />
+                ) : null}
                 <div className="relative z-10 flex h-full min-h-[9.7rem] flex-col justify-between gap-2 sm:min-h-[15rem] sm:gap-6">
                   <div className="flex items-center justify-between gap-3">
                     <span className="rounded-md bg-white px-3 py-1.5 text-xs font-extrabold text-[#0B1F4A] sm:rounded-lg sm:px-4 sm:py-2 sm:text-sm">
@@ -106,11 +150,18 @@ export default function HomePage() {
                     </div>
                   </div>
                   <AppText variant={verseTextVariant} color="textInverse" weight="regular" lineClamp={verseLineClamp}>
-                    &quot;For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.&quot;
+                    &quot;{banner.text}&quot;
                   </AppText>
-                  <AppText variant={verseReferenceVariant} color="textInverse" weight="semibold">
-                    - John 3:16 (NIV)
-                  </AppText>
+                  <div className="grid gap-1">
+                    {banner.source === 'church' && banner.title ? (
+                      <AppText variant="bodySmall" color="textInverse" weight="medium" lineClamp={1}>
+                        {banner.title}
+                      </AppText>
+                    ) : null}
+                    <AppText variant={verseReferenceVariant} color="textInverse" weight="semibold">
+                      - {banner.reference}
+                    </AppText>
+                  </div>
                 </div>
               </article>
 

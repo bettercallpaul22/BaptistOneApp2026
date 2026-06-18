@@ -6,8 +6,10 @@ import {
   CreditCard,
   ExternalLink,
   Gift,
+  Heart,
   RefreshCw,
   Wallet as WalletIcon,
+  Landmark,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useNavigate } from 'react-router-dom';
@@ -29,19 +31,32 @@ import type { GivingBucket } from '@/types/giving';
 import type { MemberAccount } from '@/types/member';
 
 const minorUnitMultiplier = 100;
+const paystackFeeRate = 0.015;
+const paystackFixedFee = 100;
+const paystackFeeCap = 2000;
+
+const BUCKET_GRADIENTS = [
+  'from-[#123B8D] to-[#0B1F4A]',
+  'from-[#059669] to-[#047857]',
+  'from-[#7C3AED] to-[#5B21B6]',
+  'from-[#D4A017] to-[#B8860B]',
+  'from-[#DC2626] to-[#991B1B]',
+  'from-[#0891B2] to-[#0E7490]',
+];
+
+const BUCKET_ICONS = [Gift, Heart, Church, CreditCard, Gift, Heart];
 
 const getChurchId = (memberAccount: MemberAccount | null) =>
   memberAccount?.membershipAndPreferences?.churchId || memberAccount?.basicProfile?.churchId || null;
 
 const getMemberId = (memberAccount: MemberAccount | null) => memberAccount?.basicProfile?.id || null;
 
-const toMinorCurrencyUnit = (amount: number) => Math.round(amount * minorUnitMultiplier);
-
 const formatMoney = (value: number, currency: string) => {
   try {
-    return new Intl.NumberFormat(undefined, {
+    return new Intl.NumberFormat('en-NG', {
       style: 'currency',
       currency,
+      minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(value);
   } catch {
@@ -49,7 +64,8 @@ const formatMoney = (value: number, currency: string) => {
   }
 };
 
-const formatMinorMoney = (value: number, currency: string) => formatMoney(value / minorUnitMultiplier, currency);
+const calculatePaystackFee = (amount: number) =>
+  Math.min(Math.round((amount * paystackFeeRate) + paystackFixedFee), paystackFeeCap);
 
 const getErrorMessage = (error: unknown, fallback: string) => {
   if (error && typeof error === 'object' && 'message' in error) {
@@ -98,41 +114,68 @@ const GivingStateMessage = ({
 
 const BucketCard = ({
   bucket,
+  index,
   selected,
   onSelect,
 }: {
   bucket: GivingBucket;
+  index: number;
   selected: boolean;
   onSelect: () => void;
-}) => (
-  <button
-    className={clsx(
-      'grid min-h-28 gap-3 rounded-xl border p-4 text-left transition',
-      selected
-        ? 'border-[#123B8D] bg-[#EAF1FF] shadow-[0_12px_24px_rgba(18,59,141,0.14)]'
-        : 'border-[#D6DEEB] bg-white shadow-[0_8px_18px_rgba(11,31,74,0.06)] hover:border-[#123B8D]',
-    )}
-    type="button"
-    onClick={onSelect}
-  >
-    <div className="flex items-start justify-between gap-3">
-      <span className="grid size-10 place-items-center rounded-xl bg-white text-[#123B8D]">
-        <Gift className="size-5" aria-hidden />
-      </span>
-      {bucket.isDefault && (
-        <span className="rounded-full bg-[#D4A017]/15 px-2.5 py-1 text-[10px] font-black uppercase text-[#8A6500]">
-          Default
-        </span>
+}) => {
+  const gradient = BUCKET_GRADIENTS[index % BUCKET_GRADIENTS.length];
+  const Icon = BUCKET_ICONS[index % BUCKET_ICONS.length];
+
+  return (
+    <button
+      className={clsx(
+        'group relative flex w-40 shrink-0 flex-col justify-between overflow-hidden rounded-2xl p-4 text-left text-white shadow-lg transition-all duration-300 sm:w-44',
+        selected
+          ? 'ring-2 ring-white ring-offset-2 ring-offset-[#F8FAFC] shadow-xl'
+          : 'hover:shadow-xl',
       )}
-    </div>
-    <div className="grid gap-1">
-      <AppText variant="subtitle">{bucket.name}</AppText>
-      <AppText variant="caption" color="textMuted" weight="bold">
-        {bucket.code}
-      </AppText>
-    </div>
-  </button>
-);
+      style={{ minHeight: '160px' }}
+      type="button"
+      onClick={onSelect}
+    >
+      <div className={clsx('absolute inset-0 bg-gradient-to-br', gradient)} aria-hidden />
+      <div className="absolute -right-4 -bottom-4 opacity-10 transition-transform duration-300 group-hover:scale-110" aria-hidden>
+        <Icon className="size-20" />
+      </div>
+      <div className="relative z-10 flex h-full flex-col justify-between">
+        <div className="flex items-start justify-between">
+          <AppText variant="h5" color="textInverse" weight="bold" className="line-clamp-2 flex-1">
+            {bucket.name}
+          </AppText>
+          <span
+            className={clsx(
+              'ml-2 mt-0.5 size-5 shrink-0 rounded-full border-2 transition-all duration-200',
+              selected
+                ? 'border-[#123B8D] bg-[#123B8D]'
+                : 'border-white/50 bg-transparent',
+            )}
+          >
+            {selected && (
+              <span className="flex size-full items-center justify-center">
+                <span className="size-2 rounded-full bg-[#D4A017]" />
+              </span>
+            )}
+          </span>
+        </div>
+        {bucket.isDefault && (
+          <span className="mt-2 inline-block w-fit rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold uppercase backdrop-blur-sm">
+            Default
+          </span>
+        )}
+        <div className="relative z-10">
+          <Icon className="size-8 text-white/80" aria-hidden />
+        </div>
+      </div>
+    </button>
+  );
+};
+
+type PaymentMethod = 'wallet' | 'bank';
 
 export default function GivingPage() {
   const dispatch = useAppDispatch();
@@ -157,17 +200,21 @@ export default function GivingPage() {
     paymentLoading,
     paymentResult,
   } = useAppSelector((state) => state.giving);
+
   const [selectedBucketId, setSelectedBucketId] = useState<string | null>(null);
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('wallet');
+  const [walletPin, setWalletPin] = useState('');
+  const [isConfirmSheetOpen, setIsConfirmSheetOpen] = useState(false);
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [pinValue, setPinValue] = useState('');
   const [confirmPinValue, setConfirmPinValue] = useState('');
   const [pinError, setPinError] = useState('');
   const [settingPin, setSettingPin] = useState(false);
   const [pinMode, setPinMode] = useState<'set' | 'verify'>('set');
-  const [walletPin, setWalletPin] = useState('');
   const pendingGivingRef = useRef<(() => void) | null>(null);
+
   const churchId = getChurchId(memberAccount);
   const memberId = getMemberId(memberAccount);
   const supportedCurrencies = useMemo(
@@ -210,21 +257,22 @@ export default function GivingPage() {
   const defaultBucket = activeBuckets.find((bucket) => bucket.isDefault) ?? activeBuckets[0] ?? null;
   const selectedBucket = activeBuckets.find((bucket) => bucket.id === selectedBucketId) ?? defaultBucket;
   const amountMajor = Number(amount || 0);
-  const amountMinor = toMinorCurrencyUnit(amountMajor);
   const minAmount = config?.minAmount ?? null;
   const maxAmount = config?.maxAmount ?? null;
   const amountError =
-    amount && minAmount !== null && amountMinor < minAmount
-      ? `Minimum amount is ${formatMinorMoney(minAmount, selectedCurrency)}.`
-      : amount && maxAmount !== null && amountMinor > maxAmount
-        ? `Maximum amount is ${formatMinorMoney(maxAmount, selectedCurrency)}.`
+    amount && minAmount !== null && (amountMajor * minorUnitMultiplier) < minAmount
+      ? `Minimum amount is ${formatMoney(minAmount / minorUnitMultiplier, selectedCurrency)}.`
+      : amount && maxAmount !== null && (amountMajor * minorUnitMultiplier) > maxAmount
+        ? `Maximum amount is ${formatMoney(maxAmount / minorUnitMultiplier, selectedCurrency)}.`
         : undefined;
   const canSubmit = Boolean(churchId && memberId && selectedWallet && selectedBucket && amountMajor > 0 && !amountError && !paymentLoading);
-  const walletInsufficientBalance = Boolean(selectedWallet && amountMinor > selectedWallet.balance);
+  const walletInsufficientBalance = Boolean(selectedWallet && (amountMajor * minorUnitMultiplier) > selectedWallet.balance);
   const canSubmitWallet = canSubmit && !walletInsufficientBalance && walletPin.length === 4;
   const paymentData = paymentResult?.data?.data;
   const transaction = paymentData?.transaction;
-  const givingAmount = paymentData?.givingAmount ?? paymentData?.fundingAmount ?? paymentData?.amount ?? amountMinor;
+  const givingAmount = paymentData?.givingAmount ?? paymentData?.fundingAmount ?? paymentData?.amount ?? amountMajor;
+  const paystackFee = calculatePaystackFee(givingAmount);
+  const paystackTotal = givingAmount + paystackFee;
 
   useEffect(() => {
     if (!memberLastFetchedAt && !memberLoading) {
@@ -262,11 +310,23 @@ export default function GivingPage() {
     }
   }, [churchId, dispatch, memberError, memberLastFetchedAt, walletError, walletsLastFetchedAt]);
 
-  const handleSubmit = async (method: 'wallet' | 'paystack') => {
+  const openConfirmSheet = () => {
+    if (paymentMethod === 'wallet' && walletPin.length !== 4) return;
+    if (!canSubmit) return;
+    setIsConfirmSheetOpen(true);
+  };
+
+  const closeConfirmSheet = () => {
+    setIsConfirmSheetOpen(false);
+  };
+
+  const handleSubmit = async (method: PaymentMethod) => {
     if (!churchId || !memberId || !selectedWallet || !selectedBucket) return;
     if (amountMajor <= 0 || amountError) return;
     if (method === 'wallet' && walletInsufficientBalance) return;
     if (method === 'wallet' && walletPin.length !== 4) return;
+
+    const apiMethod = method === 'bank' ? 'paystack' : 'wallet';
 
     dispatch(clearGivingPaymentStatus());
 
@@ -274,13 +334,13 @@ export default function GivingPage() {
       await dispatch(
         createGivingThunk({
           churchId,
-          amount: amountMinor,
+          amount: amountMajor,
           currency: selectedWallet.currency,
           type: selectedBucket.code,
-          paymentMethod: method,
+          paymentMethod: apiMethod,
           bucketId: selectedBucket.id,
           memberId,
-          callbackUrl: method === 'paystack' ? callbackUrls.giving() : '',
+          callbackUrl: method === 'bank' ? callbackUrls.giving() : '',
           ...(note.trim() ? { note: note.trim() } : {}),
           ...(method === 'wallet' ? { authKey: walletPin } : {}),
         }),
@@ -291,13 +351,16 @@ export default function GivingPage() {
           pushNotification({
             type: 'success',
             title: 'Giving successful',
-            message: `Your gift of ${formatMinorMoney(amountMinor, selectedWallet.currency)} has been processed from your wallet.`,
+            message: `Your gift of ${formatMoney(amountMajor, selectedWallet.currency)} has been processed from your wallet.`,
           }),
         );
         setAmount('');
         setNote('');
         setWalletPin('');
+        setIsConfirmSheetOpen(false);
         void dispatch(fetchWalletsThunk());
+      } else {
+        setIsConfirmSheetOpen(false);
       }
     } catch (requestError) {
       const errorMessage = getErrorMessage(requestError, 'Unable to initiate giving payment.');
@@ -578,7 +641,7 @@ export default function GivingPage() {
 
   return (
     <AppShell>
-      <main className="mx-auto grid w-full max-w-[78rem] gap-5 px-4 py-6 pb-28 sm:px-6 md:px-9 md:py-9">
+      <main className="mx-auto grid w-full max-w-[78rem] gap-6 px-4 py-6 pb-28 sm:px-6 md:px-9 md:py-9">
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div className="grid gap-1">
             <AppText variant="h3">Giving</AppText>
@@ -596,93 +659,95 @@ export default function GivingPage() {
           </AppButton>
         </header>
 
-        <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_22rem]">
-          <div className="grid min-w-0 gap-5">
-            <section className="grid gap-3 rounded-xl border border-[#D6DEEB] bg-white p-4 shadow-[0_12px_28px_rgba(11,31,74,0.08)] sm:p-5">
-              <div className="flex items-start gap-3">
-                <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-[#EAF1FF] text-[#123B8D]">
-                  <WalletIcon className="size-6" aria-hidden />
-                </span>
-                <div className="grid min-w-0 gap-1">
-                  <AppText variant="h5">{selectedWallet.displayName || `${selectedWallet.currency} Wallet`}</AppText>
-                  <AppText variant="bodySmall" color="textMuted">
-                    Wallet No. {selectedWallet.walletNumber || 'Not provided'}
-                  </AppText>
-                </div>
-              </div>
-              <div className="grid gap-1 rounded-xl bg-[#0B1F4A] p-4 text-white">
-                <AppText variant="caption" color="#D8E4FF" weight="bold">
-                  Available Balance
-                </AppText>
-                <AppText variant="h3" color="textInverse">
-                  {formatMinorMoney(selectedWallet.balance, selectedWallet.currency)}
-                </AppText>
-                <AppText variant="bodySmall" color="#D8E4FF">
-                  {selectedWallet.currency} wallet
-                </AppText>
-              </div>
-            </section>
+        <section className="grid gap-6">
+          <section className="grid gap-3">
+            <AppText variant="h5">Choose giving bucket</AppText>
+            <div className="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {activeBuckets.map((bucket, index) => (
+                <BucketCard
+                  bucket={bucket}
+                  index={index}
+                  key={bucket.id}
+                  selected={bucket.id === selectedBucket?.id}
+                  onSelect={() => {
+                    dispatch(clearGivingPaymentStatus());
+                    setSelectedBucketId(bucket.id);
+                  }}
+                />
+              ))}
+            </div>
+          </section>
 
-            <section className="grid gap-3">
-              <div className="grid gap-1">
-                <AppText variant="h5">Choose giving bucket</AppText>
+          <section className="grid gap-4 rounded-2xl border border-[#D6DEEB] bg-white p-4 shadow-[0_8px_24px_rgba(11,31,74,0.06)] sm:p-5">
+            <div className="grid gap-1">
+              <AppText variant="h5">Gift details</AppText>
+              {selectedBucket && (
                 <AppText variant="bodySmall" color="textSecondary">
-                  Select where this gift should be received.
-                </AppText>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {activeBuckets.map((bucket) => (
-                  <BucketCard
-                    bucket={bucket}
-                    key={bucket.id}
-                    selected={bucket.id === selectedBucket?.id}
-                    onSelect={() => {
-                      dispatch(clearGivingPaymentStatus());
-                      setSelectedBucketId(bucket.id);
-                    }}
-                  />
-                ))}
-              </div>
-            </section>
-          </div>
-
-          <aside className="grid content-start gap-5">
-            <section className="grid gap-4 rounded-xl border border-[#D6DEEB] bg-white p-4 shadow-[0_12px_28px_rgba(11,31,74,0.08)] sm:p-5">
-              <div className="grid gap-1">
-                <AppText variant="h5">Gift amount</AppText>
-                {selectedBucket && (
-                  <AppText variant="bodySmall" color="textSecondary">
-                    Giving to {selectedBucket.name}
-                  </AppText>
-                )}
-              </div>
-              <AppMoneyInput
-                currency={selectedCurrency}
-                disabled={paymentLoading}
-                error={amountError ?? paymentError ?? undefined}
-                presets={['1000', '5000', '10000']}
-                value={amount}
-                onChange={(value) => {
-                  dispatch(clearGivingPaymentStatus());
-                  setAmount(value);
-                }}
-              />
-              {walletInsufficientBalance && amountMajor > 0 && (
-                <AppText variant="caption" color="#B91C1C">
-                  Insufficient wallet balance. Your balance is {formatMinorMoney(selectedWallet?.balance ?? 0, selectedCurrency)}.
+                  Giving to {selectedBucket.name}
                 </AppText>
               )}
-              <label className="grid gap-2">
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-[#5A6880]">Note</span>
-                <textarea
-                  className="min-h-24 resize-none rounded-xl border border-[#D6DEEB] bg-[#F8FAFC] p-3 text-sm font-semibold text-[#0B1F4A] outline-none transition placeholder:text-[#A8B3C4] focus:border-[#123B8D] focus:ring-3 focus:ring-[#123B8D]/10"
-                  disabled={paymentLoading}
-                  maxLength={240}
-                  placeholder="Optional note"
-                  value={note}
-                  onChange={(event) => setNote(event.target.value)}
-                />
-              </label>
+            </div>
+
+            <div className="flex rounded-xl bg-[#F1F5F9] p-1">
+              <button
+                className={clsx(
+                  'flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold transition-all duration-200',
+                  paymentMethod === 'wallet'
+                    ? 'bg-[#123B8D] text-white shadow-[0_2px_8px_rgba(18,59,141,0.25)]'
+                    : 'text-[#5A6880] hover:text-[#0B1F4A]',
+                )}
+                type="button"
+                onClick={() => setPaymentMethod('wallet')}
+              >
+                <WalletIcon className="size-4" aria-hidden />
+                Wallet
+              </button>
+              <button
+                className={clsx(
+                  'flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold transition-all duration-200',
+                  paymentMethod === 'bank'
+                    ? 'bg-[#123B8D] text-white shadow-[0_2px_8px_rgba(18,59,141,0.25)]'
+                    : 'text-[#5A6880] hover:text-[#0B1F4A]',
+                )}
+                type="button"
+                onClick={() => setPaymentMethod('bank')}
+              >
+                <Landmark className="size-4" aria-hidden />
+                Bank
+              </button>
+            </div>
+
+            <AppMoneyInput
+              currency={selectedCurrency}
+              disabled={paymentLoading}
+              error={amountError ?? paymentError ?? undefined}
+              presets={['1000', '5000', '10000']}
+              value={amount}
+              onChange={(value) => {
+                dispatch(clearGivingPaymentStatus());
+                setAmount(value);
+              }}
+            />
+
+            {paymentMethod === 'wallet' && walletInsufficientBalance && amountMajor > 0 && (
+              <AppText variant="caption" color="#B91C1C">
+                Insufficient wallet balance. Your balance is {formatMoney(selectedWallet?.balance ?? 0, selectedCurrency)}.
+              </AppText>
+            )}
+
+            <label className="grid gap-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-[#5A6880]">Note</span>
+              <textarea
+                className="min-h-20 resize-none rounded-xl border border-[#D6DEEB] bg-[#F8FAFC] p-3 text-sm font-semibold text-[#0B1F4A] outline-none transition placeholder:text-[#A8B3C4] focus:border-[#123B8D] focus:ring-3 focus:ring-[#123B8D]/10"
+                disabled={paymentLoading}
+                maxLength={240}
+                placeholder="Optional note"
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+              />
+            </label>
+
+            {paymentMethod === 'wallet' && (
               <AppInput
                 label="Wallet PIN"
                 type="password"
@@ -696,29 +761,103 @@ export default function GivingPage() {
                   setWalletPin(numeric);
                 }}
               />
-              <div className="grid grid-cols-2 gap-3">
-                <AppButton
-                  fullWidth
-                  variant="secondary"
-                  loading={paymentLoading}
-                  disabled={!canSubmitWallet}
-                  onClick={() => void handleSubmit('wallet')}
-                >
-                  Give via Wallet
-                </AppButton>
-                <AppButton
-                  fullWidth
-                  loading={paymentLoading}
-                  disabled={!canSubmit}
-                  onClick={() => void handleSubmit('paystack')}
-                >
-                  Pay with Bank
-                </AppButton>
-              </div>
-            </section>
-          </aside>
+            )}
+
+            <AppButton
+              fullWidth
+              loading={paymentLoading}
+              disabled={paymentMethod === 'wallet' ? !canSubmitWallet : !canSubmit}
+              onClick={paymentMethod === 'wallet' ? openConfirmSheet : () => void handleSubmit('bank')}
+            >
+              {paymentMethod === 'wallet' ? 'Confirm' : 'Pay with Bank'}
+            </AppButton>
+          </section>
         </section>
       </main>
+
+      <AppModal
+        open={isConfirmSheetOpen}
+        title="Confirm Giving"
+        onClose={closeConfirmSheet}
+        footer={
+          <>
+            <AppButton variant="secondary" onClick={closeConfirmSheet}>
+              Cancel
+            </AppButton>
+            <AppButton
+              loading={paymentLoading}
+              disabled={paymentLoading}
+              onClick={() => void handleSubmit('wallet')}
+            >
+              Proceed
+            </AppButton>
+          </>
+        }
+      >
+        {selectedBucket && selectedWallet && (
+          <div className="grid gap-4">
+            <div className="flex items-start gap-3 rounded-xl bg-[#EAF1FF] p-4">
+              <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#123B8D] text-white">
+                <CheckCircle2 className="size-5" aria-hidden />
+              </span>
+              <div className="grid gap-1">
+                <AppText variant="h5" color="#0B1F4A">
+                  Payment Summary
+                </AppText>
+                <AppText variant="bodySmall" color="textSecondary">
+                  Review your giving details before proceeding.
+                </AppText>
+              </div>
+            </div>
+
+            <div className="grid gap-3 rounded-xl border border-[#E5E7EB] p-4">
+              <div className="flex items-center justify-between gap-3 border-b border-[#EEF2F7] pb-3">
+                <AppText variant="caption" color="textMuted" weight="bold">
+                  Bucket
+                </AppText>
+                <AppText variant="bodySmall" weight="bold">
+                  {selectedBucket.name}
+                </AppText>
+              </div>
+              <div className="flex items-center justify-between gap-3 border-b border-[#EEF2F7] pb-3">
+                <AppText variant="caption" color="textMuted" weight="bold">
+                  Amount
+                </AppText>
+                <AppText variant="bodySmall" weight="bold">
+                  {formatMoney(amountMajor, selectedCurrency)}
+                </AppText>
+              </div>
+              <div className="flex items-center justify-between gap-3 border-b border-[#EEF2F7] pb-3">
+                <AppText variant="caption" color="textMuted" weight="bold">
+                  Payment method
+                </AppText>
+                <AppText variant="bodySmall" weight="bold">
+                  Wallet
+                </AppText>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <AppText variant="caption" color="textMuted" weight="bold">
+                  Wallet balance after
+                </AppText>
+                <AppText variant="bodySmall" weight="bold">
+                  {formatMoney((selectedWallet.balance / minorUnitMultiplier) - amountMajor, selectedCurrency)}
+                </AppText>
+              </div>
+            </div>
+
+            {note.trim() && (
+              <div className="rounded-xl border border-[#E5E7EB] p-4">
+                <AppText variant="caption" color="textMuted" weight="bold">
+                  Note
+                </AppText>
+                <AppText variant="bodySmall" className="mt-1">
+                  {note.trim()}
+                </AppText>
+              </div>
+            )}
+          </div>
+        )}
+      </AppModal>
 
       <AppModal
         open={Boolean(paymentResult && transaction)}
@@ -764,7 +903,7 @@ export default function GivingPage() {
                   Gift amount
                 </AppText>
                 <AppText variant="bodySmall" weight="bold">
-                  {formatMinorMoney(givingAmount, transaction.currency)}
+                  {formatMoney(givingAmount, transaction.currency)}
                 </AppText>
               </div>
               <div className="flex items-center justify-between gap-3 border-b border-[#EEF2F7] pb-3">
@@ -772,7 +911,7 @@ export default function GivingPage() {
                   Fees
                 </AppText>
                 <AppText variant="bodySmall" weight="bold">
-                  {formatMinorMoney(transaction.feesAmountTotal, transaction.currency)}
+                  {formatMoney(paystackFee, transaction.currency)}
                 </AppText>
               </div>
               <div className="flex items-center justify-between gap-3">
@@ -780,29 +919,23 @@ export default function GivingPage() {
                   Total
                 </AppText>
                 <AppText variant="bodySmall" weight="bold">
-                  {formatMinorMoney(transaction.amountTotal, transaction.currency)}
+                  {formatMoney(paystackTotal, transaction.currency)}
                 </AppText>
               </div>
             </div>
-            {transaction.fees.length > 0 && (
-              <div className="grid gap-2">
-                <AppText variant="caption" color="textMuted" weight="bold">
-                  Fee details
+            <div className="grid gap-2">
+              <AppText variant="caption" color="textMuted" weight="bold">
+                Fee details
+              </AppText>
+              <div className="rounded-lg border border-[#E5E7EB] p-3">
+                <AppText variant="bodySmall" weight="bold">
+                  Paystack Fee: {formatMoney(paystackFee, transaction.currency)}
                 </AppText>
-                {transaction.fees.map((fee) => (
-                  <div className="rounded-lg border border-[#E5E7EB] p-3" key={`${fee.name}-${fee.type}`}>
-                    <AppText variant="bodySmall" weight="bold">
-                      {fee.name}: {formatMinorMoney(fee.amountTotal, transaction.currency)}
-                    </AppText>
-                    {fee.description && (
-                      <AppText variant="caption" color="textSecondary">
-                        {fee.description}
-                      </AppText>
-                    )}
-                  </div>
-                ))}
+                <AppText variant="caption" color="textSecondary">
+                  1.5% + {formatMoney(paystackFixedFee, transaction.currency)} (capped at {formatMoney(paystackFeeCap, transaction.currency)})
+                </AppText>
               </div>
-            )}
+            </div>
           </div>
         )}
       </AppModal>

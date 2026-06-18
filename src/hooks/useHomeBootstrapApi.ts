@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { fetchDevotionalBannerThunk } from '@/store/thunks/homeThunk';
 import { fetchMemberAccountThunk } from '@/store/thunks/memberThunk';
 
 const getBootstrapErrorMessage = (error: unknown) => {
@@ -28,7 +29,10 @@ export const useHomeBootstrapApi = () => {
     setError(null);
 
     try {
-      await Promise.all([dispatch(fetchMemberAccountThunk()).unwrap()]);
+      await Promise.all([
+        dispatch(fetchMemberAccountThunk()).unwrap(),
+        dispatch(fetchDevotionalBannerThunk()).unwrap(),
+      ]);
     } catch (requestError) {
       setError(getBootstrapErrorMessage(requestError));
     } finally {

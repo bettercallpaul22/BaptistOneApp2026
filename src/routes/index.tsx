@@ -50,6 +50,9 @@ const GivingCallbackPage = lazy(() => import('@/pages/giving/GivingCallbackPage'
 const ForumPage = lazy(() => import('@/pages/forum/ForumPage'));
 const ForumPostListPage = lazy(() => import('@/pages/forum/ForumPostListPage'));
 const ForumPostDetailPage = lazy(() => import('@/pages/forum/ForumPostDetailPage'));
+const MinistryPage = lazy(() => import('@/pages/ministry/MinistryPage'));
+const DevotionalPage = lazy(() => import('@/pages/devotional/DevotionalPage'));
+const DevotionalDetailPage = lazy(() => import('@/pages/devotional/DevotionalDetailPage'));
 const LoginPage = lazy(() => import('@/pages/auth/login/LoginPage'));
 const GoogleRedirectPage = lazy(() => import('@/pages/auth/google-redirect/GoogleRedirectPage'));
 const EmailVerifyPage = lazy(() => import('@/pages/auth/email-verify/EmailVerifyPage'));
@@ -181,7 +184,7 @@ const RoutedApp = () => {
             <Route path={paths.forum} element={<ForumPage />} />
             <Route path={paths.forumDetailsRoute} element={<ForumPostListPage />} />
             <Route path={paths.forumPostDetailRoute} element={<ForumPostDetailPage />} />
-            <Route path={paths.ministries} element={<AppPlaceholderPage title="Ministries" />} />
+            <Route path={paths.ministries} element={<MinistryPage />} />
             <Route path={paths.events} element={<EventsPage />} />
             <Route path={paths.donation} element={<GivingPage />} />
             <Route path={paths.media} element={<AppPlaceholderPage title="Media" />} />
@@ -206,7 +209,8 @@ const RoutedApp = () => {
             />
             <Route path={paths.profile} element={<ProfilePage />} />
             <Route path={paths.settings} element={<AppPlaceholderPage title="Settings" />} />
-            <Route path={paths.devotional} element={<AppPlaceholderPage title="Devotional" />} />
+            <Route path={paths.devotional} element={<DevotionalPage />} />
+            <Route path={paths.devotionalDetailRoute} element={<DevotionalDetailPage />} />
             <Route
               path={paths.sundaySchool}
               element={<AppPlaceholderPage title="Sunday School" />}

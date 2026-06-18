@@ -11,12 +11,16 @@ import type { TransactionVerification } from '@/types/transaction';
 type VerifyStatus = 'idle' | 'loading' | 'success' | 'error';
 
 const minorUnitMultiplier = 100;
+const paystackFeeRate = 0.015;
+const paystackFixedFee = 100;
+const paystackFeeCap = 2000;
 
 const formatMoney = (value: number, currency: string) => {
   try {
-    return new Intl.NumberFormat(undefined, {
+    return new Intl.NumberFormat('en-NG', {
       style: 'currency',
       currency,
+      minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(value);
   } catch {
@@ -24,7 +28,52 @@ const formatMoney = (value: number, currency: string) => {
   }
 };
 
-const formatMinorMoney = (value: number, currency: string) => formatMoney(value / minorUnitMultiplier, currency);
+const decodePaystackFee = (value: number) => {
+  const minorUnitValue = value / minorUnitMultiplier;
+  const serializedValue = String(Math.trunc(value));
+  const serializedFixedFee = String(paystackFixedFee);
+
+  if (
+    minorUnitValue > 0 &&
+    minorUnitValue < paystackFeeCap &&
+    serializedValue.startsWith(serializedFixedFee) &&
+    serializedValue.length > serializedFixedFee.length
+  ) {
+    const variableFee = Number(serializedValue.slice(serializedFixedFee.length));
+
+    if (Number.isFinite(variableFee) && variableFee > 0) {
+      return paystackFixedFee + variableFee;
+    }
+  }
+
+  return minorUnitValue;
+};
+
+const getGivingPaymentAmounts = (transaction: TransactionVerification) => {
+  if (transaction.paymentMethod.toLowerCase() !== 'paystack' || transaction.feesAmountTotal <= 0) {
+    return {
+      amount: transaction.amountTotal / minorUnitMultiplier,
+      fees: transaction.feesAmountTotal / minorUnitMultiplier,
+    };
+  }
+
+  const fees = decodePaystackFee(transaction.feesAmountTotal);
+  const variableFee = fees - paystackFixedFee;
+
+  if (variableFee <= 0 || fees >= paystackFeeCap) {
+    return {
+      amount: transaction.amountTotal / minorUnitMultiplier,
+      fees,
+    };
+  }
+
+  const givingAmount = variableFee / paystackFeeRate;
+
+  return {
+    amount: givingAmount + fees,
+    fees,
+  };
+};
 
 const formatDate = (value: string) => {
   const date = new Date(value);
@@ -153,26 +202,32 @@ export default function GivingCallbackPage() {
         }
       >
         {transaction && (
-          <div className="grid gap-4">
-            <div className="rounded-xl bg-[#EAF1FF] p-4">
-              <AppText variant="caption" color="textMuted" weight="bold">
-                Amount
-              </AppText>
-              <AppText variant="h3">{formatMinorMoney(transaction.amountTotal, transaction.currency)}</AppText>
-              <AppText variant="bodySmall" color="textSecondary">
-                {transaction.description}
-              </AppText>
-            </div>
+          (() => {
+            const paymentAmounts = getGivingPaymentAmounts(transaction);
 
-            <div className="grid rounded-xl border border-[#E5E7EB] px-4">
-              <DetailRow label="Status" value={transaction.status} />
-              <DetailRow label="Payment method" value={transaction.paymentMethod} />
-              <DetailRow label="Reference" value={transaction.reference} />
-              <DetailRow label="Serial number" value={transaction.serialNumber} />
-              <DetailRow label="Date" value={formatDate(transaction.updatedAt || transaction.createdAt)} />
-              <DetailRow label="Fees" value={formatMinorMoney(transaction.feesAmountTotal, transaction.currency)} />
-            </div>
-          </div>
+            return (
+              <div className="grid gap-4">
+                <div className="rounded-xl bg-[#EAF1FF] p-4">
+                  <AppText variant="caption" color="textMuted" weight="bold">
+                    Amount
+                  </AppText>
+                  <AppText variant="h3">{formatMoney(paymentAmounts.amount, transaction.currency)}</AppText>
+                  <AppText variant="bodySmall" color="textSecondary">
+                    {transaction.description}
+                  </AppText>
+                </div>
+
+                <div className="grid rounded-xl border border-[#E5E7EB] px-4">
+                  <DetailRow label="Status" value={transaction.status} />
+                  <DetailRow label="Payment method" value={transaction.paymentMethod} />
+                  <DetailRow label="Reference" value={transaction.reference} />
+                  <DetailRow label="Serial number" value={transaction.serialNumber} />
+                  <DetailRow label="Date" value={formatDate(transaction.updatedAt || transaction.createdAt)} />
+                  <DetailRow label="Fees" value={formatMoney(paymentAmounts.fees, transaction.currency)} />
+                </div>
+              </div>
+            );
+          })()
         )}
       </AppModal>
     </main>

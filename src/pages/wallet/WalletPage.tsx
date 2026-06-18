@@ -38,7 +38,7 @@ const minorUnitMultiplier = 100;
 
 const formatMoney = (value: number, currency: string) => {
   try {
-    return new Intl.NumberFormat(undefined, {
+    return new Intl.NumberFormat('en-NG', {
       style: 'currency',
       currency,
       maximumFractionDigits: 2,
@@ -330,23 +330,6 @@ export default function WalletPage() {
   return (
     <AppShell>
       <main className="mx-auto grid w-full max-w-[78rem] gap-5 px-4 py-6 pb-28 sm:px-6 md:px-9 md:py-9">
-        <header className="flex flex-wrap items-start justify-between gap-4">
-          <div className="grid gap-1">
-            <AppText variant="h3">Wallet</AppText>
-            <AppText variant="bodyMedium" color="textSecondary">
-              Manage your BaptistOne wallet balance.
-            </AppText>
-          </div>
-          <AppButton
-            leftIcon={<RefreshCw className="size-4" aria-hidden />}
-            loading={loading}
-            variant="outline"
-            onClick={retryWallets}
-          >
-            Refresh
-          </AppButton>
-        </header>
-
         {items.length === 0 ? (
           <section className="grid min-h-[50vh] place-items-center">
             <div className="grid w-full max-w-md justify-items-center gap-5 rounded-xl border border-[#E5E7EB] bg-white p-5 text-center shadow-[0_12px_28px_rgba(11,31,74,0.08)] sm:p-6">
