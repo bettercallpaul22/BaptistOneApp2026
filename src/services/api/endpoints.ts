@@ -159,6 +159,6 @@ export const endpoints = {
   },
   publicGiving: {
     config: (churchId: string) => `/public/giving/config/${encodeURIComponent(churchId)}`,
-    create: '/public/giving',
+    create: '/private/giving',
   },
 } as const;

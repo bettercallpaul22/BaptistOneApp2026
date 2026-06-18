@@ -19,12 +19,12 @@ export const givingService = {
       payload,
     );
 
-    if (!response.status) {
-      throw new Error(response.message || 'Unable to initiate giving payment.');
+    if (!response.status || !response.data?.status) {
+      throw new Error(response.data?.message || response.message || 'Unable to initiate giving payment.');
     }
 
-    if (payload.paymentMethod === 'paystack' && !response.data?.checkoutUrl) {
-      throw new Error(response.message || 'Unable to initiate giving payment.');
+    if (payload.paymentMethod === 'paystack' && !response.data?.data?.transaction?.checkoutUrl) {
+      throw new Error('Unable to initiate giving payment.');
     }
 
     return response;

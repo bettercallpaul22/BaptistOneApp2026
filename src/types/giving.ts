@@ -54,10 +54,19 @@ export interface GivingPaymentData {
   checkoutUrl: string;
   givingAmount?: number;
   amount?: number;
+  walletId?: string;
+  fundingAmount?: number;
+  financeMeta?: Record<string, unknown>;
+}
+
+export interface CreateGivingInnerResponse {
+  status: boolean;
+  message?: string;
+  data: GivingPaymentData;
 }
 
 export interface CreateGivingResponse {
   status: boolean;
   message?: string;
-  data: GivingPaymentData;
+  data: CreateGivingInnerResponse;
 }

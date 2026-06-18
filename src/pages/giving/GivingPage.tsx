@@ -222,8 +222,9 @@ export default function GivingPage() {
   const canSubmit = Boolean(churchId && memberId && selectedWallet && selectedBucket && amountMajor > 0 && !amountError && !paymentLoading);
   const walletInsufficientBalance = Boolean(selectedWallet && amountMinor > selectedWallet.balance);
   const canSubmitWallet = canSubmit && !walletInsufficientBalance && walletPin.length === 4;
-  const transaction = paymentResult?.data.transaction;
-  const givingAmount = paymentResult?.data.givingAmount ?? paymentResult?.data.amount ?? amountMinor;
+  const paymentData = paymentResult?.data?.data;
+  const transaction = paymentData?.transaction;
+  const givingAmount = paymentData?.givingAmount ?? paymentData?.fundingAmount ?? paymentData?.amount ?? amountMinor;
 
   useEffect(() => {
     if (!memberLastFetchedAt && !memberLoading) {
@@ -270,7 +271,7 @@ export default function GivingPage() {
     dispatch(clearGivingPaymentStatus());
 
     try {
-      const result = await dispatch(
+      await dispatch(
         createGivingThunk({
           churchId,
           amount: amountMinor,
@@ -297,8 +298,6 @@ export default function GivingPage() {
         setNote('');
         setWalletPin('');
         void dispatch(fetchWalletsThunk());
-      } else if (result.data.checkoutUrl) {
-        window.location.assign(result.data.checkoutUrl);
       }
     } catch (requestError) {
       const errorMessage = getErrorMessage(requestError, 'Unable to initiate giving payment.');
@@ -324,7 +323,7 @@ export default function GivingPage() {
   };
 
   const continueToCheckout = () => {
-    const checkoutUrl = paymentResult?.data.checkoutUrl;
+    const checkoutUrl = transaction?.checkoutUrl;
 
     if (!checkoutUrl) {
       dispatch(
@@ -768,6 +767,14 @@ export default function GivingPage() {
                   {formatMinorMoney(givingAmount, transaction.currency)}
                 </AppText>
               </div>
+              <div className="flex items-center justify-between gap-3 border-b border-[#EEF2F7] pb-3">
+                <AppText variant="caption" color="textMuted" weight="bold">
+                  Fees
+                </AppText>
+                <AppText variant="bodySmall" weight="bold">
+                  {formatMinorMoney(transaction.feesAmountTotal, transaction.currency)}
+                </AppText>
+              </div>
               <div className="flex items-center justify-between gap-3">
                 <AppText variant="caption" color="textMuted" weight="bold">
                   Total
@@ -777,6 +784,25 @@ export default function GivingPage() {
                 </AppText>
               </div>
             </div>
+            {transaction.fees.length > 0 && (
+              <div className="grid gap-2">
+                <AppText variant="caption" color="textMuted" weight="bold">
+                  Fee details
+                </AppText>
+                {transaction.fees.map((fee) => (
+                  <div className="rounded-lg border border-[#E5E7EB] p-3" key={`${fee.name}-${fee.type}`}>
+                    <AppText variant="bodySmall" weight="bold">
+                      {fee.name}: {formatMinorMoney(fee.amountTotal, transaction.currency)}
+                    </AppText>
+                    {fee.description && (
+                      <AppText variant="caption" color="textSecondary">
+                        {fee.description}
+                      </AppText>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </AppModal>
