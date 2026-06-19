@@ -224,7 +224,7 @@ export default function DevotionalPage() {
         {rest.length > 0 && (
           <div className="grid gap-4">
             <AppText variant="h5">Previous Devotionals</AppText>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 lg:grid-cols-2">
               {rest.map((item) => (
                 <DevotionalCard key={item.id} item={item} onSelect={handleSelect} />
               ))}

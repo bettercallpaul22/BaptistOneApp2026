@@ -120,10 +120,15 @@ export const endpoints = {
     familyLink: '/private/members/family/link',
     familyLinkRequests: '/private/members/family/link-requests',
     family: '/private/members/family',
+    familyLeave: '/private/members/family/leave',
     profileCompletion: '/private/members/profile-completion',
     profileCompletionSection: (sectionKey: string) =>
       `/private/members/profile-completion/sections/${sectionKey}`,
     myDepartments: '/private/members/my/departments',
+    churchDepartments: '/private/members/my/church/departments',
+    joinDepartment: (departmentId: string) =>
+      `/private/members/my/departments/${encodeURIComponent(departmentId)}/request`,
+    departmentRequests: '/private/members/my/department-requests',
     myUnits: '/private/members/my/units',
     myMinistries: '/private/members/my/ministries',
     churchMinistries: '/private/members/my/church/ministries',

@@ -7,7 +7,7 @@ import {
   type ChangeEvent,
   type FormEvent,
 } from 'react';
-import { CheckCircle2, Clock3, Mail, Plus, Send, UserPlus, Users, XCircle } from 'lucide-react';
+import { CheckCircle2, Clock3, LogOut, Mail, Plus, Send, UserPlus, Users, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { AppButton, AppScrollableTabs, AppText } from '@/components/common';
 import { AppAvatar } from '@/components/display';
@@ -168,6 +168,10 @@ const FamilyPage = () => {
   const [manualMessage, setManualMessage] = useState(defaultMessage);
   const [manualInviteLoading, setManualInviteLoading] = useState(false);
   const [manualInviteError, setManualInviteError] = useState<string | null>(null);
+  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+  const [leaveReason, setLeaveReason] = useState('');
+  const [leaveLoading, setLeaveLoading] = useState(false);
+  const [leaveError, setLeaveError] = useState<string | null>(null);
   const trimmedSearchQuery = searchQuery.trim();
   const familyMembers = familyData?.members ?? [];
   const familyName = familyData?.family?.name ?? 'Your family';
@@ -525,6 +529,55 @@ const FamilyPage = () => {
     }
   };
 
+  const openLeaveModal = () => {
+    setLeaveReason('');
+    setLeaveError(null);
+    setIsLeaveModalOpen(true);
+  };
+
+  const closeLeaveModal = () => {
+    if (leaveLoading) return;
+
+    setIsLeaveModalOpen(false);
+    setLeaveError(null);
+  };
+
+  const handleLeaveFamily = async () => {
+    setLeaveLoading(true);
+    setLeaveError(null);
+
+    try {
+      const response = await familyInviteService.leaveFamily({
+        note: leaveReason.trim() || 'No longer part of this family group.',
+        maritalStatus: 'divorced',
+        marritalStatus: 'divorced',
+      });
+
+      dispatch(
+        pushNotification({
+          type: 'success',
+          title: 'Left family',
+          message: response.message || 'You have left the family group.',
+        }),
+      );
+
+      setIsLeaveModalOpen(false);
+      setFamilyData(null);
+    } catch (error) {
+      const message = getErrorMessage(error, 'Unable to leave family.');
+      setLeaveError(message);
+      dispatch(
+        pushNotification({
+          type: 'error',
+          title: 'Unable to leave family',
+          message,
+        }),
+      );
+    } finally {
+      setLeaveLoading(false);
+    }
+  };
+
   return (
     <AppShell>
       <main className="mx-auto grid max-w-[78rem] gap-5 px-4 py-6 pb-28 sm:px-6 md:px-9">
@@ -551,26 +604,32 @@ const FamilyPage = () => {
         </section>
 
         <section className="grid gap-4 rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-[0_8px_18px_rgba(11,31,74,0.06)]">
-          <div className="flex items-start justify-between gap-3">
-            <div className="grid min-w-0 gap-1">
-              <AppText variant="h6" lineClamp={1}>
-                {familyName}
-              </AppText>
-              <AppText variant="bodySmall" color="textSecondary">
-                Family members linked to your profile.
-              </AppText>
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <span className="inline-flex items-center rounded-full border border-[#EAF1FF] bg-[#EAF1FF] px-2.5 py-1 text-[0.6875rem] font-black text-[#123B8D]">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <AppText variant="h6">{familyName}</AppText>
+              <span className="inline-flex items-center rounded-full bg-[#EAF1FF] px-2 py-0.5 text-[0.6875rem] font-bold text-[#123B8D]">
                 {familyMembers.length} members
               </span>
-              {familyMembers.length > 0 && (
-                <AppButton size="sm" variant="outline" onClick={() => navigate(paths.familyMembers)}>
-                  View all
-                </AppButton>
-              )}
             </div>
           </div>
+          <AppText variant="bodySmall" color="textSecondary">
+            Family members linked to your profile.
+          </AppText>
+          {familyMembers.length > 0 && (
+            <div className="flex items-center gap-2">
+              <AppButton size="sm" onClick={() => navigate(paths.familyMembers)}>
+                View all
+              </AppButton>
+              <AppButton
+                size="sm"
+                variant="secondary"
+                leftIcon={<LogOut className="size-3.5" aria-hidden />}
+                onClick={openLeaveModal}
+              >
+                Leave family
+              </AppButton>
+            </div>
+          )}
 
           {familyLoading && !familyMembers.length && (
             <AppStateFeedback state="loading" label="Loading family" className="min-h-32" />
@@ -601,30 +660,30 @@ const FamilyPage = () => {
 
                 return (
                   <div
-                    className="flex min-w-0 items-start justify-between gap-3 rounded-lg border border-[#E5E7EB] bg-[#F8FAFC] p-3"
+                    className="flex items-center gap-3 rounded-lg border border-[#E5E7EB] bg-[#F8FAFC] px-4 py-3"
                     key={member.memberId}
                   >
-                    <div className="flex min-w-0 items-start gap-3">
-                      <AppAvatar name={name} src={member.avatarUrl ?? undefined} size="md" />
-                      <div className="grid min-w-0 gap-1">
-                        <span className="truncate text-sm font-black text-[#0B1F4A]">{name}</span>
+                    <AppAvatar name={name} src={member.avatarUrl ?? undefined} size="lg" />
+                    <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
+                      <div className="grid min-w-0 gap-0.5">
+                        <span className="truncate text-sm font-bold text-[#0B1F4A]">{name}</span>
                         {contact && (
-                          <span className="truncate text-xs font-semibold text-[#5A6880]">
+                          <span className="truncate text-xs text-[#5A6880]">
                             {contact}
                           </span>
                         )}
                         {member.familyLinkedAt && (
-                          <span className="truncate text-xs font-semibold text-[#8A96AA]">
+                          <span className="truncate text-[0.6875rem] text-[#8A96AA]">
                             Linked {formatRequestDate(member.familyLinkedAt)}
                           </span>
                         )}
                       </div>
+                      {member.familyRole && (
+                        <span className="inline-flex shrink-0 rounded-full border border-[#EAF1FF] bg-white px-2.5 py-1 text-[0.6875rem] font-bold text-[#123B8D]">
+                          {member.familyRole}
+                        </span>
+                      )}
                     </div>
-                    {member.familyRole && (
-                      <span className="inline-flex shrink-0 rounded-full border border-[#EAF1FF] bg-white px-2.5 py-1 text-[0.6875rem] font-black text-[#123B8D]">
-                        {member.familyRole}
-                      </span>
-                    )}
                   </div>
                 );
               })}
@@ -1014,6 +1073,61 @@ const FamilyPage = () => {
             </div>
           </div>
         )}
+      </AppModal>
+
+      <AppModal
+        open={isLeaveModalOpen}
+        title="Leave family"
+        footer={
+          <>
+            <AppButton variant="secondary" disabled={leaveLoading} onClick={closeLeaveModal}>
+              Cancel
+            </AppButton>
+            <AppButton
+              loading={leaveLoading}
+              className="bg-red-600 text-white hover:bg-red-700"
+              onClick={handleLeaveFamily}
+            >
+              Leave family
+            </AppButton>
+          </>
+        }
+        onClose={closeLeaveModal}
+      >
+        <div className="grid gap-4">
+          <div className="flex items-start gap-3 rounded-lg border border-red-100 bg-red-50 p-3">
+            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-red-100 text-red-600">
+              <LogOut className="size-5" aria-hidden />
+            </span>
+            <div className="grid gap-1">
+              <AppText variant="bodyMedium" weight="bold">
+                Are you sure you want to leave?
+              </AppText>
+              <AppText variant="bodySmall" color="textSecondary">
+                You will be removed from this family group. This action can be undone by sending a new
+                family request.
+              </AppText>
+            </div>
+          </div>
+
+          {leaveError && (
+            <div className="rounded-lg border border-red-100 bg-red-50 p-3 text-sm font-semibold text-red-700">
+              {leaveError}
+            </div>
+          )}
+
+          <label className="grid gap-1">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-[#5A6880]">
+              Reason (optional)
+            </span>
+            <textarea
+              className="min-h-20 rounded-[10px] border-[1.5px] border-[#D5DCE8] bg-white px-3.5 py-2.5 text-sm text-[#0B1F4A] outline-none transition-all duration-150 placeholder:text-[#A8B3C4] focus:border-[#123B8D] focus:ring-3 focus:ring-[#123B8D]/10"
+              placeholder="No longer part of this family group."
+              value={leaveReason}
+              onChange={(event) => setLeaveReason(event.target.value)}
+            />
+          </label>
+        </div>
       </AppModal>
     </AppShell>
   );

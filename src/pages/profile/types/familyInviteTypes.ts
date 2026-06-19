@@ -130,6 +130,18 @@ export interface UserFamilyInvitation {
   metadata?: Record<string, unknown>;
 }
 
+export interface LeaveFamilyPayload {
+  note: string;
+  maritalStatus: string;
+  marritalStatus: string;
+}
+
+export interface LeaveFamilyResponse {
+  status: boolean;
+  message?: string;
+  data?: unknown;
+}
+
 export interface UserFamilyResponse {
   status: boolean;
   message?: string;

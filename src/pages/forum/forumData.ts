@@ -26,6 +26,7 @@ export interface ForumDepartment {
   id: string;
   title: string;
   description: string;
+  joined: boolean;
   members: ForumMember[];
   forumIds: string[];
 }

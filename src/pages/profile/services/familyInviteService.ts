@@ -6,6 +6,8 @@ import type {
   FamilyLinkRequestsResponse,
   InviteFamilyMemberPayload,
   InviteFamilyMemberResponse,
+  LeaveFamilyPayload,
+  LeaveFamilyResponse,
   LinkFamilyMemberPayload,
   LinkFamilyMemberResponse,
   UserFamilyResponse,
@@ -92,6 +94,19 @@ export const familyInviteService = {
 
     if (!response.status) {
       throw new Error(response.message || 'Unable to link family member.');
+    }
+
+    return response;
+  },
+
+  leaveFamily: async (payload: LeaveFamilyPayload) => {
+    const response = await http.post<LeaveFamilyResponse, LeaveFamilyPayload>(
+      endpoints.privateMembers.familyLeave,
+      payload,
+    );
+
+    if (!response.status) {
+      throw new Error(response.message || 'Unable to leave family.');
     }
 
     return response;
