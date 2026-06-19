@@ -727,8 +727,6 @@ const FamilyPage = () => {
             <div className="grid max-h-[400px] gap-2 overflow-y-auto pr-1">
               {searchResults.map((member) => {
                 const name = getMemberName(member);
-                const email = getMemberEmail(member);
-                const phone = getMemberPhone(member);
                 const linked = linkedMemberIds.includes(member.memberId);
 
                 return (
@@ -740,12 +738,9 @@ const FamilyPage = () => {
                       <AppAvatar name={name} src={member.avatarUrl ?? undefined} size="md" />
                       <div className="grid min-w-0 gap-1">
                         <span className="truncate text-sm font-black text-[#0B1F4A]">{name}</span>
-                        <span className="truncate text-xs font-semibold text-[#5A6880]">
-                          {[email, phone].filter(Boolean).join(' - ') || 'No contact provided'}
-                        </span>
-                        {member.churchName && (
-                          <span className="truncate text-xs font-semibold text-[#8A96AA]">
-                            {member.churchName}
+                        {member.username && (
+                          <span className="truncate text-xs font-semibold text-[#5A6880]">
+                            @{member.username}
                           </span>
                         )}
                       </div>
