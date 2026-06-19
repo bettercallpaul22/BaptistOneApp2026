@@ -13,9 +13,12 @@ import {
   ProfileLoading,
   ProfileProgressSummary,
 } from './components';
+import { ProfileSectionEditModal } from './components/ProfileSectionEditModal';
 import { tabs, tabText } from './config/profileConfig';
 import type { ProfileLocationState, ProfileTab } from './types/profilePageTypes';
 import { getProfileDisplayName } from './utils/profileDisplayUtils';
+
+const avatarOnlyFieldNames = ['avatarFileId'];
 
 export default function ProfilePage() {
   const dispatch = useAppDispatch();
@@ -27,6 +30,7 @@ export default function ProfilePage() {
       ? requestedProfileTab
       : 'profile',
   );
+  const [isAvatarEditorOpen, setIsAvatarEditorOpen] = useState(false);
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
   const memberAccount = useAppSelector((state) => state.member.data);
   const { data, error, loading } = useAppSelector((state) => state.profile);
@@ -36,7 +40,10 @@ export default function ProfilePage() {
       .filter(Boolean)
       .join(' ') ||
     (data ? getProfileDisplayName(data) : 'Member Profile');
-  const headerAvatarSrc = memberAccount?.basicProfile?.avatarUrl || undefined;
+  const headerAvatarSrc =
+    (data?.personalInformation?.avatarFile as Record<string, unknown>)?.url as string ||
+    memberAccount?.basicProfile?.avatarUrl ||
+    undefined;
 
   const shouldFetchProfile = isAuthenticated && activeTab === 'profile' && !data && !loading && !error;
 
@@ -62,6 +69,12 @@ export default function ProfilePage() {
     dispatch(fetchProfileCompletionThunk());
   }, [dispatch]);
 
+  const openAvatarEditor = useCallback(() => {
+    if (data) {
+      setIsAvatarEditorOpen(true);
+    }
+  }, [data]);
+
   const activePanel = useMemo(() => {
     if (activeTab === 'church') {
       return <ChurchMembershipPanel />;
@@ -76,15 +89,28 @@ export default function ProfilePage() {
     }
 
     if (data) {
-      return <ProfileCompletionView profile={data} />;
+      return <ProfileCompletionView profile={data} onAvatarClick={openAvatarEditor} />;
     }
 
     return null;
-  }, [activeTab, data, error, loading, retryProfileFetch]);
+  }, [activeTab, data, error, loading, openAvatarEditor, retryProfileFetch]);
 
   return (
     <AppShell
-      headerAvatar={<AppAvatar name={headerAvatarName} src={headerAvatarSrc} size="md" />}
+      headerAvatar={
+        data ? (
+          <button
+            type="button"
+            className="rounded-full outline-none focus-visible:ring-3 focus-visible:ring-[#123B8D]/20"
+            aria-label="Update profile avatar"
+            onClick={openAvatarEditor}
+          >
+            <AppAvatar name={headerAvatarName} src={headerAvatarSrc} size="md" />
+          </button>
+        ) : (
+          <AppAvatar name={headerAvatarName} src={headerAvatarSrc} size="md" />
+        )
+      }
       mobileHeaderAddon={
         <div className="min-w-0 bg-white/95 shadow-[0_8px_18px_rgba(11,31,74,0.04)] backdrop-blur-xl">
           <div className="min-w-0 overflow-hidden border-b border-[#E5E7EB]">
@@ -102,6 +128,7 @@ export default function ProfilePage() {
             <ProfileProgressSummary
               profile={data}
               className="mx-auto max-w-[78rem] gap-3 px-4 py-4"
+              onAvatarClick={openAvatarEditor}
             />
           )}
         </div>
@@ -115,6 +142,16 @@ export default function ProfilePage() {
         >
           {activePanel}
         </section>
+        {data && (
+          <ProfileSectionEditModal
+            open={isAvatarEditorOpen}
+            sectionKey="personalInformation"
+            sectionTitle="Profile Avatar"
+            sectionData={data.personalInformation}
+            fieldNames={avatarOnlyFieldNames}
+            onClose={() => setIsAvatarEditorOpen(false)}
+          />
+        )}
       </div>
     </AppShell>
   );

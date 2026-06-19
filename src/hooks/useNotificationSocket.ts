@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { io, type Socket } from 'socket.io-client';
 import { env } from '@/config/env';
 import type { AppDispatch } from '@/store';
+import { pushNotification } from '@/store/slices/notificationSlice';
 import { setUnreadCount, upsertNotification, updateReadState } from '@/store/slices/realtimeNotificationSlice';
 import type { RealtimeNotification, FilterCategory } from '@/types/realtimeNotification';
 
@@ -12,6 +13,10 @@ const MEMBER_REFRESH_TYPES = new Set([
 ]);
 
 const TRANSACTION_REFRESH_TYPES = new Set(['transaction.completed']);
+
+const MINISTRY_REFRESH_TYPES = new Set(['member.ministry.request.approved']);
+
+const DEPARTMENT_REFRESH_TYPES = new Set(['member.department.request.approved']);
 
 export function useNotificationSocket(
   accessToken: string | undefined,
@@ -85,6 +90,42 @@ export function useNotificationSocket(
         console.log('[socket] refreshing wallet data due to', notification.type);
         import('@/store/thunks/walletThunk').then(({ fetchWalletsThunk }) => {
           dispatchRef.current(fetchWalletsThunk());
+        });
+      }
+      if (MINISTRY_REFRESH_TYPES.has(notification.type)) {
+        console.log('[socket] refreshing ministry data due to', notification.type);
+        dispatchRef.current(
+          pushNotification({
+            type: 'success',
+            title: 'Ministry request approved',
+            message: 'Your ministry membership has been updated.',
+          }),
+        );
+        import('@/store/thunks/ministryThunk').then(({
+          fetchChurchMinistriesThunk,
+          fetchMyMinistriesThunk,
+        }) => {
+          dispatchRef.current(fetchMyMinistriesThunk());
+          dispatchRef.current(fetchChurchMinistriesThunk());
+        });
+      }
+      if (DEPARTMENT_REFRESH_TYPES.has(notification.type)) {
+        console.log('[socket] refreshing department data due to', notification.type);
+        dispatchRef.current(
+          pushNotification({
+            type: 'success',
+            title: 'Department request approved',
+            message: 'Your department membership has been updated.',
+          }),
+        );
+        import('@/store/slices/forumSlice').then(({
+          fetchChurchDepartmentsThunk,
+          fetchDepartmentRequestsThunk,
+          fetchUserDepartmentsThunk,
+        }) => {
+          dispatchRef.current(fetchUserDepartmentsThunk());
+          dispatchRef.current(fetchChurchDepartmentsThunk());
+          dispatchRef.current(fetchDepartmentRequestsThunk());
         });
       }
 

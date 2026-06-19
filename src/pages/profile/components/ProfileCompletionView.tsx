@@ -16,7 +16,13 @@ import { ProfileProgressSummary } from './ProfileProgressSummary';
 import { ProfileSectionEditModal } from './ProfileSectionEditModal';
 import { SectionShell } from './SectionShell';
 
-export const ProfileCompletionView = ({ profile }: { profile: ProfileCompletion }) => {
+export const ProfileCompletionView = ({
+  profile,
+  onAvatarClick,
+}: {
+  profile: ProfileCompletion;
+  onAvatarClick?: () => void;
+}) => {
   const memberAccount = useAppSelector((state) => state.member.data);
   const [editingSection, setEditingSection] = useState<{
     key: keyof ProfileCompletion;
@@ -29,7 +35,11 @@ export const ProfileCompletionView = ({ profile }: { profile: ProfileCompletion 
 
   return (
     <div className="grid gap-5">
-      <ProfileProgressSummary profile={profile} className="hidden min-[1181px]:grid" />
+      <ProfileProgressSummary
+        profile={profile}
+        className="hidden min-[1181px]:grid"
+        onAvatarClick={onAvatarClick}
+      />
 
       <div className="grid gap-4 lg:grid-cols-2">
         {informationGroups.map((group) => {

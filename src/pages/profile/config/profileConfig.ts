@@ -57,7 +57,7 @@ export const sectionFieldSchemas: Partial<Record<keyof ProfileCompletion, Profil
     { name: 'currentlyAttendsChurch', type: 'boolean' },
   ],
   personalInformation: [
-    { name: 'avatarUrl', label: 'Avatar', type: 'file', ...memberUploadDefaults },
+    { name: 'avatarFileId', label: 'Avatar', type: 'file', ...memberUploadDefaults },
     { name: 'firstName' },
     { name: 'lastName' },
     { name: 'displayName' },

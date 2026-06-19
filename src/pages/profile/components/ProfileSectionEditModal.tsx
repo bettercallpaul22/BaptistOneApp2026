@@ -28,25 +28,35 @@ export const ProfileSectionEditModal = ({
   sectionKey,
   sectionTitle,
   sectionData,
+  fieldNames,
   open,
   onClose,
 }: {
   sectionKey: keyof ProfileCompletion;
   sectionTitle: string;
   sectionData: unknown;
+  fieldNames?: string[];
   open: boolean;
   onClose: () => void;
 }) => {
   const dispatch = useAppDispatch();
-  const fields = useMemo(
+  const editableFields = useMemo(
     () => getEditableFields(sectionKey, sectionData),
     [sectionData, sectionKey],
   );
+  const fields = useMemo(
+    () => {
+      return fieldNames?.length
+        ? editableFields.filter((field) => fieldNames.includes(field.name))
+        : editableFields;
+    },
+    [editableFields, fieldNames],
+  );
   const [formValues, setFormValues] = useState<Record<string, EditableFieldValue>>(() =>
-    buildInitialFormValues(sectionData, fields),
+    buildInitialFormValues(sectionData, editableFields),
   );
   const initialValuesRef = useRef<Record<string, EditableFieldValue>>(
-    buildInitialFormValues(sectionData, fields),
+    buildInitialFormValues(sectionData, editableFields),
   );
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -64,13 +74,13 @@ export const ProfileSectionEditModal = ({
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
-      const initial = buildInitialFormValues(sectionData, fields);
+      const initial = buildInitialFormValues(sectionData, editableFields);
       initialValuesRef.current = initial;
       setFormValues(initial);
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
-  }, [fields, sectionData]);
+  }, [editableFields, sectionData]);
 
   const setFieldValue = (name: string, value: EditableFieldValue) => {
     setFormValues((current) => ({ ...current, [name]: value }));
@@ -168,7 +178,12 @@ export const ProfileSectionEditModal = ({
       await dispatch(
         updateProfileCompletionSectionThunk({
           sectionKey: String(sectionKey),
-          data: buildSectionPayload(visibleFields, formValues),
+          data: buildSectionPayload(
+            fieldNames?.length
+              ? getVisibleFields(sectionKey, editableFields, formValues)
+              : visibleFields,
+            formValues,
+          ),
         }),
       ).unwrap();
       dispatch(

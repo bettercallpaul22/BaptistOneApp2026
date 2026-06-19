@@ -81,6 +81,7 @@ export const AppShell = ({ children, headerAvatar, mobileHeaderAddon }: AppShell
   const mobileHeaderRef = useRef<HTMLDivElement>(null);
   const { authData, hasKnownUser, isAuthenticated, user } = useAppSelector((state) => state.auth);
   const memberAccount = useAppSelector((state) => state.member.data);
+  const profileData = useAppSelector((state) => state.profile.data);
   const showSidebar = isDesktop;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMenuLoginPromptOpen, setIsMenuLoginPromptOpen] = useState(false);
@@ -120,7 +121,12 @@ export const AppShell = ({ children, headerAvatar, mobileHeaderAddon }: AppShell
     isAuthenticated && defaultHeaderAvatarName ? (
       <AppAvatar
         name={defaultHeaderAvatarName}
-        src={memberAccount?.basicProfile?.avatarUrl || authData?.profile?.avatarUrl || undefined}
+        src={
+          (profileData?.personalInformation?.avatarFile as Record<string, unknown>)?.url as string ||
+          memberAccount?.basicProfile?.avatarUrl ||
+          authData?.profile?.avatarUrl ||
+          undefined
+        }
         size="md"
       />
     ) : null;

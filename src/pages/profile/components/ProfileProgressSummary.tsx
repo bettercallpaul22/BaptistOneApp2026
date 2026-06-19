@@ -1,17 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import clsx from 'clsx';
-import { Gift } from 'lucide-react';
+import { Camera, Gift } from 'lucide-react';
 import { AppText } from '@/components/common';
+import { AppAvatar } from '@/components/display';
 import type { ProfileCompletion } from '@/types/profile';
 import { formatCurrencyValue } from '../utils/profileFormatters';
-import { getAvatarLabel, getProfileDisplayName } from '../utils/profileDisplayUtils';
+import { getProfileDisplayName } from '../utils/profileDisplayUtils';
 
 interface ProfileProgressSummaryProps {
   profile: ProfileCompletion;
   className?: string;
+  onAvatarClick?: () => void;
 }
 
-export const ProfileProgressSummary = ({ profile, className }: ProfileProgressSummaryProps) => {
+export const ProfileProgressSummary = ({
+  profile,
+  className,
+  onAvatarClick,
+}: ProfileProgressSummaryProps) => {
   const rewardBucketValue = `${profile.rewardBalance}:${profile.currency}`;
   const previousRewardBucketValue = useRef(rewardBucketValue);
   const [isRewardBucketAnimating, setIsRewardBucketAnimating] = useState(false);
@@ -19,7 +25,10 @@ export const ProfileProgressSummary = ({ profile, className }: ProfileProgressSu
   const completedSections = sectionEntries.filter(([, section]) => section.completed);
   const incompleteSections = sectionEntries.length - completedSections.length;
   const progress = Math.min(100, Math.max(0, profile.completionScore));
-  const avatarLabel = getAvatarLabel(getProfileDisplayName(profile));
+  const profileDisplayName = getProfileDisplayName(profile);
+  const avatarUrl = (profile.personalInformation?.avatarFile as Record<string, unknown>)?.url as
+    | string
+    | undefined;
   const rewardBalance = useMemo(
     () => formatCurrencyValue(profile.rewardBalance, profile.currency),
     [profile.currency, profile.rewardBalance],
@@ -39,9 +48,20 @@ export const ProfileProgressSummary = ({ profile, className }: ProfileProgressSu
   return (
     <div className={clsx('grid gap-5', className)}>
       <div className="grid justify-items-center pt-2">
-        <span className="grid size-16 place-items-center rounded-full bg-[#EAF1FF] text-xl font-black text-[#123B8D] ring-4 ring-white shadow-[0_8px_18px_rgba(11,31,74,0.08)]">
-          {avatarLabel}
-        </span>
+        <button
+          type="button"
+          className="group relative rounded-full ring-4 ring-white shadow-[0_8px_18px_rgba(11,31,74,0.08)] outline-none transition-transform focus-visible:ring-[#123B8D]/30 active:scale-95"
+          aria-label="Update profile avatar"
+          onClick={onAvatarClick}
+        >
+          <AppAvatar name={profileDisplayName} src={avatarUrl} size="lg" />
+          <span
+            className="absolute -right-1 -bottom-1 grid size-7 place-items-center rounded-full border-2 border-white bg-[#123B8D] text-white shadow-sm"
+            aria-hidden
+          >
+            <Camera className="size-3.5" />
+          </span>
+        </button>
       </div>
 
       <section className="grid gap-3 rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-[0_8px_18px_rgba(11,31,74,0.05)]">

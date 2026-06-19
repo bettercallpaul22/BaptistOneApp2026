@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 
 export interface AppAvatarProps {
@@ -23,10 +23,16 @@ const sizeClasses = {
   xl: 'size-20 text-2xl',
 } as const;
 
-const normalizeAvatarSrc = (src?: string) => (src?.startsWith('http://') ? src.replace(/^http:\/\//, 'https://') : src);
+const getAvatarSrcCandidates = (src?: string) => {
+  if (!src) return [];
+  if (src.startsWith('http://')) return [src.replace(/^http:\/\//, 'https://'), src];
+  return [src];
+};
 
 export const AppAvatar = ({ src, name, size = 'md', online = false }: AppAvatarProps) => {
-  const avatarSrc = normalizeAvatarSrc(src);
+  const avatarSrcCandidates = useMemo(() => getAvatarSrcCandidates(src), [src]);
+  const [candidateIndex, setCandidateIndex] = useState(0);
+  const avatarSrc = avatarSrcCandidates[candidateIndex];
   const [imageState, setImageState] = useState<{ src?: string; loaded: boolean; failed: boolean }>({
     loaded: false,
     failed: false,
@@ -35,6 +41,11 @@ export const AppAvatar = ({ src, name, size = 'md', online = false }: AppAvatarP
   const imageFailed = imageState.src === avatarSrc && imageState.failed;
   const showImage = Boolean(avatarSrc && !imageFailed);
   const showSkeleton = showImage && !imageLoaded;
+
+  useEffect(() => {
+    setCandidateIndex(0);
+    setImageState({ loaded: false, failed: false });
+  }, [src]);
 
   return (
     <span
@@ -50,7 +61,17 @@ export const AppAvatar = ({ src, name, size = 'md', online = false }: AppAvatarP
           className={clsx('size-full object-cover transition-opacity duration-200', imageLoaded ? 'opacity-100' : 'opacity-0')}
           alt=""
           src={avatarSrc}
-          onError={() => setImageState({ src: avatarSrc, loaded: false, failed: true })}
+          onError={() => {
+            const nextCandidateIndex = candidateIndex + 1;
+
+            if (avatarSrcCandidates[nextCandidateIndex]) {
+              setCandidateIndex(nextCandidateIndex);
+              setImageState({ loaded: false, failed: false });
+              return;
+            }
+
+            setImageState({ src: avatarSrc, loaded: false, failed: true });
+          }}
           onLoad={() => setImageState({ src: avatarSrc, loaded: true, failed: false })}
         />
       ) : (
