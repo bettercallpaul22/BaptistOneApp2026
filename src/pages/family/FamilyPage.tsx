@@ -1022,14 +1022,9 @@ const FamilyPage = () => {
                 <AppText variant="bodyMedium" weight="bold" lineClamp={1}>
                   {selectedMemberName}
                 </AppText>
-                {selectedMemberContact && (
+                {selectedMember.username && (
                   <AppText variant="bodySmall" color="textSecondary" lineClamp={1}>
-                    {selectedMemberContact}
-                  </AppText>
-                )}
-                {selectedMember.churchName && (
-                  <AppText variant="caption" color="textMuted" lineClamp={1}>
-                    {selectedMember.churchName}
+                    @{selectedMember.username}
                   </AppText>
                 )}
               </div>
