@@ -111,3 +111,7 @@ export interface SetPasswordResult {
   email: string;
   message: string;
 }
+
+export interface SwitchAccessPayload {
+  accessId: string;
+}

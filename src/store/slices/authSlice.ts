@@ -8,6 +8,7 @@ import {
   loginThunk,
   registerThunk,
   setPasswordThunk,
+  switchAccessThunk,
 } from '@/store/thunks/authThunk';
 import { getStoredAuthStatus, hasStoredUserData, readStoredAuthData, type StoredAuthStatus } from '@/utils/authToken';
 import type { AuthData, AuthUser, RegistrationResult } from '@/types/auth';
@@ -170,6 +171,17 @@ export const authSlice = createSlice({
       .addCase(setPasswordThunk.rejected, (state, action) => {
         state.setPasswordLoading = false;
         state.error = action.payload?.message ?? 'Unable to reset password.';
+      })
+      .addCase(switchAccessThunk.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(switchAccessThunk.fulfilled, (state, action) => {
+        applyAuthenticatedState(state, action.payload);
+      })
+      .addCase(switchAccessThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload?.message ?? 'Unable to switch access.';
       });
   },
 });

@@ -11,6 +11,7 @@ export const endpoints = {
     verifyOtp: '/auth/verify-otp',
     setPassword: '/auth/set-password',
     me: '/auth/me',
+    switchAccess: '/auth/access/switch',
   },
   user: {
     profile: '/user/profile',

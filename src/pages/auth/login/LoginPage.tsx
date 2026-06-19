@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
@@ -7,8 +7,10 @@ import appleIcon from '@/assets/icons/apple_icon.svg';
 import googleIcon from '@/assets/icons/google_icon.svg';
 import appLogo from '@/assets/icons/applogo.png';
 import { AppButton } from '@/components/common';
+import { NoAccessModal } from '@/components/feedback/NoAccessModal';
 import { AppCheckbox, AppInput } from '@/components/form';
 import { storageKeys } from '@/constants/storage';
+import { usePostLoginAccess } from '@/hooks/usePostLoginAccess';
 import { AuthLayout } from '@/layouts/AuthLayout';
 import { paths } from '@/routes/paths';
 import { loginThunk } from '@/store/thunks/authThunk';
@@ -40,7 +42,8 @@ export default function LoginPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const { loading, error } = useAppSelector((state) => state.auth);
+  const { loading, error, authData } = useAppSelector((state) => state.auth);
+  const { ready, showNoAccessModal, handleLogoutAndRedirect } = usePostLoginAccess(authData);
   const { register, handleSubmit, formState } = useForm<LoginForm>({
     resolver: zodResolver(schema),
     defaultValues: { email: '', password: '', rememberMe: true },
@@ -51,19 +54,23 @@ export default function LoginPage() {
       try {
         await dispatch(loginThunk({ email, password })).unwrap();
         dispatch(pushNotification({ type: 'success', title: 'Signed in', message: 'Welcome back to BaptistOne.' }));
-
-        const stateFrom = (location.state as LoginLocationState)?.from;
-        const sessionRedirect = sessionStorage.getItem(storageKeys.postAuthRedirect);
-        const from = sessionRedirect || `${stateFrom?.pathname ?? paths.home}${stateFrom?.search ?? ''}${stateFrom?.hash ?? ''}`;
-        sessionStorage.removeItem(storageKeys.postAuthRedirect);
-        navigate(from, { replace: true });
       } catch (error) {
         const message = (error as { message?: string })?.message ?? 'Check your email and password, then try again.';
         dispatch(pushNotification({ type: 'error', title: 'Sign in failed', message }));
       }
     },
-    [dispatch, location.state, navigate],
+    [dispatch],
   );
+
+  useEffect(() => {
+    if (!ready) return;
+
+    const stateFrom = (location.state as LoginLocationState)?.from;
+    const sessionRedirect = sessionStorage.getItem(storageKeys.postAuthRedirect);
+    const from = sessionRedirect || `${stateFrom?.pathname ?? paths.home}${stateFrom?.search ?? ''}${stateFrom?.hash ?? ''}`;
+    sessionStorage.removeItem(storageKeys.postAuthRedirect);
+    navigate(from, { replace: true });
+  }, [ready, navigate, location.state]);
 
   return (
     <AuthLayout
@@ -71,6 +78,7 @@ export default function LoginPage() {
       subtitle="Access your church community, Bible, hymns, events and more."
       logo={<img src={appLogo} alt="BaptistOne" className="h-20 w-auto rounded-xl" />}
     >
+      <NoAccessModal open={showNoAccessModal} onLogout={handleLogoutAndRedirect} />
       <div className={authCardClass}>
         {error && <div className={authErrorClass}>{error}</div>}
         <form className={authFormClass} onSubmit={handleSubmit(onSubmit)}>

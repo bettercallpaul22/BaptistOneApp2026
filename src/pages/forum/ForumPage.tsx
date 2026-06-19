@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppButton, AppScrollableTabs, AppText } from '@/components/common';
 import { AppAvatar, AppCard } from '@/components/display';
+import { ChurchMembershipGuard } from '@/components/guards';
 import { AppShell } from '@/layouts/AppShell';
 import { AppStateFeedback } from '@/components/feedback';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -81,11 +82,7 @@ const ForumPage = () => {
       void dispatch(fetchChurchDepartmentsThunk());
       void dispatch(fetchDepartmentRequestsThunk());
     }
-
-    if (!units.length && !unitsLoading && !unitsError) {
-      void dispatch(fetchUserUnitsThunk());
-    }
-  }, [churchDepartments.length, churchDepartmentsError, churchDepartmentsLoading, dispatch, units.length, unitsError, unitsLoading]);
+  }, [churchDepartments.length, churchDepartmentsError, churchDepartmentsLoading, dispatch]);
 
   const loadMoreForums = useCallback(() => {
     if (!hasMore || loadingMore) return;
@@ -217,6 +214,7 @@ const ForumPage = () => {
         </div>
       }
     >
+      <ChurchMembershipGuard>
       <main className="min-w-0">
         <section className="mx-auto max-w-[78rem] px-4 py-6 pb-28 sm:px-6 md:px-9" role="tabpanel" aria-label={activeTab}>
           {isInitialLoading && (
@@ -361,6 +359,7 @@ const ForumPage = () => {
           )}
         </section>
       </main>
+      </ChurchMembershipGuard>
     </AppShell>
   );
 };

@@ -2,10 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertCircle, CheckCircle2, RotateCcw } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AppButton, AppText } from '@/components/common';
-import { AppLoader } from '@/components/feedback';
+import { AppLoader, NoAccessModal } from '@/components/feedback';
+import { usePostLoginAccess } from '@/hooks/usePostLoginAccess';
 import { AuthLayout } from '@/layouts/AuthLayout';
 import { paths } from '@/routes/paths';
-import { useAppDispatch } from '@/store/hooks';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { pushNotification } from '@/store/slices/notificationSlice';
 import { handoffLoginThunk } from '@/store/thunks/authThunk';
 import { authCardClass, authErrorClass } from '../authClasses';
@@ -20,6 +21,8 @@ export default function EmailVerifyPage() {
   const code = useMemo(() => new URLSearchParams(location.search).get('code')?.trim() ?? '', [location.search]);
   const [status, setStatus] = useState<VerificationStatus>('loading');
   const [message, setMessage] = useState<string | null>(null);
+  const { authData } = useAppSelector((state) => state.auth);
+  const { ready, showNoAccessModal, handleLogoutAndRedirect } = usePostLoginAccess(authData);
 
   const completeHandoffLogin = useCallback(async () => {
     if (!code) {
@@ -34,14 +37,13 @@ export default function EmailVerifyPage() {
     try {
       await dispatch(handoffLoginThunk({ code })).unwrap();
       dispatch(pushNotification({ type: 'success', title: 'Signed in', message: 'Welcome to BaptistOne.' }));
-      navigate(paths.home, { replace: true });
     } catch (error) {
       const errorMessage = (error as { message?: string })?.message ?? 'We could not complete this handoff login. Please try again.';
       setStatus('error');
       setMessage(errorMessage);
       dispatch(pushNotification({ type: 'error', title: 'Handoff login failed', message: errorMessage }));
     }
-  }, [code, dispatch, navigate]);
+  }, [code, dispatch]);
 
   useEffect(() => {
     if (hasRequestedRef.current) return;
@@ -50,8 +52,14 @@ export default function EmailVerifyPage() {
     void completeHandoffLogin();
   }, [completeHandoffLogin]);
 
+  useEffect(() => {
+    if (!ready || status === 'error') return;
+    navigate(paths.home, { replace: true });
+  }, [ready, status, navigate]);
+
   return (
     <AuthLayout title="Signing You In" subtitle="We are confirming your BaptistOne handoff">
+      <NoAccessModal open={showNoAccessModal} onLogout={handleLogoutAndRedirect} />
       <div className={authCardClass}>
         {status === 'loading' ? (
           <div className="grid justify-items-center gap-4 py-3 text-center">

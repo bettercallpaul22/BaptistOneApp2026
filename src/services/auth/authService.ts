@@ -9,6 +9,7 @@ import type {
   LoginCredentials,
   RegisterPayload,
   SetPasswordPayload,
+  SwitchAccessPayload,
 } from '@/types/auth';
 
 export const authService = {
@@ -20,4 +21,6 @@ export const authService = {
     http.post<AuthApiResponse<unknown>, ForgotPasswordPayload>(endpoints.auth.forgotPassword, payload),
   setPassword: (payload: SetPasswordPayload) =>
     http.post<AuthApiResponse<unknown>, SetPasswordPayload>(endpoints.auth.setPassword, payload),
+  switchAccess: (payload: SwitchAccessPayload) =>
+    http.post<AuthApiResponse<AuthData>, SwitchAccessPayload>(endpoints.auth.switchAccess, payload),
 };

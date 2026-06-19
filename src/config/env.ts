@@ -10,6 +10,7 @@ const required = (key: keyof ImportMetaEnv): string => {
 
 export const env = {
   apiBaseUrl: required('VITE_API_BASE_URL'),
+  socketNotificationsUrl: required('VITE_SOCKET_NOTIFICATIONS_URL'),
   appName: required('VITE_APP_NAME'),
   appVersion: required('VITE_APP_VERSION'),
   googleMapsKey: import.meta.env.VITE_GOOGLE_MAPS_KEY ?? '',

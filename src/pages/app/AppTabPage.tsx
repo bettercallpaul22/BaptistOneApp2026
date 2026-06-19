@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AlertCircle, BookOpen, Building2, CalendarDays, Church, Clock3, FileText, Mail, MapPin, Music2, Phone, RefreshCw, Search, User, Users, Wallet } from 'lucide-react';
 import { AppButton, AppText } from '@/components/common';
 import { AppAvatar, AppCard, ProfileCard } from '@/components/display';
+import { ChurchMembershipGuard } from '@/components/guards';
 import { AppLoader, AppModal, AppStateFeedback } from '@/components/feedback';
 import { useChurchScreenBootstrapApi } from '@/hooks/useChurchScreenBootstrapApi';
 import { AppShell } from '@/layouts/AppShell';
@@ -497,7 +498,6 @@ const ChurchDocumentsSection = ({ documents, loading }: { documents: ChurchDocum
 };
 
 const ChurchTabScreen = () => {
-  const navigate = useNavigate();
   const {
     church,
     documents,
@@ -557,21 +557,6 @@ const ChurchTabScreen = () => {
     );
   }
 
-  if (membershipStatus !== 'APPROVED') {
-    return (
-      <ChurchStatusMessage
-        title="Join a church to continue"
-        description="Join a church to access church features, events, departments, and church updates."
-        icon={
-          <span className="grid size-12 place-items-center rounded-full bg-[#EAF1FF] text-[#123B8D]">
-            <Church className="size-6" aria-hidden />
-          </span>
-        }
-        action={<AppButton onClick={() => navigate(paths.profile, { state: { profileTab: 'church' } })}>Join church</AppButton>}
-      />
-    );
-  }
-
   if (!church) {
     return (
       <ChurchStatusMessage
@@ -609,7 +594,9 @@ export default function AppTabPage({ kind }: AppTabPageProps) {
     return (
       <AppShell>
         <main className="mx-auto w-full max-w-[78rem] px-4 py-6 sm:px-6 md:px-9 md:py-9">
-          <ChurchTabScreen />
+          <ChurchMembershipGuard>
+            <ChurchTabScreen />
+          </ChurchMembershipGuard>
         </main>
       </AppShell>
     );

@@ -13,6 +13,7 @@ import { forumPostsSlice } from './slices/forumPostsSlice';
 import { homeReducer } from './slices/homeSlice';
 import { userReducer } from './slices/userSlice';
 import { walletReducer } from './slices/walletSlice';
+import { realtimeNotificationReducer } from './slices/realtimeNotificationSlice';
 
 export const rootReducer = combineReducers({
   app: appReducer,
@@ -23,6 +24,7 @@ export const rootReducer = combineReducers({
   member: memberReducer,
   ministry: ministryReducer,
   notifications: notificationReducer,
+  realtimeNotification: realtimeNotificationReducer,
   profile: profileReducer,
   forum: forumReducer,
   forumPosts: forumPostsSlice.reducer,

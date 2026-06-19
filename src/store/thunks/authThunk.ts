@@ -14,6 +14,7 @@ import type {
   RegistrationResult,
   SetPasswordPayload,
   SetPasswordResult,
+  SwitchAccessPayload,
 } from '@/types/auth';
 
 const persistAuthSession = (authData: AuthData) => {
@@ -144,3 +145,22 @@ export const setPasswordThunk = createAsyncThunk<
     return rejectWithValue(toApiError(error));
   }
 });
+
+export const switchAccessThunk = createAsyncThunk<AuthData, SwitchAccessPayload, { rejectValue: ReturnType<typeof toApiError> }>(
+  'auth/switchAccess',
+  async (payload, { rejectWithValue }) => {
+    try {
+      const response = await authService.switchAccess(payload);
+
+      if (!response.status || !response.data?.access?.token) {
+        return rejectWithValue({ message: response.message || 'Unable to switch access.' });
+      }
+
+      persistAuthSession(response.data);
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(toApiError(error));
+    }
+  },
+);
