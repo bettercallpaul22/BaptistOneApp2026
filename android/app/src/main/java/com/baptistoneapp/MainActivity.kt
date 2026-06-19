@@ -1,4 +1,4 @@
-package com.baptistoneapp
+package com.baptistapp
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

@@ -1,4 +1,4 @@
-package com.baptistoneapp
+package com.baptistapp
 
 import android.app.Application
 import com.facebook.react.PackageList
