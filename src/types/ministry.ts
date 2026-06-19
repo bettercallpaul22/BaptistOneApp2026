@@ -14,6 +14,10 @@ export interface ChurchMinistryMembership {
   joinedAt: string;
 }
 
+export interface ChurchMinistryPendingRequest {
+  id: string;
+}
+
 export interface ChurchMinistry {
   ministryId: string;
   churchId: string;
@@ -26,7 +30,7 @@ export interface ChurchMinistry {
   joined: boolean;
   membership: ChurchMinistryMembership | null;
   hasPendingRequest: boolean;
-  pendingRequest: unknown;
+  pendingRequest: ChurchMinistryPendingRequest | null;
 }
 
 export interface MyMinistryResponse {

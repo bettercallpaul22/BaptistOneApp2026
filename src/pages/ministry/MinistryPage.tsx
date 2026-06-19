@@ -4,8 +4,11 @@ import {
   Shield,
   Clock,
   Sparkles,
+  UserPlus,
+  UserMinus,
 } from 'lucide-react';
 import { AppScrollableTabs, AppText } from '@/components/common';
+import { AppButton } from '@/components/common';
 import { AppCard } from '@/components/display';
 import { AppShell } from '@/layouts/AppShell';
 import { AppStateFeedback } from '@/components/feedback';
@@ -17,6 +20,8 @@ import {
 import {
   fetchChurchMinistriesThunk,
   fetchMyMinistriesThunk,
+  requestToJoinMinistryThunk,
+  cancelMinistryRequestThunk,
 } from '@/store/thunks/ministryThunk';
 import type { ChurchMinistry, MyMinistry } from '@/types/ministry';
 
@@ -79,7 +84,21 @@ const MyMinistryCard = ({ ministry, index }: { ministry: MyMinistry; index: numb
   </div>
 );
 
-const ChurchMinistryCard = ({ ministry, index }: { ministry: ChurchMinistry; index: number }) => (
+const ChurchMinistryCard = ({
+  ministry,
+  index,
+  onJoin,
+  onCancel,
+  isJoining,
+  isCancelling,
+}: {
+  ministry: ChurchMinistry;
+  index: number;
+  onJoin: (ministryId: string) => void;
+  onCancel: (ministryId: string, requestId: string) => void;
+  isJoining: boolean;
+  isCancelling: boolean;
+}) => (
   <div
     className="animate-slide-up opacity-0"
     style={{ animationDelay: `${index * 80}ms` }}
@@ -102,21 +121,44 @@ const ChurchMinistryCard = ({ ministry, index }: { ministry: ChurchMinistry; ind
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${statusBadgeColor(ministry.joined)}`}>
-            {ministry.joined ? 'Joined' : 'Available'}
-          </span>
-          {ministry.membership && (
-            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${roleBadgeColor(ministry.membership.role)}`}>
-              <Shield className="size-3" aria-hidden />
-              {ministry.membership.role}
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${statusBadgeColor(ministry.joined)}`}>
+              {ministry.joined ? 'Joined' : 'Available'}
             </span>
+            {ministry.membership && (
+              <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${roleBadgeColor(ministry.membership.role)}`}>
+                <Shield className="size-3" aria-hidden />
+                {ministry.membership.role}
+              </span>
+            )}
+            {ministry.hasPendingRequest && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
+                <Clock className="size-3" aria-hidden />
+                Pending
+              </span>
+            )}
+          </div>
+          {!ministry.joined && !ministry.hasPendingRequest && (
+            <AppButton
+              size="sm"
+              leftIcon={<UserPlus className="size-3.5" aria-hidden />}
+              loading={isJoining}
+              onClick={() => onJoin(ministry.ministryId)}
+            >
+              Join
+            </AppButton>
           )}
-          {ministry.hasPendingRequest && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
-              <Clock className="size-3" aria-hidden />
-              Pending
-            </span>
+          {ministry.hasPendingRequest && ministry.pendingRequest && (
+            <AppButton
+              size="sm"
+              variant="secondary"
+              leftIcon={<UserMinus className="size-3.5" aria-hidden />}
+              loading={isCancelling}
+              onClick={() => onCancel(ministry.ministryId, ministry.pendingRequest!.id)}
+            >
+              Cancel
+            </AppButton>
           )}
         </div>
       </div>
@@ -135,6 +177,8 @@ export default function MinistryPage() {
     churchMinistries,
     churchMinistriesLoading,
     churchMinistriesError,
+    joinRequestLoading,
+    cancelRequestLoading,
   } = useAppSelector((state) => state.ministry);
 
   useEffect(() => {
@@ -158,6 +202,14 @@ export default function MinistryPage() {
       dispatch(clearChurchMinistriesError());
       void dispatch(fetchChurchMinistriesThunk());
     }
+  };
+
+  const handleJoinMinistry = (ministryId: string) => {
+    dispatch(requestToJoinMinistryThunk(ministryId));
+  };
+
+  const handleCancelRequest = (ministryId: string, requestId: string) => {
+    dispatch(cancelMinistryRequestThunk({ ministryId, requestId }));
   };
 
   const isLoading = activeTab === 'my' ? myMinistriesLoading : churchMinistriesLoading;
@@ -236,7 +288,15 @@ export default function MinistryPage() {
 
               {activeTab === 'church' &&
                 churchMinistries.map((ministry, index) => (
-                  <ChurchMinistryCard key={ministry.ministryId} ministry={ministry} index={index} />
+                  <ChurchMinistryCard
+                    key={ministry.ministryId}
+                    ministry={ministry}
+                    index={index}
+                    onJoin={handleJoinMinistry}
+                    onCancel={handleCancelRequest}
+                    isJoining={joinRequestLoading === ministry.ministryId}
+                    isCancelling={cancelRequestLoading === ministry.ministryId}
+                  />
                 ))}
             </div>
           )}

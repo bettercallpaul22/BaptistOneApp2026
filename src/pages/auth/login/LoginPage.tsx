@@ -5,6 +5,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import appleIcon from '@/assets/icons/apple_icon.svg';
 import googleIcon from '@/assets/icons/google_icon.svg';
+import appLogo from '@/assets/icons/applogo.png';
 import { AppButton } from '@/components/common';
 import { AppCheckbox, AppInput } from '@/components/form';
 import { storageKeys } from '@/constants/storage';
@@ -65,7 +66,11 @@ export default function LoginPage() {
   );
 
   return (
-    <AuthLayout title="Sign In" subtitle="Access your church community, Bible, hymns, events and more.">
+    <AuthLayout
+      title="Sign In"
+      subtitle="Access your church community, Bible, hymns, events and more."
+      logo={<img src={appLogo} alt="BaptistOne" className="h-20 w-auto rounded-xl" />}
+    >
       <div className={authCardClass}>
         {error && <div className={authErrorClass}>{error}</div>}
         <form className={authFormClass} onSubmit={handleSubmit(onSubmit)}>

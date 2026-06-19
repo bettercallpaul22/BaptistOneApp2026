@@ -142,7 +142,7 @@ export default function HymnalPage() {
                     <Music2 className="size-6" aria-hidden />
                   </span>
                   <div className="min-w-0">
-                    <AppText variant="h3">Hymnal</AppText>
+                    <AppText variant="h3">Baptist Hymnal</AppText>
                     <AppText variant="bodySmall" color="textSecondary">
                       {hymns.length} hymns available
                     </AppText>
@@ -189,7 +189,6 @@ export default function HymnalPage() {
                         <span className="text-sm font-black text-[#123B8D]">
                           {hymn.number}. {hymn.title}
                         </span>
-                        <span className="text-xs font-bold uppercase tracking-[0.12em] text-[#D4A017]">{getMatchLabel(matchType)}</span>
                         <span className="line-clamp-2 text-sm leading-6 text-[#5A6780]">{preview}</span>
                       </button>
                     );

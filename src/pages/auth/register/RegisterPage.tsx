@@ -6,6 +6,7 @@ import { z } from 'zod';
 import clsx from 'clsx';
 import appleIcon from '@/assets/icons/apple_icon.svg';
 import googleIcon from '@/assets/icons/google_icon.svg';
+import appLogo from '@/assets/icons/applogo.png';
 import { AppButton } from '@/components/common';
 import { AppDropdown, AppInput } from '@/components/form';
 import { callbackUrls } from '@/constants/callbackUrls';
@@ -112,6 +113,7 @@ export default function RegisterPage() {
     <AuthLayout
       title="Create Your Account"
       subtitle="Join your church community in seconds"
+      logo={<img src={appLogo} alt="BaptistOne" className="h-20 w-auto rounded-xl" />}
       contentClassName="md:max-w-[42rem]"
     >
       <div className={clsx(authCardClass, 'md:p-6')}>

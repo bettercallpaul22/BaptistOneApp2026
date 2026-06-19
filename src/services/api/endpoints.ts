@@ -132,6 +132,10 @@ export const endpoints = {
     myUnits: '/private/members/my/units',
     myMinistries: '/private/members/my/ministries',
     churchMinistries: '/private/members/my/church/ministries',
+    requestToJoinMinistry: (ministryId: string) =>
+      `/private/members/my/ministries/${ministryId}/request`,
+    cancelMinistryRequest: (requestId: string) =>
+      `/private/members/my/ministry-requests/${requestId}/cancel`,
     forums: ({ page = 1, limit = 20 }: { page?: number; limit?: number } = {}) => {
       const params = new URLSearchParams();
       params.set('page', String(page));
