@@ -22,6 +22,7 @@ import { paths } from '@/routes/paths';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logout } from '@/store/slices/authSlice';
 import { pushNotification } from '@/store/slices/notificationSlice';
+import { fetchProfileCompletionThunk } from '@/store/thunks/profileThunk';
 
 interface NavigationItem {
   label: string;
@@ -61,6 +62,18 @@ const postNativeLogout = () => {
 const getFirstAvailableName = (...names: Array<string | null | undefined>) =>
   names.find((name) => typeof name === 'string' && name.trim())?.trim() ?? null;
 
+const getProfileAvatarUrl = (profileData: unknown) =>
+  ((profileData as { personalInformation?: { avatarFile?: { url?: unknown } } } | null)
+    ?.personalInformation?.avatarFile?.url as string | undefined) || undefined;
+
+const hasProfileAvatarFileIdWithoutUrl = (profileData: unknown) => {
+  const personalInformation = (profileData as
+    | { personalInformation?: { avatarFileId?: unknown; avatarFile?: { url?: unknown } } }
+    | null)?.personalInformation;
+
+  return Boolean(personalInformation?.avatarFileId && !personalInformation?.avatarFile?.url);
+};
+
 const DesktopHeader = ({ title }: { title: string }) => (
   <header className="fixed top-0 right-0 left-[18rem] z-20 flex min-h-20 items-center justify-between border-b border-[#E5E7EB] bg-white/95 px-8 backdrop-blur-xl">
     <div className="grid gap-1">
@@ -81,7 +94,11 @@ export const AppShell = ({ children, headerAvatar, mobileHeaderAddon }: AppShell
   const mobileHeaderRef = useRef<HTMLDivElement>(null);
   const { authData, hasKnownUser, isAuthenticated, user } = useAppSelector((state) => state.auth);
   const memberAccount = useAppSelector((state) => state.member.data);
-  const profileData = useAppSelector((state) => state.profile.data);
+  const {
+    data: profileData,
+    error: profileError,
+    loading: profileLoading,
+  } = useAppSelector((state) => state.profile);
   const showSidebar = isDesktop;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMenuLoginPromptOpen, setIsMenuLoginPromptOpen] = useState(false);
@@ -122,7 +139,7 @@ export const AppShell = ({ children, headerAvatar, mobileHeaderAddon }: AppShell
       <AppAvatar
         name={defaultHeaderAvatarName}
         src={
-          (profileData?.personalInformation?.avatarFile as Record<string, unknown>)?.url as string ||
+          getProfileAvatarUrl(profileData) ||
           memberAccount?.basicProfile?.avatarUrl ||
           authData?.profile?.avatarUrl ||
           undefined
@@ -130,6 +147,7 @@ export const AppShell = ({ children, headerAvatar, mobileHeaderAddon }: AppShell
         size="md"
       />
     ) : null;
+  const mobileHeaderAvatar = headerAvatar ?? defaultHeaderAvatar;
 
   const handleLogout = () => {
     dispatch(logout());
@@ -150,6 +168,10 @@ export const AppShell = ({ children, headerAvatar, mobileHeaderAddon }: AppShell
 
     setPendingMenuPath(null);
     setIsMenuOpen(true);
+  };
+
+  const handleHeaderAvatarPress = () => {
+    navigate(paths.profile, { state: { profileTab: 'profile' } });
   };
 
   const closeMenu = () => {
@@ -182,6 +204,13 @@ export const AppShell = ({ children, headerAvatar, mobileHeaderAddon }: AppShell
     setDismissedRestrictedPath(pathname);
     navigate(paths.login);
   };
+
+  useEffect(() => {
+    if (!isAuthenticated || profileLoading || profileError) return;
+    if (profileData && !hasProfileAvatarFileIdWithoutUrl(profileData)) return;
+
+    dispatch(fetchProfileCompletionThunk());
+  }, [dispatch, isAuthenticated, profileData, profileError, profileLoading]);
 
   useEffect(() => {
     if (showSidebar) return;
@@ -247,7 +276,18 @@ export const AppShell = ({ children, headerAvatar, mobileHeaderAddon }: AppShell
       ) : (
         <div ref={mobileHeaderRef} className="fixed inset-x-0 top-0 z-40">
           <AppMobileHeader
-            avatar={headerAvatar ?? defaultHeaderAvatar}
+            avatar={
+              mobileHeaderAvatar ? (
+                <button
+                  type="button"
+                  className="rounded-full outline-none focus-visible:ring-3 focus-visible:ring-[#123B8D]/20"
+                  aria-label="Open profile"
+                  onClick={handleHeaderAvatarPress}
+                >
+                  {mobileHeaderAvatar}
+                </button>
+              ) : null
+            }
             title={headerTitle}
             position="static"
             onActionPress={handleMobileMenuPress}

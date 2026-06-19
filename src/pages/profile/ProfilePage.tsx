@@ -97,20 +97,7 @@ export default function ProfilePage() {
 
   return (
     <AppShell
-      headerAvatar={
-        data ? (
-          <button
-            type="button"
-            className="rounded-full outline-none focus-visible:ring-3 focus-visible:ring-[#123B8D]/20"
-            aria-label="Update profile avatar"
-            onClick={openAvatarEditor}
-          >
-            <AppAvatar name={headerAvatarName} src={headerAvatarSrc} size="md" />
-          </button>
-        ) : (
-          <AppAvatar name={headerAvatarName} src={headerAvatarSrc} size="md" />
-        )
-      }
+      headerAvatar={<AppAvatar name={headerAvatarName} src={headerAvatarSrc} size="md" />}
       mobileHeaderAddon={
         <div className="min-w-0 bg-white/95 shadow-[0_8px_18px_rgba(11,31,74,0.04)] backdrop-blur-xl">
           <div className="min-w-0 overflow-hidden border-b border-[#E5E7EB]">

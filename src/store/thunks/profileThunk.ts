@@ -30,7 +30,8 @@ export const updateProfileCompletionSectionThunk = createAsyncThunk<
   { rejectValue: ReturnType<typeof toApiError> }
 >('profile/updateProfileCompletionSection', async (payload, { rejectWithValue }) => {
   try {
-    const response = await profileService.updateProfileCompletionSection(payload);
+    await profileService.updateProfileCompletionSection(payload);
+    const response = await profileService.getProfileCompletion();
     const result = {
       data: response.data as ProfileCompletion,
       lastFetchedAt: new Date().toISOString(),
