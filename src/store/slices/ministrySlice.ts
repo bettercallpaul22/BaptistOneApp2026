@@ -5,9 +5,11 @@ import type { ChurchMinistry, MyMinistry } from '@/types/ministry';
 
 interface MinistryState {
   myMinistries: MyMinistry[];
+  myMinistriesLoaded: boolean;
   myMinistriesLoading: boolean;
   myMinistriesError: string | null;
   churchMinistries: ChurchMinistry[];
+  churchMinistriesLoaded: boolean;
   churchMinistriesLoading: boolean;
   churchMinistriesError: string | null;
   joinRequestLoading: string | null;
@@ -18,9 +20,11 @@ interface MinistryState {
 
 const initialState: MinistryState = {
   myMinistries: [],
+  myMinistriesLoaded: false,
   myMinistriesLoading: false,
   myMinistriesError: null,
   churchMinistries: [],
+  churchMinistriesLoaded: false,
   churchMinistriesLoading: false,
   churchMinistriesError: null,
   joinRequestLoading: null,
@@ -51,6 +55,7 @@ export const ministrySlice = createSlice({
       })
       .addCase(fetchMyMinistriesThunk.fulfilled, (state, action) => {
         state.myMinistriesLoading = false;
+        state.myMinistriesLoaded = true;
         state.myMinistries = action.payload.data;
         state.myMinistriesError = null;
       })
@@ -64,6 +69,7 @@ export const ministrySlice = createSlice({
       })
       .addCase(fetchChurchMinistriesThunk.fulfilled, (state, action) => {
         state.churchMinistriesLoading = false;
+        state.churchMinistriesLoaded = true;
         state.churchMinistries = action.payload.data;
         state.churchMinistriesError = null;
       })

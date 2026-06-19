@@ -173,9 +173,11 @@ export default function MinistryPage() {
 
   const {
     myMinistries,
+    myMinistriesLoaded,
     myMinistriesLoading,
     myMinistriesError,
     churchMinistries,
+    churchMinistriesLoaded,
     churchMinistriesLoading,
     churchMinistriesError,
     joinRequestLoading,
@@ -183,13 +185,13 @@ export default function MinistryPage() {
   } = useAppSelector((state) => state.ministry);
 
   useEffect(() => {
-    if (activeTab === 'my' && !myMinistries.length && !myMinistriesLoading && !myMinistriesError) {
+    if (activeTab === 'my' && !myMinistriesLoaded && !myMinistriesLoading && !myMinistriesError) {
       void dispatch(fetchMyMinistriesThunk());
     }
-    if (activeTab === 'church' && !churchMinistries.length && !churchMinistriesLoading && !churchMinistriesError) {
+    if (activeTab === 'church' && !churchMinistriesLoaded && !churchMinistriesLoading && !churchMinistriesError) {
       void dispatch(fetchChurchMinistriesThunk());
     }
-  }, [activeTab, myMinistries.length, myMinistriesLoading, myMinistriesError, churchMinistries.length, churchMinistriesLoading, churchMinistriesError, dispatch]);
+  }, [activeTab, myMinistriesLoaded, myMinistriesLoading, myMinistriesError, churchMinistriesLoaded, churchMinistriesLoading, churchMinistriesError, dispatch]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value as MinistryTab);
