@@ -10,6 +10,7 @@ import {
 import { AppScrollableTabs, AppText } from '@/components/common';
 import { AppButton } from '@/components/common';
 import { AppCard } from '@/components/display';
+import { ChurchMembershipGuard } from '@/components/guards';
 import { AppShell } from '@/layouts/AppShell';
 import { AppStateFeedback } from '@/components/feedback';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -250,6 +251,7 @@ export default function MinistryPage() {
         </div>
       }
     >
+      <ChurchMembershipGuard>
       <main className="min-w-0">
         <section className="mx-auto max-w-[78rem] px-4 py-6 pb-28 sm:px-6 md:px-9" role="tabpanel" aria-label={activeTab}>
           {isLoading && !items.length && (
@@ -302,6 +304,7 @@ export default function MinistryPage() {
           )}
         </section>
       </main>
+      </ChurchMembershipGuard>
     </AppShell>
   );
 }

@@ -13,6 +13,7 @@ export type ProfileFieldType =
   | 'list'
   | 'textarea'
   | 'select'
+  | 'multi-select'
   | 'file'
   | 'file-list'
   | 'children-list'

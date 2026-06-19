@@ -68,17 +68,13 @@ export const ChurchMembershipPanel = () => {
 
   useEffect(() => {
     if (!canJoinChurch) return;
-    if (initialFetchRequested.current || lastFetchedAt) return;
-
-    initialFetchRequested.current = true;
-    dispatch(fetchChurchRegistrationOptionsThunk({ search: query, page: 1, limit: 20 }));
-  }, [canJoinChurch, dispatch, lastFetchedAt, query]);
-
-  useEffect(() => {
-    if (!canJoinChurch) return;
 
     if (!searchEffectReady.current) {
       searchEffectReady.current = true;
+      return;
+    }
+
+    if (!query.trim()) {
       return;
     }
 

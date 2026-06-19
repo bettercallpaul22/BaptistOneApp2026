@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { Plus, Trash2, X, ChevronDown } from 'lucide-react';
 import { AppButton, AppText } from '@/components/common';
 import { AppModal } from '@/components/feedback';
 import { AppDropdown, AppFileUploadField, AppInput, AppSwitch } from '@/components/form';
@@ -45,16 +45,28 @@ export const ProfileSectionEditModal = ({
   const [formValues, setFormValues] = useState<Record<string, EditableFieldValue>>(() =>
     buildInitialFormValues(sectionData, fields),
   );
+  const initialValuesRef = useRef<Record<string, EditableFieldValue>>(
+    buildInitialFormValues(sectionData, fields),
+  );
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [collapsedItems, setCollapsedItems] = useState<Record<string, boolean>>({});
   const visibleFields = useMemo(
     () => getVisibleFields(sectionKey, fields, formValues),
     [fields, formValues, sectionKey],
   );
 
+  const hasChanges = useMemo(() => {
+    const current = JSON.stringify(formValues);
+    const initial = JSON.stringify(initialValuesRef.current);
+    return current !== initial;
+  }, [formValues]);
+
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
-      setFormValues(buildInitialFormValues(sectionData, fields));
+      const initial = buildInitialFormValues(sectionData, fields);
+      initialValuesRef.current = initial;
+      setFormValues(initial);
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
@@ -143,6 +155,10 @@ export const ProfileSectionEditModal = ({
     setSubmitError(null);
   };
 
+  const toggleCollapse = (key: string) => {
+    setCollapsedItems((current) => ({ ...current, [key]: !current[key] }));
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSubmitting(true);
@@ -183,6 +199,7 @@ export const ProfileSectionEditModal = ({
             fullWidth
             form={`profile-${String(sectionKey)}-form`}
             loading={submitting}
+            disabled={!hasChanges}
             type="submit"
           >
             Save
@@ -196,6 +213,13 @@ export const ProfileSectionEditModal = ({
         id={`profile-${String(sectionKey)}-form`}
         onSubmit={handleSubmit}
       >
+        {sectionKey === 'identityInformation' && (
+          <div className="rounded-lg border border-[#EEF2F7] bg-[#F8FAFC] p-3">
+            <AppText variant="caption" color="textSecondary">
+              Your identity information is required to enable wallet and payment features on your account.
+            </AppText>
+          </div>
+        )}
         {submitError && (
           <div className="rounded-lg border border-red-100 bg-red-50 p-3 text-sm font-semibold text-red-700">
             {submitError}
@@ -224,6 +248,67 @@ export const ProfileSectionEditModal = ({
             );
           }
 
+          if (field.type === 'multi-select') {
+            const selected = Array.isArray(value) ? (value as string[]) : [];
+            const options = field.options ?? [];
+
+            const toggleOption = (optionValue: string) => {
+              const next = selected.includes(optionValue)
+                ? selected.filter((v) => v !== optionValue)
+                : [...selected, optionValue];
+              setFieldValue(field.name, next);
+            };
+
+            return (
+              <div className="grid gap-2" key={field.name}>
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-[#5A6880]">
+                  {fieldLabel}
+                </span>
+                <div className="rounded-[10px] border-[1.5px] border-[#D5DCE8] bg-white p-2">
+                  {selected.length > 0 && (
+                    <div className="mb-2 flex flex-wrap gap-1.5">
+                      {selected.map((val) => {
+                        const option = options.find((o) => o.value === val);
+                        return (
+                          <span
+                            key={val}
+                            className="inline-flex items-center gap-1 rounded-full bg-[#EEF4FF] px-2.5 py-1 text-xs font-semibold text-[#123B8D]"
+                          >
+                            {option?.label ?? val}
+                            <button
+                              type="button"
+                              onClick={() => toggleOption(val)}
+                              className="ml-0.5 rounded-full p-0.5 hover:bg-[#D6DEEB]"
+                            >
+                              <X className="size-3" aria-hidden />
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <div className="flex flex-wrap gap-1.5">
+                    {options
+                      .filter((o) => !selected.includes(o.value))
+                      .map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => toggleOption(option.value)}
+                          className="rounded-full border border-[#D5DCE8] bg-white px-2.5 py-1 text-xs font-medium text-[#5A6880] transition-colors hover:border-[#123B8D] hover:text-[#123B8D]"
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                  </div>
+                  {selected.length === 0 && options.length === 0 && (
+                    <span className="text-xs text-[#A8B3C4]">No options available</span>
+                  )}
+                </div>
+              </div>
+            );
+          }
+
           if (field.type === 'children-list') {
             const children = Array.isArray(value) ? (value as ChildFormValue[]) : [];
 
@@ -247,78 +332,103 @@ export const ProfileSectionEditModal = ({
                     No child added yet.
                   </div>
                 ) : (
-                  children.map((child, index) => (
-                    <div
-                      className="grid gap-3 rounded-xl border border-[#E5E7EB] bg-[#F8FAFC] p-3"
-                      key={index}
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <AppText variant="bodySmall" weight="bold">
-                          Child {index + 1}
-                        </AppText>
-                        <AppButton
-                          leftIcon={<Trash2 className="size-4" aria-hidden />}
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => removeChild(field.name, index)}
-                        >
-                          Remove
-                        </AppButton>
+                  children.map((child, index) => {
+                    const isCollapsed = collapsedItems[`${field.name}-${index}`] ?? false;
+                    const computedAge = child.dob
+                      ? String(Math.floor((Date.now() - new Date(child.dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000)))
+                      : '';
+                    return (
+                      <div
+                        className="rounded-xl border border-[#E5E7EB] bg-[#F8FAFC]"
+                        key={index}
+                      >
+                        <div className="flex items-center justify-between gap-3 px-3 py-2">
+                          <button
+                            type="button"
+                            className="flex items-center gap-2 text-left"
+                            onClick={() => toggleCollapse(`${field.name}-${index}`)}
+                          >
+                            <ChevronDown
+                              className={`size-4 text-[#5A6880] transition-transform ${isCollapsed ? '' : 'rotate-180'}`}
+                              aria-hidden
+                            />
+                            <AppText variant="bodySmall" weight="bold">
+                              {child.name || `Child ${index + 1}`}
+                              {computedAge ? `, ${computedAge} yrs` : ''}
+                            </AppText>
+                          </button>
+                          <AppButton
+                            leftIcon={<Trash2 className="size-4" aria-hidden />}
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => removeChild(field.name, index)}
+                          >
+                            Remove
+                          </AppButton>
+                        </div>
+                        {!isCollapsed && (
+                          <div className="grid gap-3 border-t border-[#E5E7EB] p-3">
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <AppInput
+                                label="Name"
+                                value={child.name}
+                                onChange={(event) =>
+                                  setChildValue(field.name, index, 'name', event.target.value)
+                                }
+                              />
+                              <AppDropdown
+                                label="Gender"
+                                options={[
+                                  { label: 'Male', value: 'male' },
+                                  { label: 'Female', value: 'female' },
+                                ]}
+                                placeholder="Select gender"
+                                value={child.gender}
+                                onChange={(nextValue) =>
+                                  setChildValue(
+                                    field.name,
+                                    index,
+                                    'gender',
+                                    Array.isArray(nextValue) ? (nextValue[0] ?? '') : nextValue,
+                                  )
+                                }
+                              />
+                            </div>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <AppInput
+                                label="Date Of Birth"
+                                type="date"
+                                value={child.dob}
+                                onChange={(event) => {
+                                  setChildValue(field.name, index, 'dob', event.target.value);
+                                  if (event.target.value) {
+                                    const age = Math.floor(
+                                      (Date.now() - new Date(event.target.value).getTime()) /
+                                        (365.25 * 24 * 60 * 60 * 1000),
+                                    );
+                                    setChildValue(field.name, index, 'age', String(age));
+                                  }
+                                }}
+                              />
+                              <AppInput
+                                label="Age"
+                                type="number"
+                                value={computedAge}
+                                disabled
+                              />
+                            </div>
+                            <AppInput
+                              label="School"
+                              value={child.school}
+                              onChange={(event) =>
+                                setChildValue(field.name, index, 'school', event.target.value)
+                              }
+                            />
+                          </div>
+                        )}
                       </div>
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <AppInput
-                          label="Name"
-                          value={child.name}
-                          onChange={(event) =>
-                            setChildValue(field.name, index, 'name', event.target.value)
-                          }
-                        />
-                        <AppDropdown
-                          label="Gender"
-                          options={[
-                            { label: 'Male', value: 'male' },
-                            { label: 'Female', value: 'female' },
-                          ]}
-                          placeholder="Select gender"
-                          value={child.gender}
-                          onChange={(nextValue) =>
-                            setChildValue(
-                              field.name,
-                              index,
-                              'gender',
-                              Array.isArray(nextValue) ? (nextValue[0] ?? '') : nextValue,
-                            )
-                          }
-                        />
-                      </div>
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <AppInput
-                          label="Date Of Birth"
-                          type="date"
-                          value={child.dob}
-                          onChange={(event) =>
-                            setChildValue(field.name, index, 'dob', event.target.value)
-                          }
-                        />
-                        <AppInput
-                          label="Age"
-                          min={0}
-                          type="number"
-                          value={child.age}
-                          onChange={(event) =>
-                            setChildValue(field.name, index, 'age', event.target.value)
-                          }
-                        />
-                      </div>
-                      <AppInput
-                        label="School"
-                        value={child.school}
-                        onChange={(event) =>
-                          setChildValue(field.name, index, 'school', event.target.value)
-                        }
-                      />
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             );
@@ -469,9 +579,16 @@ export const ProfileSectionEditModal = ({
               label={fieldLabel}
               placeholder={field.placeholder}
               type={field.type ?? 'text'}
+              inputMode={field.type === 'tel' ? 'numeric' : undefined}
+              pattern={field.type === 'tel' ? '[0-9]*' : undefined}
               value={String(value)}
               disabled={field.disabled}
-              onChange={(event) => setFieldValue(field.name, event.target.value)}
+              onChange={(event) => {
+                const nextValue = field.type === 'tel'
+                  ? event.target.value.replace(/[^0-9]/g, '')
+                  : event.target.value;
+                setFieldValue(field.name, nextValue);
+              }}
             />
           );
         })}
