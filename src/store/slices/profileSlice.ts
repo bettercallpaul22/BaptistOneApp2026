@@ -1,6 +1,12 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { storageKeys } from '@/constants/storage';
 import { logout } from '@/store/slices/authSlice';
+import {
+  handoffLoginThunk,
+  intentLogin,
+  loginThunk,
+  switchAccessThunk,
+} from '@/store/thunks/authThunk';
 import { fetchProfileCompletionThunk, updateProfileCompletionSectionThunk } from '@/store/thunks/profileThunk';
 import type { ProfileCompletion, StoredProfileCompletion } from '@/types/profile';
 
@@ -35,6 +41,14 @@ const initialState: ProfileState = {
 
 const clearStoredProfileCompletion = () => {
   localStorage.removeItem(storageKeys.profileCompletion);
+};
+
+const resetProfileCompletionState = (state: ProfileState) => {
+  state.data = null;
+  state.error = null;
+  state.lastFetchedAt = null;
+  state.loading = false;
+  clearStoredProfileCompletion();
 };
 
 export const profileSlice = createSlice({
@@ -75,12 +89,12 @@ export const profileSlice = createSlice({
         state.lastFetchedAt = action.payload.lastFetchedAt;
         state.error = null;
       })
+      .addCase(loginThunk.fulfilled, resetProfileCompletionState)
+      .addCase(intentLogin.fulfilled, resetProfileCompletionState)
+      .addCase(handoffLoginThunk.fulfilled, resetProfileCompletionState)
+      .addCase(switchAccessThunk.fulfilled, resetProfileCompletionState)
       .addCase(logout, (state) => {
-        state.data = null;
-        state.error = null;
-        state.lastFetchedAt = null;
-        state.loading = false;
-        clearStoredProfileCompletion();
+        resetProfileCompletionState(state);
       });
   },
 });

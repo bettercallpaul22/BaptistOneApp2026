@@ -1,6 +1,12 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { storageKeys } from '@/constants/storage';
 import { logout } from '@/store/slices/authSlice';
+import {
+  handoffLoginThunk,
+  intentLogin,
+  loginThunk,
+  switchAccessThunk,
+} from '@/store/thunks/authThunk';
 import { fetchMemberAccountThunk } from '@/store/thunks/memberThunk';
 import type { MemberAccount, StoredMemberAccount } from '@/types/member';
 
@@ -37,6 +43,14 @@ const clearStoredMemberAccount = () => {
   localStorage.removeItem(storageKeys.memberAccount);
 };
 
+const resetMemberAccountState = (state: MemberState) => {
+  state.data = null;
+  state.error = null;
+  state.lastFetchedAt = null;
+  state.loading = false;
+  clearStoredMemberAccount();
+};
+
 export const memberSlice = createSlice({
   name: 'member',
   initialState,
@@ -67,12 +81,12 @@ export const memberSlice = createSlice({
         state.loading = false;
         state.error = action.payload?.message ?? 'Unable to load member account.';
       })
+      .addCase(loginThunk.fulfilled, resetMemberAccountState)
+      .addCase(intentLogin.fulfilled, resetMemberAccountState)
+      .addCase(handoffLoginThunk.fulfilled, resetMemberAccountState)
+      .addCase(switchAccessThunk.fulfilled, resetMemberAccountState)
       .addCase(logout, (state) => {
-        state.data = null;
-        state.error = null;
-        state.lastFetchedAt = null;
-        state.loading = false;
-        clearStoredMemberAccount();
+        resetMemberAccountState(state);
       });
   },
 });

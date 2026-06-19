@@ -42,7 +42,7 @@ export default function LoginPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const { loading, error, authData } = useAppSelector((state) => state.auth);
+  const { loading, error, authData, isAuthenticated } = useAppSelector((state) => state.auth);
   const { ready, showNoAccessModal, handleLogoutAndRedirect } = usePostLoginAccess(authData);
   const { register, handleSubmit, formState } = useForm<LoginForm>({
     resolver: zodResolver(schema),
@@ -63,14 +63,14 @@ export default function LoginPage() {
   );
 
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || !isAuthenticated) return;
 
     const stateFrom = (location.state as LoginLocationState)?.from;
     const sessionRedirect = sessionStorage.getItem(storageKeys.postAuthRedirect);
     const from = sessionRedirect || `${stateFrom?.pathname ?? paths.home}${stateFrom?.search ?? ''}${stateFrom?.hash ?? ''}`;
     sessionStorage.removeItem(storageKeys.postAuthRedirect);
     navigate(from, { replace: true });
-  }, [ready, navigate, location.state]);
+  }, [ready, isAuthenticated, navigate, location.state]);
 
   return (
     <AuthLayout

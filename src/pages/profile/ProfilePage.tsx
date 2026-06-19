@@ -38,7 +38,7 @@ export default function ProfilePage() {
     (data ? getProfileDisplayName(data) : 'Member Profile');
   const headerAvatarSrc = memberAccount?.basicProfile?.avatarUrl || undefined;
 
-  const shouldFetchProfile = activeTab === 'profile' && !data && !loading && !error;
+  const shouldFetchProfile = isAuthenticated && activeTab === 'profile' && !data && !loading && !error;
 
   useEffect(() => {
     if (!isAuthenticated) {
