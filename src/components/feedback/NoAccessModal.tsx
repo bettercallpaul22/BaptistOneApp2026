@@ -27,3 +27,29 @@ export function NoAccessModal({ open, onLogout }: NoAccessModalProps) {
     </AppModal>
   );
 }
+
+interface RegisterRequiredModalProps {
+  open: boolean;
+  onLogout: () => void;
+}
+
+export function RegisterRequiredModal({ open, onLogout }: RegisterRequiredModalProps) {
+  return (
+    <AppModal
+      open={open}
+      title="Access Restricted"
+      onClose={onLogout}
+      footer={
+        <AppButton fullWidth onClick={onLogout}>
+          Register to Continue
+        </AppButton>
+      }
+    >
+      <div className="grid gap-3 text-center">
+        <AppText variant="bodyLarge">
+          You need to register as a church member or create a profile before accessing this app.
+        </AppText>
+      </div>
+    </AppModal>
+  );
+}

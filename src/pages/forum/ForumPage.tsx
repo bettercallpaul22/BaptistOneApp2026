@@ -70,11 +70,14 @@ const ForumPage = () => {
     );
   }, [churchDetails]);
 
+  const hasFetchedInitial = useRef(false);
+
   useEffect(() => {
-    if (!forums.length && !loading && !error) {
-      void dispatch(fetchForumsThunk({ page: 1, limit: 20 }));
-    }
-  }, [dispatch, error, forums.length, loading]);
+    if (hasFetchedInitial.current) return;
+    if (loading || error) return;
+    hasFetchedInitial.current = true;
+    void dispatch(fetchForumsThunk({ page: 1, limit: 20 }));
+  }, [dispatch, error, loading]);
 
   useEffect(() => {
     if (!churchDepartments.length && !churchDepartmentsLoading && !churchDepartmentsError) {

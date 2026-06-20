@@ -7,13 +7,13 @@ import appleIcon from '@/assets/icons/apple_icon.svg';
 import googleIcon from '@/assets/icons/google_icon.svg';
 import appLogo from '@/assets/icons/applogo.png';
 import { AppButton } from '@/components/common';
-import { NoAccessModal } from '@/components/feedback/NoAccessModal';
+import { NoAccessModal, RegisterRequiredModal } from '@/components/feedback/NoAccessModal';
 import { AppCheckbox, AppInput } from '@/components/form';
 import { storageKeys } from '@/constants/storage';
 import { usePostLoginAccess } from '@/hooks/usePostLoginAccess';
 import { AuthLayout } from '@/layouts/AuthLayout';
 import { paths } from '@/routes/paths';
-import { loginThunk } from '@/store/thunks/authThunk';
+import { loginThunk, switchAccessThunk } from '@/store/thunks/authThunk';
 import { pushNotification } from '@/store/slices/notificationSlice';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { authCardClass, authDividerClass, authErrorClass, authFooterClass, authFormClass, authLinkClass, authMutedLinkClass, authSocialsClass } from '../authClasses';
@@ -43,7 +43,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { loading, error, authData, isAuthenticated } = useAppSelector((state) => state.auth);
-  const { ready, showNoAccessModal, handleLogoutAndRedirect } = usePostLoginAccess(authData);
+  const { ready, showNoAccessModal, registerRequired, findBestAccess, handleLogoutAndRedirect } = usePostLoginAccess(authData);
   const { register, handleSubmit, formState } = useForm<LoginForm>({
     resolver: zodResolver(schema),
     defaultValues: { email: '', password: '', rememberMe: true },
@@ -52,14 +52,22 @@ export default function LoginPage() {
   const onSubmit = useCallback(
     async ({ email, password }: LoginForm) => {
       try {
-        await dispatch(loginThunk({ email, password })).unwrap();
+        const authResult = await dispatch(loginThunk({ email, password })).unwrap();
+
+        if (authResult.currentAccess.resourceType !== 'church-member') {
+          const targetAccess = findBestAccess(authResult.userAccess);
+          if (targetAccess && targetAccess.resourceType === 'church-member') {
+            await dispatch(switchAccessThunk({ accessId: targetAccess.id })).unwrap();
+          }
+        }
+
         dispatch(pushNotification({ type: 'success', title: 'Signed in', message: 'Welcome back to BaptistOne.' }));
       } catch (error) {
         const message = (error as { message?: string })?.message ?? 'Check your email and password, then try again.';
         dispatch(pushNotification({ type: 'error', title: 'Sign in failed', message }));
       }
     },
-    [dispatch],
+    [dispatch, findBestAccess],
   );
 
   useEffect(() => {
@@ -79,6 +87,7 @@ export default function LoginPage() {
       logo={<img src={appLogo} alt="BaptistOne" className="h-20 w-auto rounded-xl" />}
     >
       <NoAccessModal open={showNoAccessModal} onLogout={handleLogoutAndRedirect} />
+      <RegisterRequiredModal open={registerRequired} onLogout={handleLogoutAndRedirect} />
       <div className={authCardClass}>
         {error && <div className={authErrorClass}>{error}</div>}
         <form className={authFormClass} onSubmit={handleSubmit(onSubmit)}>

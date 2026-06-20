@@ -42,8 +42,13 @@ export const UserProfileImage = ({ size = 'md', className }: UserProfileImagePro
   const authData = useAppSelector((state) => state.auth.authData);
   const user = useAppSelector((state) => state.auth.user);
 
+  const avatar = memberAccount?.basicProfile?.avatar;
+  const avatarUrl = avatar && typeof avatar === 'object' && 'url' in avatar
+    ? (avatar as { url?: string }).url
+    : undefined;
+
   const src =
-  memberAccount?.basicProfile?.avatar.url ||
+  avatarUrl ||
     getProfileAvatarUrl(profileData) ||
     authData?.profile?.avatarUrl ||
     undefined;

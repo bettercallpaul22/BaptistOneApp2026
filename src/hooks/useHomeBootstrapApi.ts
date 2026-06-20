@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logout } from '@/store/slices/authSlice';
@@ -32,9 +32,17 @@ export const useHomeBootstrapApi = () => {
   const authData = useAppSelector((state) => state.auth.authData);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const switchingAccess = useRef(false);
+  const authDataRef = useRef(authData);
+
+  useEffect(() => {
+    authDataRef.current = authData;
+  }, [authData]);
+
+  const hasChurchMemberAccess = authData?.currentAccess?.resourceType === 'church-member';
 
   const refetch = useCallback(async () => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || switchingAccess.current) {
       setLoading(false);
       setError(null);
       return;
@@ -43,16 +51,21 @@ export const useHomeBootstrapApi = () => {
     setLoading(true);
     setError(null);
 
+    const bootstrapPromises: Promise<unknown>[] = [
+      dispatch(fetchMemberAccountThunk()).unwrap(),
+    ];
+
+    if (hasChurchMemberAccess) {
+      bootstrapPromises.push(dispatch(fetchDevotionalBannerThunk()).unwrap());
+    }
+
     try {
-      await Promise.all([
-        dispatch(fetchMemberAccountThunk()).unwrap(),
-        dispatch(fetchDevotionalBannerThunk()).unwrap(),
-      ]);
+      await Promise.all(bootstrapPromises);
     } catch (requestError) {
       const errorMessage = getBootstrapErrorMessage(requestError);
 
-      if (errorMessage === ACCESS_DENIED_MESSAGE && authData) {
-        const targetAccess = findAccessToSwitch(authData.userAccess);
+      if (errorMessage === ACCESS_DENIED_MESSAGE && authDataRef.current) {
+        const targetAccess = findAccessToSwitch(authDataRef.current.userAccess);
 
         if (!targetAccess) {
           dispatch(logout());
@@ -61,13 +74,25 @@ export const useHomeBootstrapApi = () => {
         }
 
         try {
+          switchingAccess.current = true;
           await dispatch(switchAccessThunk({ accessId: targetAccess.id })).unwrap();
-          await dispatch(fetchMemberAccountThunk()).unwrap();
+
+          const retryPromises: Promise<unknown>[] = [
+            dispatch(fetchMemberAccountThunk()).unwrap(),
+          ];
+
+          if (hasChurchMemberAccess) {
+            retryPromises.push(dispatch(fetchDevotionalBannerThunk()).unwrap());
+          }
+
+          await Promise.all(retryPromises);
           return;
         } catch {
           dispatch(logout());
           navigate(paths.login, { replace: true });
           return;
+        } finally {
+          switchingAccess.current = false;
         }
       }
 
@@ -75,7 +100,7 @@ export const useHomeBootstrapApi = () => {
     } finally {
       setLoading(false);
     }
-  }, [dispatch, isAuthenticated, authData, navigate]);
+  }, [dispatch, isAuthenticated, navigate, hasChurchMemberAccess]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {

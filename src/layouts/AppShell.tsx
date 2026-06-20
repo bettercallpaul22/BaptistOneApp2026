@@ -170,16 +170,18 @@ export const AppShell = ({ children, headerAvatar, mobileHeaderAddon }: AppShell
   };
 
   const profileFetchInitiated = useRef(false);
+  const profileError = useAppSelector((state) => state.profile.error);
 
   useEffect(() => {
     if (!isAuthenticated) {
       profileFetchInitiated.current = false;
       return;
     }
-    if (profileFetchInitiated.current || profileLoading) return;
+    if (profileLoading) return;
+    if (profileFetchInitiated.current && !profileError) return;
     profileFetchInitiated.current = true;
     dispatch(fetchProfileCompletionThunk());
-  }, [dispatch, isAuthenticated, profileLoading]);
+  }, [dispatch, isAuthenticated, profileLoading, profileError]);
 
   useEffect(() => {
     if (showSidebar) return;

@@ -8,7 +8,7 @@ import { AuthLayout } from '@/layouts/AuthLayout';
 import { paths } from '@/routes/paths';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { pushNotification } from '@/store/slices/notificationSlice';
-import { handoffLoginThunk } from '@/store/thunks/authThunk';
+import { handoffLoginThunk, switchAccessThunk } from '@/store/thunks/authThunk';
 import { authCardClass, authErrorClass } from '../authClasses';
 
 type VerificationStatus = 'loading' | 'error';
@@ -22,7 +22,7 @@ export default function EmailVerifyPage() {
   const [status, setStatus] = useState<VerificationStatus>('loading');
   const [message, setMessage] = useState<string | null>(null);
   const { authData } = useAppSelector((state) => state.auth);
-  const { ready, showNoAccessModal, handleLogoutAndRedirect } = usePostLoginAccess(authData);
+  const { ready, showNoAccessModal, findBestAccess, handleLogoutAndRedirect } = usePostLoginAccess(authData);
 
   const completeHandoffLogin = useCallback(async () => {
     if (!code) {
@@ -35,7 +35,15 @@ export default function EmailVerifyPage() {
     setMessage(null);
 
     try {
-      await dispatch(handoffLoginThunk({ code })).unwrap();
+      const authResult = await dispatch(handoffLoginThunk({ code })).unwrap();
+
+      if (authResult.currentAccess.resourceType !== 'church-member') {
+        const targetAccess = findBestAccess(authResult.userAccess);
+        if (targetAccess && targetAccess.resourceType === 'church-member') {
+          await dispatch(switchAccessThunk({ accessId: targetAccess.id })).unwrap();
+        }
+      }
+
       dispatch(pushNotification({ type: 'success', title: 'Signed in', message: 'Welcome to BaptistOne.' }));
     } catch (error) {
       const errorMessage = (error as { message?: string })?.message ?? 'We could not complete this handoff login. Please try again.';
@@ -43,7 +51,7 @@ export default function EmailVerifyPage() {
       setMessage(errorMessage);
       dispatch(pushNotification({ type: 'error', title: 'Handoff login failed', message: errorMessage }));
     }
-  }, [code, dispatch]);
+  }, [code, dispatch, findBestAccess]);
 
   useEffect(() => {
     if (hasRequestedRef.current) return;

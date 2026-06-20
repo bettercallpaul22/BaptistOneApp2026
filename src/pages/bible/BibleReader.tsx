@@ -3,7 +3,6 @@ import clsx from 'clsx';
 import { BookOpen, ChevronLeft, ChevronRight, Loader2, Search, X } from 'lucide-react';
 import { AppButton, AppText } from '@/components/common';
 import { AppModal } from '@/components/feedback';
-import { AppDropdown } from '@/components/form';
 import {
   cleanBibleVerseText,
   defaultBibleReference,
@@ -62,24 +61,32 @@ export default function BibleReader({ onBottomTabHiddenChange }: BiblePageProps)
   const [pickerTab, setPickerTab] = useState<PickerTab>('book');
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isVersionOpen, setIsVersionOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<BibleSearchResult[]>([]);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isSearchLoading, setIsSearchLoading] = useState(false);
   const [isBottomTabHidden, setIsBottomTabHidden] = useState(false);
   const chapterTopRef = useRef<HTMLDivElement | null>(null);
+  const versionRef = useRef<HTMLDivElement | null>(null);
   const scrollAnchorOffset = useRef(0);
   const isBottomTabHiddenRef = useRef(false);
 
+  useEffect(() => {
+    if (!isVersionOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (versionRef.current && !versionRef.current.contains(event.target as Node)) {
+        setIsVersionOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isVersionOpen]);
+
   const selectedBook = getBibleBook(reference.book);
-  const translationOptions = useMemo(
-    () =>
-      bibleTranslations.map((translation) => ({
-        label: `${translation.shortName} - ${translation.name}`,
-        value: translation.id,
-      })),
-    [],
-  );
+  const selectedTranslation = bibleTranslations.find((t) => t.id === translationId);
   const chaptersForSelectedBook = useMemo(() => getChaptersForBook(reference.book), [reference.book]);
   const previousChapterRef = useMemo(() => getPreviousChapterRef(reference), [reference]);
   const nextChapterRef = useMemo(() => getNextChapterRef(reference), [reference]);
@@ -239,9 +246,48 @@ export default function BibleReader({ onBottomTabHiddenChange }: BiblePageProps)
 
   return (
     <>
+      <div className="fixed top-20 right-4 z-50 flex items-center gap-2 sm:top-24 sm:right-6 md:hidden" ref={versionRef}>
+        <button
+          className="grid h-10 min-w-[2.75rem] place-items-center rounded-full border border-[#D9E3F5] bg-[#EAF1FF] px-3 text-xs font-black text-[#123B8D] shadow-sm transition hover:bg-[#D6E4FF] active:scale-95"
+          type="button"
+          aria-label="Change Bible version"
+          onClick={() => setIsVersionOpen((prev) => !prev)}
+        >
+          {selectedTranslation?.shortName ?? 'KJV'}
+        </button>
+        {isVersionOpen && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setIsVersionOpen(false)} aria-hidden />
+            <div className="absolute top-full right-0 z-50 mt-2 w-[calc(100vw-2rem)] max-w-[18rem] overflow-hidden rounded-xl border border-[#E5EAF3] bg-white py-1 shadow-[0_12px_30px_rgba(11,31,74,0.15)]">
+              {bibleTranslations.map((translation) => (
+                <button
+                  className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition hover:bg-[#F2F5FA] ${translation.id === translationId ? 'font-bold text-[#123B8D] bg-[#EAF1FF]' : 'text-[#46556E]'}`}
+                  key={translation.id}
+                  type="button"
+                  onClick={() => {
+                    handleTranslationChange(translation.id);
+                    setIsVersionOpen(false);
+                  }}
+                >
+                  <span className="w-14 shrink-0 text-[0.65rem] font-black leading-tight text-[#8A96AA]">{translation.shortName}</span>
+                  <span className="min-w-0 truncate">{translation.name}</span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+        <button
+          className="grid size-10 place-items-center rounded-full bg-[#D4A017] text-white shadow-md transition hover:bg-[#B8900F] active:scale-95"
+          type="button"
+          aria-label="Search Bible"
+          onClick={() => setIsSearchOpen(true)}
+        >
+          <Search className="size-5" aria-hidden />
+        </button>
+      </div>
       <div className="min-h-[calc(100vh-4rem)] overflow-x-hidden bg-[#F6F8FC] px-4 pt-5 pb-36 sm:px-6 md:px-9 md:py-8 md:pb-32">
         <div className="mx-auto grid max-w-[78rem] min-w-0 gap-5">
-          <section className="grid min-w-0 gap-4 rounded-2xl border border-[#E5EAF3] bg-white p-5 shadow-[0_12px_30px_rgba(11,31,74,0.08)] sm:p-6">
+          {/* <section className="grid min-w-0 gap-4 rounded-2xl border border-[#E5EAF3] bg-white p-5 shadow-[0_12px_30px_rgba(11,31,74,0.08)] sm:p-6">
             <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="grid min-w-0 gap-2">
                 <div className="flex items-center gap-3 text-[#123B8D]">
@@ -256,28 +302,16 @@ export default function BibleReader({ onBottomTabHiddenChange }: BiblePageProps)
               </div>
 
               <div className="flex min-w-0 flex-col gap-3 sm:flex-row">
-                <AppDropdown
-                  label="Translation"
-                  options={translationOptions}
-                  value={translationId}
-                  searchable
-                  onChange={(value) => {
-                    if (typeof value === 'string') handleTranslationChange(value);
-                  }}
-                />
                 <div className="flex min-w-0 flex-wrap items-end gap-2">
                   <AppButton variant="outline" leftIcon={<BookOpen className="size-4" aria-hidden />} onClick={() => setIsPickerOpen(true)}>
                     {chapterTitle}
                   </AppButton>
-                  <AppButton variant="secondary" leftIcon={<Search className="size-4" aria-hidden />} onClick={() => setIsSearchOpen(true)}>
-                    Search
-                  </AppButton>
                 </div>
               </div>
             </div>
-          </section>
+          </section> */}
 
-          <section ref={chapterTopRef} className="grid min-w-0 gap-4 rounded-2xl border border-[#E5EAF3] bg-white p-5 shadow-[0_10px_24px_rgba(11,31,74,0.05)] sm:p-7">
+          <section ref={chapterTopRef} className="grid min-w-0 gap-4 mt-[80px] rounded-2xl border border-[#E5EAF3] bg-white p-5 shadow-[0_10px_24px_rgba(11,31,74,0.05)] sm:p-7">
             <div className="border-b border-[#EEF2F7] pb-4">
               <div className="grid gap-1">
                 <p className="text-sm font-black uppercase tracking-[0.18em] text-[#D4A017]">{selectedBook?.shortname ?? 'Bible'}</p>

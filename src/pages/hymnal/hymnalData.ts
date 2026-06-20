@@ -148,11 +148,11 @@ export const formatHymnVerseLines = (text: string) => {
   return phraseLines.flatMap(splitLongLine);
 };
 
-export const searchHymns = (hymns: Hymn[], query: string, limit = 50): HymnSearchResult[] => {
+export const searchHymns = (hymns: Hymn[], query: string, limit = Infinity): HymnSearchResult[] => {
   const normalizedQuery = normalizeText(query);
 
   if (!normalizedQuery) {
-    return hymns.slice(0, limit).map((hymn) => ({
+    return hymns.map((hymn) => ({
       hymn,
       matchType: 'title',
       preview: `${hymn.verses.length} verses`,
