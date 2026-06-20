@@ -183,8 +183,13 @@ const ChurchBanner = ({ church }: { church: PublicChurchDetails }) => {
   const phone = getChurchPhone(church);
   const membershipSize = formatMembershipSize(church);
   const complianceBadge = church.complianceBadge;
+  const kycVerified = complianceBadge?.kycStatus?.toLowerCase() === 'verified';
   const complianceBadgeLabel =
-    complianceBadge?.visible && typeof complianceBadge.label === 'string' ? complianceBadge.label.trim() : '';
+    complianceBadge?.visible
+      ? kycVerified
+        ? 'Compliant'
+        : 'Non Compliant'
+      : '';
 
   return (
     <section className="overflow-hidden rounded-xl border border-[#D6DEEB] bg-white shadow-[0_12px_26px_rgba(11,31,74,0.08)]">
