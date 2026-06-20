@@ -2,6 +2,20 @@
 #
 .DS_Store
 
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.gradle/
+*.hprof
+
 # Xcode
 #
 build/
@@ -25,11 +39,8 @@ DerivedData
 # Android/IntelliJ
 #
 build/
-.idea
-.gradle
 local.properties
 *.iml
-*.hprof
 .cxx/
 *.keystore
 !debug.keystore
