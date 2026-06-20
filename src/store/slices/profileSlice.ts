@@ -1,12 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { storageKeys } from '@/constants/storage';
 import { logout } from '@/store/slices/authSlice';
-import {
-  handoffLoginThunk,
-  intentLogin,
-  loginThunk,
-  switchAccessThunk,
-} from '@/store/thunks/authThunk';
+import { switchAccessThunk } from '@/store/thunks/authThunk';
 import { fetchProfileCompletionThunk, updateProfileCompletionSectionThunk } from '@/store/thunks/profileThunk';
 import type { ProfileCompletion, StoredProfileCompletion } from '@/types/profile';
 
@@ -81,17 +76,10 @@ export const profileSlice = createSlice({
         state.error = action.payload?.message ?? 'Unable to load profile.';
       })
       .addCase(updateProfileCompletionSectionThunk.fulfilled, (state, action) => {
-        console.info('[profileSlice] profile update fulfilled', {
-          data: action.payload.data,
-          lastFetchedAt: action.payload.lastFetchedAt,
-        });
         state.data = action.payload.data;
         state.lastFetchedAt = action.payload.lastFetchedAt;
         state.error = null;
       })
-      .addCase(loginThunk.fulfilled, resetProfileCompletionState)
-      .addCase(intentLogin.fulfilled, resetProfileCompletionState)
-      .addCase(handoffLoginThunk.fulfilled, resetProfileCompletionState)
       .addCase(switchAccessThunk.fulfilled, resetProfileCompletionState)
       .addCase(logout, (state) => {
         resetProfileCompletionState(state);

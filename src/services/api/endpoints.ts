@@ -93,6 +93,7 @@ export const endpoints = {
   },
   privateMembers: {
     account: '/private/members/account',
+    basicProfile: '/private/members/basic-profile',
     onboard: '/private/members/onboard',
     churchContent: (type: string, { page = 1, limit = 20 }: { page?: number; limit?: number } = {}) => {
       const params = new URLSearchParams();

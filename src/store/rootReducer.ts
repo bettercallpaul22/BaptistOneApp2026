@@ -12,6 +12,7 @@ import { forumReducer } from './slices/forumSlice';
 import { forumPostsSlice } from './slices/forumPostsSlice';
 import { homeReducer } from './slices/homeSlice';
 import { userReducer } from './slices/userSlice';
+import { userAvatarUrlReducer } from './slices/userAvatarUrlSlice';
 import { walletReducer } from './slices/walletSlice';
 import { realtimeNotificationReducer } from './slices/realtimeNotificationSlice';
 
@@ -30,6 +31,7 @@ export const rootReducer = combineReducers({
   forumPosts: forumPostsSlice.reducer,
   home: homeReducer,
   user: userReducer,
+  userAvatarUrl: userAvatarUrlReducer,
   wallet: walletReducer,
 });
 

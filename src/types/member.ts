@@ -61,6 +61,11 @@ export interface MemberAccountResponse {
   message?: string;
 }
 
+export interface MemberBasicProfileUpdateRequest {
+  avatarFileId?: string | null;
+  coverImageFileId?: string | null;
+}
+
 export interface StoredMemberAccount {
   data: MemberAccount;
   lastFetchedAt: string;

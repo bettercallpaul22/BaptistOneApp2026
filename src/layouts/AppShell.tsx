@@ -12,7 +12,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { AppButton, AppText } from '@/components/common';
-import { AppAvatar } from '@/components/display';
+import { UserProfileImage } from '@/components/display';
 import { AppModal } from '@/components/feedback';
 import { AppMobileHeader, NotificationButton } from '@/components/navigation/AppMobileHeader';
 import { useDeviceProfile } from '@/hooks/useDeviceProfile';
@@ -59,21 +59,6 @@ const postNativeLogout = () => {
   }
 };
 
-const getFirstAvailableName = (...names: Array<string | null | undefined>) =>
-  names.find((name) => typeof name === 'string' && name.trim())?.trim() ?? null;
-
-const getProfileAvatarUrl = (profileData: unknown) =>
-  ((profileData as { personalInformation?: { avatarFile?: { url?: unknown } } } | null)
-    ?.personalInformation?.avatarFile?.url as string | undefined) || undefined;
-
-const hasProfileAvatarFileIdWithoutUrl = (profileData: unknown) => {
-  const personalInformation = (profileData as
-    | { personalInformation?: { avatarFileId?: unknown; avatarFile?: { url?: unknown } } }
-    | null)?.personalInformation;
-
-  return Boolean(personalInformation?.avatarFileId && !personalInformation?.avatarFile?.url);
-};
-
 const DesktopHeader = ({ title }: { title: string }) => (
   <header className="fixed top-0 right-0 left-[18rem] z-20 flex min-h-20 items-center justify-between border-b border-[#E5E7EB] bg-white/95 px-8 backdrop-blur-xl">
     <div className="grid gap-1">
@@ -92,13 +77,8 @@ export const AppShell = ({ children, headerAvatar, mobileHeaderAddon }: AppShell
   const { pathname } = useLocation();
   const { isDesktop } = useDeviceProfile();
   const mobileHeaderRef = useRef<HTMLDivElement>(null);
-  const { authData, hasKnownUser, isAuthenticated, user } = useAppSelector((state) => state.auth);
-  const memberAccount = useAppSelector((state) => state.member.data);
-  const {
-    data: profileData,
-    error: profileError,
-    loading: profileLoading,
-  } = useAppSelector((state) => state.profile);
+  const { hasKnownUser, isAuthenticated } = useAppSelector((state) => state.auth);
+  const { loading: profileLoading } = useAppSelector((state) => state.profile);
   const showSidebar = isDesktop;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMenuLoginPromptOpen, setIsMenuLoginPromptOpen] = useState(false);
@@ -125,28 +105,12 @@ export const AppShell = ({ children, headerAvatar, mobileHeaderAddon }: AppShell
   const isLoginPromptOpen = isMenuLoginPromptOpen || isRestrictedLoginPromptOpen;
   const isPendingMenuRouteReady = Boolean(pendingMenuPath && pathname === pendingMenuPath);
   const showMobileMenu = isMenuOpen && !isPendingMenuRouteReady;
-  const defaultHeaderAvatarName = getFirstAvailableName(
-    memberAccount?.basicProfile?.displayName,
-    [memberAccount?.basicProfile?.firstName, memberAccount?.basicProfile?.lastName]
-      .filter(Boolean)
-      .join(' '),
-    authData?.profile?.displayName,
-    [authData?.user?.firstName, authData?.user?.lastName].filter(Boolean).join(' '),
-    [user?.firstName, user?.lastName].filter(Boolean).join(' '),
-  );
-  const defaultHeaderAvatar =
-    isAuthenticated && defaultHeaderAvatarName ? (
-      <AppAvatar
-        name={defaultHeaderAvatarName}
-        src={
-          getProfileAvatarUrl(profileData) ||
-          memberAccount?.basicProfile?.avatarUrl ||
-          authData?.profile?.avatarUrl ||
-          undefined
-        }
-        size="md"
-      />
-    ) : null;
+  // const defaultHeaderAvatar = isAuthenticated ?
+  //  <UserProfileImage size="md" /> : null;
+  const defaultHeaderAvatar = useMemo(
+  () => (isAuthenticated ? <UserProfileImage size="md" /> : null),
+  [isAuthenticated], // only recreates when auth state actually changes
+);
   const mobileHeaderAvatar = headerAvatar ?? defaultHeaderAvatar;
 
   const handleLogout = () => {
@@ -205,12 +169,17 @@ export const AppShell = ({ children, headerAvatar, mobileHeaderAddon }: AppShell
     navigate(paths.login);
   };
 
-  useEffect(() => {
-    if (!isAuthenticated || profileLoading || profileError) return;
-    if (profileData && !hasProfileAvatarFileIdWithoutUrl(profileData)) return;
+  const profileFetchInitiated = useRef(false);
 
+  useEffect(() => {
+    if (!isAuthenticated) {
+      profileFetchInitiated.current = false;
+      return;
+    }
+    if (profileFetchInitiated.current || profileLoading) return;
+    profileFetchInitiated.current = true;
     dispatch(fetchProfileCompletionThunk());
-  }, [dispatch, isAuthenticated, profileData, profileError, profileLoading]);
+  }, [dispatch, isAuthenticated, profileLoading]);
 
   useEffect(() => {
     if (showSidebar) return;

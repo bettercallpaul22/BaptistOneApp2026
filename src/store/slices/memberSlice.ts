@@ -1,13 +1,8 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { storageKeys } from '@/constants/storage';
 import { logout } from '@/store/slices/authSlice';
-import {
-  handoffLoginThunk,
-  intentLogin,
-  loginThunk,
-  switchAccessThunk,
-} from '@/store/thunks/authThunk';
-import { fetchMemberAccountThunk } from '@/store/thunks/memberThunk';
+import { switchAccessThunk } from '@/store/thunks/authThunk';
+import { fetchMemberAccountThunk, updateBasicProfileThunk } from '@/store/thunks/memberThunk';
 import type { MemberAccount, StoredMemberAccount } from '@/types/member';
 
 interface MemberState {
@@ -81,12 +76,23 @@ export const memberSlice = createSlice({
         state.loading = false;
         state.error = action.payload?.message ?? 'Unable to load member account.';
       })
-      .addCase(loginThunk.fulfilled, resetMemberAccountState)
-      .addCase(intentLogin.fulfilled, resetMemberAccountState)
-      .addCase(handoffLoginThunk.fulfilled, resetMemberAccountState)
       .addCase(switchAccessThunk.fulfilled, resetMemberAccountState)
       .addCase(logout, (state) => {
         resetMemberAccountState(state);
+      })
+      .addCase(updateBasicProfileThunk.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateBasicProfileThunk.fulfilled, (state, action) => {
+        state.loading = false;
+        state.data = action.payload;
+        state.error = null;
+        localStorage.setItem(storageKeys.memberAccount, JSON.stringify({ data: action.payload, lastFetchedAt: new Date().toISOString() }));
+      })
+      .addCase(updateBasicProfileThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload?.message ?? 'Unable to update profile.';
       });
   },
 });

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppButton, AppScrollableTabs, AppText } from '@/components/common';
-import { AppAvatar, AppCard } from '@/components/display';
+import { AppCard, UserProfileImage } from '@/components/display';
 import { ChurchMembershipGuard } from '@/components/guards';
 import { AppShell } from '@/layouts/AppShell';
 import { AppStateFeedback } from '@/components/feedback';
@@ -63,7 +63,6 @@ const ForumPage = () => {
       .join(' ') ||
     'Member';
 
-  const memberAvatar = memberAccount?.basicProfile?.avatarUrl || undefined;
   const churchLogoSrc = useMemo(() => {
     if (!churchDetails) return undefined;
     return (
@@ -185,7 +184,7 @@ const ForumPage = () => {
               <div className="grid gap-6">
                 {/* Top row: Member greeting stacked below avatar */}
                 <div className="flex flex-col items-start gap-3">
-                  <AppAvatar name={memberName} src={memberAvatar} size="lg" />
+                  <UserProfileImage size="lg" />
                   <AppText variant="h5" className="font-bold text-[#0B1F4A]">
                     Hi, {memberName.split(' ')[0]}!
                   </AppText>

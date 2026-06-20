@@ -1,23 +1,31 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import clsx from 'clsx';
 import { Camera, Gift } from 'lucide-react';
-import { AppText } from '@/components/common';
-import { AppAvatar } from '@/components/display';
+import { AppButton, AppText } from '@/components/common';
+import { AppModal } from '@/components/feedback/AppModal';
+import { AppFileUploadField } from '@/components/form';
+import { UserProfileImage } from '@/components/display/UserProfileImage';
+import type { FileUploadModule } from '@/types/fileUpload';
+import { fileUploadService } from '@/services/fileUpload/fileUploadService';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { updateBasicProfileThunk } from '@/store/thunks/memberThunk';
 import type { ProfileCompletion } from '@/types/profile';
 import { formatCurrencyValue } from '../utils/profileFormatters';
-import { getProfileDisplayName } from '../utils/profileDisplayUtils';
 
 interface ProfileProgressSummaryProps {
   profile: ProfileCompletion;
   className?: string;
-  onAvatarClick?: () => void;
 }
 
 export const ProfileProgressSummary = ({
   profile,
   className,
-  onAvatarClick,
 }: ProfileProgressSummaryProps) => {
+  const dispatch = useAppDispatch();
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
   const rewardBucketValue = `${profile.rewardBalance}:${profile.currency}`;
   const previousRewardBucketValue = useRef(rewardBucketValue);
   const [isRewardBucketAnimating, setIsRewardBucketAnimating] = useState(false);
@@ -25,12 +33,8 @@ export const ProfileProgressSummary = ({
   const completedSections = sectionEntries.filter(([, section]) => section.completed);
   const incompleteSections = sectionEntries.length - completedSections.length;
   const progress = Math.min(100, Math.max(0, profile.completionScore));
-  const profileDisplayName = getProfileDisplayName(profile);
-  const avatarUrl = (profile.personalInformation?.avatarFile as Record<string, unknown>)?.url as
-    | string
-    | undefined;
   const rewardBalance = useMemo(
-    () => formatCurrencyValue(profile.rewardBalance, profile.currency),
+    () => formatCurrencyValue(profile.rewardBalance, profile.currency.charAt(0).toUpperCase() + profile.currency.slice(1)),
     [profile.currency, profile.rewardBalance],
   );
 
@@ -45,24 +49,74 @@ export const ProfileProgressSummary = ({
     return () => window.clearTimeout(timeoutId);
   }, [rewardBucketValue]);
 
+  const openUploadModal = () => setIsUploadModalOpen(true);
+  const closeUploadModal = () => {
+    setIsUploadModalOpen(false);
+    setUploadError(null);
+  };
+
+  const module: FileUploadModule = 'baptistone_member';
+
+  const handleAvatarUpload = async (fileIds: string | string[]) => {
+    const avatarFileId = Array.isArray(fileIds) ? fileIds[0] : fileIds;
+    setUploadError(null);
+    setIsUploading(true);
+
+    try {
+      await dispatch(updateBasicProfileThunk({ avatarFileId })).unwrap();
+      closeUploadModal();
+    } catch (err) {
+      const message =
+        err && typeof err === 'object' && 'message' in err
+          ? String((err as { message?: unknown }).message)
+          : 'Unable to update profile image.';
+      setUploadError(message);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return (
     <div className={clsx('grid gap-5', className)}>
       <div className="grid justify-items-center pt-2">
         <button
           type="button"
-          className="group relative rounded-full ring-4 ring-white shadow-[0_8px_18px_rgba(11,31,74,0.08)] outline-none transition-transform focus-visible:ring-[#123B8D]/30 active:scale-95"
-          aria-label="Update profile avatar"
-          onClick={onAvatarClick}
+          onClick={openUploadModal}
+          className="relative grid place-items-center rounded-full border-0 bg-transparent p-0"
         >
-          <AppAvatar name={profileDisplayName} src={avatarUrl} size="lg" />
-          <span
-            className="absolute -right-1 -bottom-1 grid size-7 place-items-center rounded-full border-2 border-white bg-[#123B8D] text-white shadow-sm"
-            aria-hidden
-          >
-            <Camera className="size-3.5" />
+          <UserProfileImage size="lg" />
+          <span className="absolute -bottom-0.5 -right-0.5 grid size-7 place-items-center rounded-full border-2 border-white bg-[#123B8D] text-white shadow-sm">
+            <Camera className="size-3.5" aria-hidden />
           </span>
         </button>
       </div>
+
+      <AppModal
+        open={isUploadModalOpen}
+        onClose={closeUploadModal}
+        title="Update profile image"
+        footer={
+          <div className="col-span-2 grid grid-cols-2 gap-3">
+            <AppButton fullWidth size="md" variant="outline" onClick={closeUploadModal}>
+              Close
+            </AppButton>
+          </div>
+        }
+      >
+        <div className="grid gap-3">
+          {uploadError && (
+            <span className="text-xs font-semibold text-[#DC2626]">{uploadError}</span>
+          )}
+          <AppFileUploadField
+            module={module}
+            isPublic={false}
+            onChange={(fileIds) => {
+              if (!fileIds) return;
+              void handleAvatarUpload(fileIds);
+            }}
+          />
+        </div>
+      </AppModal>
 
       <section className="grid gap-3 rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-[0_8px_18px_rgba(11,31,74,0.05)]">
         <div className="flex flex-wrap items-center justify-between gap-3">

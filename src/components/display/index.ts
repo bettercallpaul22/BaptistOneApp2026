@@ -4,3 +4,4 @@ export * from './AppImage';
 export * from './AppTicker';
 export * from './ProfileCard';
 export * from './QuickActionCard';
+export * from './UserProfileImage';

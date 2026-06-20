@@ -25,7 +25,7 @@ const sizeClasses = {
 
 const getAvatarSrcCandidates = (src?: string) => {
   if (!src) return [];
-  if (src.startsWith('http://')) return [src.replace(/^http:\/\//, 'https://'), src];
+  if (src.startsWith('http://')) return [src, src.replace(/^http:\/\//, 'https://')];
   return [src];
 };
 

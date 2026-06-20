@@ -18,10 +18,8 @@ import { SectionShell } from './SectionShell';
 
 export const ProfileCompletionView = ({
   profile,
-  onAvatarClick,
 }: {
   profile: ProfileCompletion;
-  onAvatarClick?: () => void;
 }) => {
   const memberAccount = useAppSelector((state) => state.member.data);
   const [editingSection, setEditingSection] = useState<{
@@ -38,7 +36,6 @@ export const ProfileCompletionView = ({
       <ProfileProgressSummary
         profile={profile}
         className="hidden min-[1181px]:grid"
-        onAvatarClick={onAvatarClick}
       />
 
       <div className="grid gap-4 lg:grid-cols-2">
