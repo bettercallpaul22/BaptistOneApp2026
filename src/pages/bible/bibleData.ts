@@ -35,8 +35,7 @@ export interface BibleChapterRef {
 export type BibleTranslationId =
   | 'asv'
   | 'asvs'
-  | 'kjv'
-  | 'kjv_strongs';
+  | 'kjv';
 
 export interface BibleTranslation {
   id: BibleTranslationId;
@@ -68,7 +67,6 @@ interface BibleCacheMetadata {
 const translationOrder: BibleTranslationId[] = [
   'kjv',
   'asv',
-  'kjv_strongs',
   'asvs',
 ];
 
@@ -91,19 +89,12 @@ const translationMetadata: Record<BibleTranslationId, BibleTranslation> = {
     shortName: 'KJV',
     module: 'kjv',
   },
-  kjv_strongs: {
-    id: 'kjv_strongs',
-    name: 'KJV with Strongs',
-    shortName: 'KJV Strongs',
-    module: 'kjv_strongs',
-  },
 };
 
 const bibleModuleLoaders: Record<BibleTranslationId, () => Promise<BibleModule>> = {
   asv: async () => ((await import('@/assets/bible/EN-English/asv.json')).default as BibleModule),
   asvs: async () => ((await import('@/assets/bible/EN-English/asvs.json')).default as BibleModule),
   kjv: async () => ((await import('@/assets/bible/EN-English/kjv.json')).default as BibleModule),
-  kjv_strongs: async () => ((await import('@/assets/bible/EN-English/kjv_strongs.json')).default as BibleModule),
 };
 
 const bibleBooks = englishBooksData as BibleBook[];
