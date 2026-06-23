@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { Gift, Pencil } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Gift, Pencil, Church } from 'lucide-react';
 import { AppButton, AppText } from '@/components/common';
+import { paths } from '@/routes/paths';
 import type { ProfileCompletion } from '@/types/profile';
 import { emptyText, informationGroups } from '../config/profileConfig';
 import { formatLabel, formatMaybeDate } from '../utils/profileFormatters';
@@ -18,6 +20,7 @@ export const ProfileCompletionView = ({
 }: {
   profile: ProfileCompletion;
 }) => {
+  const navigate = useNavigate();
   const [editingSection, setEditingSection] = useState<{
     key: keyof ProfileCompletion;
     title: string;
@@ -63,6 +66,15 @@ export const ProfileCompletionView = ({
           );
         })}
       </div>
+
+      <SectionShell title="Ministry Information">
+        <AppButton
+          leftIcon={<Church className="size-4" aria-hidden />}
+          onClick={() => navigate(paths.ministries)}
+        >
+          Go to Ministry
+        </AppButton>
+      </SectionShell>
 
       <SectionShell title="Rewards">
         {profile.rewards.length ? (

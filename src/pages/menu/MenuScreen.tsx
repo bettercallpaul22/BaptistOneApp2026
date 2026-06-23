@@ -24,7 +24,7 @@ export const MenuScreen = ({ isOpen, onClose, onLogout, onNavigate, pendingPath 
       <AppMobileHeader title="Menu" action="close" position="static" onActionPress={onClose} />
 
       <div className="overflow-y-auto px-4 py-7 sm:px-6 sm:py-10">
-        <nav className="mx-auto grid max-w-[39rem] grid-cols-3 gap-3" aria-label="Menu navigation">
+        <nav className="mx-auto grid max-w-[39rem] grid-cols-4 gap-3" aria-label="Menu navigation">
           {menuItems.map(({ to, ...item }) => (
             <QuickActionCard
               key={item.label}

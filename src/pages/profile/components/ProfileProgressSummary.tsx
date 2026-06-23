@@ -148,7 +148,7 @@ export const ProfileProgressSummary = ({
             </span>
             <span className="grid gap-0.5">
               <span className="text-[0.65rem] leading-none font-black tracking-[0.08em] text-[#7C6517] uppercase">
-                Balance
+                App Rewards
               </span>
               <span className="max-w-32 truncate text-sm leading-4 font-black">
                 {rewardBalance}

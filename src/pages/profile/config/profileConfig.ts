@@ -20,16 +20,12 @@ export const informationGroups: Array<{ key: keyof ProfileCompletion; title: str
   { key: 'salvationInformation', title: 'Salvation Information' },
   { key: 'baptismInformation', title: 'Baptism Information' },
   { key: 'employmentInformation', title: 'Employment Information' },
-  { key: 'ministryInformation', title: 'Ministry Information' },
   { key: 'familyInformation', title: 'Family Information' },
   { key: 'spouseInformation', title: 'Spouse Information' },
   { key: 'childrenInformation', title: 'Children Information' },
   { key: 'dependants', title: 'Dependants' },
-  { key: 'emergencyContact', title: 'Emergency Contact' },
-  { key: 'churchInterests', title: 'Church Interests' },
   { key: 'givingPreferences', title: 'Giving Preferences' },
   { key: 'documents', title: 'Documents' },
-  { key: 'verification', title: 'Verification' },
 ];
 
 export const memberUploadDefaults = {
@@ -90,17 +86,25 @@ export const sectionFieldSchemas: Partial<Record<keyof ProfileCompletion, Profil
     { name: 'validIdFileId', type: 'file', ...memberUploadDefaults },
     { name: 'verificationConsent', type: 'boolean' },
   ],
-  membershipInformation: [{ name: 'membershipType' }, { name: 'memberSince', type: 'date' }],
+  membershipInformation: [
+    {
+      name: 'membershipType',
+      type: 'select',
+      options: [
+        { label: 'Diaspora', value: 'diaspora' },
+        { label: 'Resident/In-Town', value: 'resident' },
+        { label: 'Out-of-town', value: 'out_of_town' },
+        { label: 'Online', value: 'online' },
+      ],
+    },
+    { name: 'memberSince', type: 'date' },
+  ],
   salvationInformation: [
     { name: 'isBornAgain', type: 'boolean' },
     { name: 'salvationDate', type: 'date' },
   ],
   baptismInformation: [
-    { name: 'passportPhotoFileId', label: 'Passport Photo', type: 'file', ...memberUploadDefaults },
-    { name: 'validIdFileId', label: 'Valid ID', type: 'file', ...memberUploadDefaults },
-    { name: 'baptismCertificateFileId', label: 'Baptism Certificate', type: 'file', ...memberUploadDefaults },
     { name: 'membershipTransferLetterFileId', label: 'Membership Transfer Letter', type: 'file', ...memberUploadDefaults },
-    { name: 'otherDocumentFileIds', label: 'Other Documents', type: 'file-list', ...memberUploadDefaults },
   ],
   employmentInformation: [
     {
@@ -114,9 +118,9 @@ export const sectionFieldSchemas: Partial<Record<keyof ProfileCompletion, Profil
     },
     { name: 'school' },
     { name: 'course' },
-    { name: 'employer' },
+    { name: 'employer', label: "Employer's Name" },
     { name: 'occupation' },
-    { name: 'workAddress', type: 'textarea' },
+    { name: 'workAddress', label: "Employer's Address", type: 'textarea' },
     { name: 'linkedIn', label: 'LinkedIn' },
   ],
   ministryInformation: [
