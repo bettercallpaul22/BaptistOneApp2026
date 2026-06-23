@@ -75,6 +75,8 @@ const ForumPage = () => {
   }, [churchDetails]);
 
   const hasFetchedInitial = useRef(false);
+  const hasFetchedDepartments = useRef(false);
+  const hasFetchedUnits = useRef(false);
 
   useEffect(() => {
     if (hasFetchedInitial.current) return;
@@ -84,15 +86,20 @@ const ForumPage = () => {
   }, [dispatch, error, loading]);
 
   useEffect(() => {
-    if (!churchDepartments.length && !churchDepartmentsLoading && !churchDepartmentsError) {
-      void dispatch(fetchChurchDepartmentsThunk());
-      void dispatch(fetchDepartmentRequestsThunk());
-    }
-    if (!units.length && !unitsLoading && !unitsError) {
-      void dispatch(fetchUserUnitsThunk());
-      void dispatch(fetchUnitRequestsThunk());
-    }
-  }, [churchDepartments.length, churchDepartmentsError, churchDepartmentsLoading, dispatch, units.length, unitsError, unitsLoading]);
+    if (hasFetchedDepartments.current) return;
+    if (churchDepartmentsLoading) return;
+    hasFetchedDepartments.current = true;
+    void dispatch(fetchChurchDepartmentsThunk());
+    void dispatch(fetchDepartmentRequestsThunk());
+  }, [churchDepartmentsLoading, dispatch]);
+
+  useEffect(() => {
+    if (hasFetchedUnits.current) return;
+    if (unitsLoading) return;
+    hasFetchedUnits.current = true;
+    void dispatch(fetchUserUnitsThunk());
+    void dispatch(fetchUnitRequestsThunk());
+  }, [unitsLoading, dispatch]);
 
   const loadMoreForums = useCallback(() => {
     if (!hasMore || loadingMore) return;
