@@ -132,6 +132,9 @@ export const endpoints = {
       `/private/members/my/departments/${encodeURIComponent(departmentId)}/request`,
     departmentRequests: '/private/members/my/department-requests',
     myUnits: '/private/members/my/units',
+    joinUnit: (unitId: string) =>
+      `/private/members/my/units/${encodeURIComponent(unitId)}/request`,
+    unitRequests: '/private/members/my/unit-requests',
     myMinistries: '/private/members/my/ministries',
     churchMinistries: '/private/members/my/church/ministries',
     requestToJoinMinistry: (ministryId: string) =>

@@ -36,6 +36,7 @@ export interface ForumUnit {
   title: string;
   description: string;
   departmentId: string;
+  joined: boolean;
   members: ForumMember[];
   forumIds: string[];
 }
@@ -197,6 +198,7 @@ export const units: ForumUnit[] = [
     title: 'Worship Team',
     description: 'Forum for planning worship services and rehearsals.',
     departmentId: 'general',
+    joined: false,
     members: [basicMembers[0], basicMembers[5], basicMembers[6]],
     forumIds: ['worship-planning'],
   },
@@ -205,6 +207,7 @@ export const units: ForumUnit[] = [
     title: 'Youth Ministry',
     description: 'Youth ministry coordination for events and discipleship.',
     departmentId: 'youth',
+    joined: false,
     members: [basicMembers[3], basicMembers[4], basicMembers[5]],
     forumIds: ['youth-events'],
   },
@@ -213,30 +216,34 @@ export const units: ForumUnit[] = [
     title: 'Teen Groups',
     description: 'Teen small group planning and Bible study discussions.',
     departmentId: 'youth',
+    joined: false,
     members: [basicMembers[4], basicMembers[7], basicMembers[8]],
     forumIds: ['teen-bible-study'],
   },
   {
     id: 'women-prayer',
     title: 'Women Prayer',
-    description: 'Women’s prayer teams and encouragement support.',
+    description: "Women's prayer teams and encouragement support.",
     departmentId: 'women',
+    joined: false,
     members: [basicMembers[6], basicMembers[7], basicMembers[8]],
     forumIds: ['women-prayer-circle'],
   },
   {
     id: 'women-leadership',
     title: 'Women Leadership',
-    description: 'Women’s ministry leader coordination and resourcing.',
+    description: "Women's ministry leader coordination and resourcing.",
     departmentId: 'women',
+    joined: false,
     members: [basicMembers[7], basicMembers[9], basicMembers[10]],
     forumIds: ['women-leadership'],
   },
   {
     id: 'men-disciple',
     title: 'Men Discipleship',
-    description: 'Men’s leadership and mentorship discussion forum.',
+    description: "Men's leadership and mentorship discussion forum.",
     departmentId: 'men',
+    joined: false,
     members: [basicMembers[9], basicMembers[10], basicMembers[11]],
     forumIds: ['men-disciple'],
   },
@@ -245,6 +252,7 @@ export const units: ForumUnit[] = [
     title: 'Missions Outreach',
     description: 'Mission team planning, reports, and volunteer coordination.',
     departmentId: 'missions',
+    joined: false,
     members: [basicMembers[12], basicMembers[13], basicMembers[14]],
     forumIds: ['missions-outreach'],
   },

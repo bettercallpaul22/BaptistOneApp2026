@@ -15,7 +15,7 @@ import clsx from 'clsx';
 import { useNavigate } from 'react-router-dom';
 import { AppButton, AppText } from '@/components/common';
 import { AppLoader, AppModal } from '@/components/feedback';
-import { AppInput, AppMoneyInput } from '@/components/form';
+import { AppDropdown, AppInput, AppMoneyInput } from '@/components/form';
 import { callbackUrls } from '@/constants/callbackUrls';
 import { AppShell } from '@/layouts/AppShell';
 import { paths } from '@/routes/paths';
@@ -662,20 +662,21 @@ export default function GivingPage() {
         <section className="grid gap-6">
           <section className="grid gap-3">
             <AppText variant="h5">Choose giving bucket</AppText>
-            <div className="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {activeBuckets.map((bucket, index) => (
-                <BucketCard
-                  bucket={bucket}
-                  index={index}
-                  key={bucket.id}
-                  selected={bucket.id === selectedBucket?.id}
-                  onSelect={() => {
-                    dispatch(clearGivingPaymentStatus());
-                    setSelectedBucketId(bucket.id);
-                  }}
-                />
-              ))}
-            </div>
+            <AppDropdown
+              options={activeBuckets.map((bucket) => ({
+                label: `${bucket.name}${bucket.isDefault ? ' (Default)' : ''}`,
+                value: bucket.id,
+              }))}
+              value={selectedBucket?.id}
+              placeholder="Select a giving bucket"
+              onChange={(value) => {
+                const bucket = activeBuckets.find((b) => b.id === value);
+                if (bucket) {
+                  dispatch(clearGivingPaymentStatus());
+                  setSelectedBucketId(bucket.id);
+                }
+              }}
+            />
           </section>
 
           <section className="grid gap-4 rounded-2xl border border-[#D6DEEB] bg-white p-4 shadow-[0_8px_24px_rgba(11,31,74,0.06)] sm:p-5">

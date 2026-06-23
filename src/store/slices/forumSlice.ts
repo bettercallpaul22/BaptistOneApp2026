@@ -61,6 +61,18 @@ interface UserUnitResponse {
   churchId: string;
 }
 
+interface UnitRequestResponse {
+  id: string;
+  unitId: string;
+  status: string;
+  requestedAt: string;
+  reviewedAt: string | null;
+  reviewedBy: string | null;
+  rejectionReason: string | null;
+  unitName: string;
+  unitSlug: string;
+}
+
 export const fetchUserDepartmentsThunk = createAsyncThunk<
   { items: ForumDepartment[]; lastFetchedAt: string },
   void,
@@ -180,6 +192,7 @@ export const fetchUserUnitsThunk = createAsyncThunk<
         title: unit.unitName,
         description: unit.unitDescription ?? '',
         departmentId: unit.departmentId,
+        joined: true,
         members: [],
         forumIds: [],
       })),
@@ -187,6 +200,51 @@ export const fetchUserUnitsThunk = createAsyncThunk<
     };
   } catch (error) {
     return rejectWithValue(error instanceof Error ? error.message : 'Unable to load units.');
+  }
+});
+
+export const joinUnitThunk = createAsyncThunk<
+  { unitId: string; message?: string },
+  string,
+  { rejectValue: string }
+>('forum/joinUnit', async (unitId, { rejectWithValue }) => {
+  try {
+    const response = await http.post<{ status: boolean; message?: string }, undefined>(
+      endpoints.privateMembers.joinUnit(unitId),
+    );
+
+    if (!response.status) {
+      return rejectWithValue(response.message || 'Unable to join unit.');
+    }
+
+    return { unitId, message: response.message };
+  } catch (error) {
+    return rejectWithValue(error instanceof Error ? error.message : 'Unable to join unit.');
+  }
+});
+
+export const fetchUnitRequestsThunk = createAsyncThunk<
+  { items: { id: string; unitId: string; status: string }[]; lastFetchedAt: string },
+  void,
+  { rejectValue: string }
+>('forum/fetchUnitRequests', async (_, { rejectWithValue }) => {
+  try {
+    const response = await http.get<ApiResponse<UnitRequestResponse[]>>(endpoints.privateMembers.unitRequests);
+
+    if (!response.status || !response.data) {
+      return rejectWithValue('Unable to load unit requests.');
+    }
+
+    return {
+      items: response.data.map((request) => ({
+        id: request.id,
+        unitId: request.unitId,
+        status: request.status,
+      })),
+      lastFetchedAt: new Date().toISOString(),
+    };
+  } catch (error) {
+    return rejectWithValue(error instanceof Error ? error.message : 'Unable to load unit requests.');
   }
 });
 
@@ -213,6 +271,11 @@ interface ForumState {
   departmentRequests: { id: string; departmentId: string; status: string }[];
   departmentRequestsLoading: boolean;
   departmentRequestsError: string | null;
+  joiningUnitId: string | null;
+  joinUnitError: string | null;
+  unitRequests: { id: string; unitId: string; status: string }[];
+  unitRequestsLoading: boolean;
+  unitRequestsError: string | null;
   posts: ForumPost[];
   postsMeta: { page: number; limit: number; total: number; totalPages: number } | null;
   postsLoading: boolean;
@@ -254,6 +317,11 @@ const initialState: ForumState = {
   departmentRequests: [],
   departmentRequestsLoading: false,
   departmentRequestsError: null,
+  joiningUnitId: null,
+  joinUnitError: null,
+  unitRequests: [],
+  unitRequestsLoading: false,
+  unitRequestsError: null,
   posts: [],
   postsMeta: null,
   postsLoading: false,
@@ -433,6 +501,31 @@ export const forumSlice = createSlice({
       .addCase(fetchUserUnitsThunk.rejected, (state, action) => {
         state.unitsLoading = false;
         state.unitsError = action.payload ?? 'Unable to load units.';
+      })
+      .addCase(joinUnitThunk.pending, (state, action) => {
+        state.joiningUnitId = action.meta.arg;
+        state.joinUnitError = null;
+      })
+      .addCase(joinUnitThunk.fulfilled, (state, action) => {
+        state.joiningUnitId = null;
+        const unit = state.units.find((u) => u.id === action.payload.unitId);
+        if (unit) unit.joined = true;
+      })
+      .addCase(joinUnitThunk.rejected, (state, action) => {
+        state.joiningUnitId = null;
+        state.joinUnitError = action.payload ?? 'Unable to join unit.';
+      })
+      .addCase(fetchUnitRequestsThunk.pending, (state) => {
+        state.unitRequestsLoading = true;
+        state.unitRequestsError = null;
+      })
+      .addCase(fetchUnitRequestsThunk.fulfilled, (state, action) => {
+        state.unitRequestsLoading = false;
+        state.unitRequests = action.payload.items;
+      })
+      .addCase(fetchUnitRequestsThunk.rejected, (state, action) => {
+        state.unitRequestsLoading = false;
+        state.unitRequestsError = action.payload ?? 'Unable to load unit requests.';
       })
       .addCase(fetchPostCommentsThunk.pending, (state) => {
         state.commentsLoading = true;

@@ -7,7 +7,7 @@ import { AppShell } from '@/layouts/AppShell';
 import { AppStateFeedback } from '@/components/feedback';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchForumsThunk } from '@/store/thunks/forumThunk';
-import { fetchChurchDepartmentsThunk, fetchDepartmentRequestsThunk, fetchUserUnitsThunk, joinDepartmentThunk } from '@/store/slices/forumSlice';
+import { fetchChurchDepartmentsThunk, fetchDepartmentRequestsThunk, fetchUserUnitsThunk, joinDepartmentThunk, joinUnitThunk, fetchUnitRequestsThunk } from '@/store/slices/forumSlice';
 import { paths } from '@/routes/paths';
 import { useChurchScreenBootstrapApi } from '@/hooks/useChurchScreenBootstrapApi';
 import type { ForumItem } from '@/services/forum/forumService';
@@ -49,6 +49,10 @@ const ForumPage = () => {
     joinDepartmentError,
     departmentRequests,
     departmentRequestsLoading,
+    joiningUnitId,
+    joinUnitError,
+    unitRequests,
+    unitRequestsLoading,
   } = useAppSelector((state) => state.forum);
 
   const hasMore = Boolean(meta && meta.page < meta.totalPages);
@@ -84,7 +88,11 @@ const ForumPage = () => {
       void dispatch(fetchChurchDepartmentsThunk());
       void dispatch(fetchDepartmentRequestsThunk());
     }
-  }, [churchDepartments.length, churchDepartmentsError, churchDepartmentsLoading, dispatch]);
+    if (!units.length && !unitsLoading && !unitsError) {
+      void dispatch(fetchUserUnitsThunk());
+      void dispatch(fetchUnitRequestsThunk());
+    }
+  }, [churchDepartments.length, churchDepartmentsError, churchDepartmentsLoading, dispatch, units.length, unitsError, unitsLoading]);
 
   const loadMoreForums = useCallback(() => {
     if (!hasMore || loadingMore) return;
@@ -118,6 +126,7 @@ const ForumPage = () => {
       void dispatch(fetchDepartmentRequestsThunk());
     } else if (value === 'units') {
       void dispatch(fetchUserUnitsThunk());
+      void dispatch(fetchUnitRequestsThunk());
     }
   };
 
@@ -139,6 +148,29 @@ const ForumPage = () => {
           type: 'error',
           title: 'Unable to join department',
           message: (result.payload as string) || 'Unable to join department.',
+        }),
+      );
+    }
+  };
+
+  const handleJoinUnit = async (unitId: string) => {
+    const result = await dispatch(joinUnitThunk(unitId));
+
+    if (joinUnitThunk.fulfilled.match(result)) {
+      void dispatch(fetchUnitRequestsThunk());
+      dispatch(
+        pushNotification({
+          type: 'success',
+          title: 'Request sent',
+          message: result.payload.message || 'Your request to join the unit has been sent.',
+        }),
+      );
+    } else if (joinUnitThunk.rejected.match(result)) {
+      dispatch(
+        pushNotification({
+          type: 'error',
+          title: 'Unable to join unit',
+          message: (result.payload as string) || 'Unable to join unit.',
         }),
       );
     }
@@ -250,9 +282,11 @@ const ForumPage = () => {
               )}
 
               {activeTab === 'departments' && (
-                <div className="grid gap-4">
+                <div className="relative grid gap-4">
                   {churchDepartmentsLoading && (
-                    <AppStateFeedback state="loading" label="Loading departments" className="min-h-32" />
+                    <div className="absolute inset-0 z-10 grid place-items-center rounded-lg bg-white/80 backdrop-blur-sm">
+                      <AppStateFeedback state="loading" label="Loading departments" className="min-h-32" />
+                    </div>
                   )}
                   {churchDepartmentsError && !churchDepartments.length && (
                     <AppStateFeedback
@@ -316,24 +350,70 @@ const ForumPage = () => {
               )}
 
               {activeTab === 'units' && (
-                <div className="grid gap-4">
-                  {units.map((unit) => (
-                    <AppCard key={unit.id} className="shadow-[0_10px_24px_rgba(11,31,74,0.05)]">
-                      <div className="flex items-start justify-between gap-3 p-4">
-                        <div className="min-w-0">
-                          <AppText variant="h6">{unit.title}</AppText>
-                          <AppText variant="caption" color="textSecondary">
-                            {unit.description}
-                          </AppText>
+                <div className="relative grid gap-4">
+                  {unitsLoading && (
+                    <div className="absolute inset-0 z-10 grid place-items-center rounded-lg bg-white/80 backdrop-blur-sm">
+                      <AppStateFeedback state="loading" label="Loading units" className="min-h-32" />
+                    </div>
+                  )}
+                  {unitsError && !units.length && (
+                    <AppStateFeedback
+                      state="error"
+                      title="Unable to load units"
+                      description={unitsError}
+                      className="min-h-36"
+                      onRetry={() => void dispatch(fetchUserUnitsThunk())}
+                    />
+                  )}
+                  {!unitsLoading && !unitsError && !units.length && (
+                    <AppStateFeedback
+                      state="empty"
+                      title="No units"
+                      description="No units are available at the moment."
+                      className="min-h-32"
+                    />
+                  )}
+                  {units.map((unit) => {
+                    const hasPendingRequest = unitRequests.some(
+                      (req) => req.unitId === unit.id && req.status === 'PENDING',
+                    );
+
+                    return (
+                      <AppCard key={unit.id} className="shadow-[0_10px_24px_rgba(11,31,74,0.05)]">
+                        <div className="flex items-start justify-between gap-3 p-4">
+                          <div className="min-w-0 flex-1">
+                            <AppText variant="h6">{unit.title}</AppText>
+                            <AppText variant="caption" color="textSecondary">
+                              {unit.description}
+                            </AppText>
+                          </div>
+                          {unit.joined ? (
+                            <span className="inline-flex shrink-0 items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                              Joined
+                            </span>
+                          ) : hasPendingRequest ? (
+                            <span className="inline-flex shrink-0 items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                              Pending
+                            </span>
+                          ) : (
+                            <AppButton
+                              size="sm"
+                              loading={joiningUnitId === unit.id}
+                              disabled={joiningUnitId !== null}
+                              onClick={() => void handleJoinUnit(unit.id)}
+                            >
+                              Join
+                            </AppButton>
+                          )}
                         </div>
-                      </div>
-                      <div className="flex flex-wrap gap-2 px-4 pb-4">
-                        <span className="rounded-full bg-[#EEF4FF] px-2 py-1 text-xs font-semibold text-[#123B8D]">
-                          Unit
-                        </span>
-                      </div>
-                    </AppCard>
-                  ))}
+                        <div className="flex flex-wrap gap-2 px-4 pb-4">
+                          <span className="rounded-full bg-[#EEF4FF] px-2 py-1 text-xs font-semibold text-[#123B8D]">
+                            Unit
+                          </span>
+                        </div>
+                      </AppCard>
+                    );
+                  })}
                 </div>
               )}
 
