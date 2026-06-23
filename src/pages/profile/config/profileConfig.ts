@@ -13,7 +13,6 @@ export const tabText: Record<ProfileTab, string> = {
 };
 
 export const informationGroups: Array<{ key: keyof ProfileCompletion; title: string }> = [
-  { key: 'churchInformation', title: 'Church Information' },
   { key: 'personalInformation', title: 'Personal Information' },
   { key: 'contactInformation', title: 'Contact Information' },
   { key: 'identityInformation', title: 'Identity Information' },

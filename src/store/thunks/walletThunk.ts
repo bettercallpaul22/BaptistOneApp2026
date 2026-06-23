@@ -137,3 +137,16 @@ export const verifyWalletPinThunk = createAsyncThunk<
     return rejectWithValue(toApiError(error));
   }
 });
+
+export const verifyFundTransactionThunk = createAsyncThunk<
+  unknown,
+  { walletNumber: string; transactionId: string },
+  { rejectValue: ReturnType<typeof toApiError> }
+>('wallet/verifyFundTransaction', async ({ walletNumber, transactionId }, { rejectWithValue }) => {
+  try {
+    const response = await walletService.verifyFundTransaction(walletNumber, transactionId);
+    return response.data;
+  } catch (error) {
+    return rejectWithValue(toApiError(error));
+  }
+});

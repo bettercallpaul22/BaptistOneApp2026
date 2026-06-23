@@ -52,6 +52,11 @@ export const getMatchingFileKeys = (key: string) => {
     return [`${base}File`];
   }
 
+  if (key.endsWith('Url')) {
+    const base = key.slice(0, -'Url'.length);
+    return [`${base}File`];
+  }
+
   return [];
 };
 

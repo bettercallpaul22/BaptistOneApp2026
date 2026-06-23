@@ -8,11 +8,10 @@ import { AppLoader, AppModal, AppStateFeedback } from '@/components/feedback';
 import { useChurchScreenBootstrapApi } from '@/hooks/useChurchScreenBootstrapApi';
 import { AppShell } from '@/layouts/AppShell';
 import {
+  formatLeaderType,
   getLeaderAvatarUrl,
-  getLeaderGroupTitle,
   getLeaderName,
   getLeadershipGroups,
-  getLeaderRole,
 } from '@/pages/church/churchLeadershipUtils';
 import {
   formatEventDate,
@@ -288,10 +287,10 @@ const ChurchLeaderDetailsModal = ({ leader, onClose }: { leader: ChurchLeadershi
           <AppAvatar name={getLeaderName(leader)} src={getLeaderAvatarUrl(leader)} size="xl" />
           <div className="grid gap-1">
             <AppText variant="h5" align="center">
-              {getLeaderName(leader)}
+              {leader.title?.trim() ? `${leader.title.trim()} ` : ''}{getLeaderName(leader)}
             </AppText>
             <AppText variant="bodySmall" color="textSecondary" align="center">
-              {getLeaderRole(leader)} - {getLeaderGroupTitle(leader)}
+              {formatLeaderType(leader.type)}
             </AppText>
           </div>
         </div>
@@ -360,7 +359,8 @@ const ChurchLeadersSection = ({
                   <ProfileCard
                     key={leader.id}
                     name={getLeaderName(leader)}
-                    role={getLeaderRole(leader)}
+                    title={leader.title?.trim() || undefined}
+                    subtitle={formatLeaderType(leader.type)}
                     avatarUrl={getLeaderAvatarUrl(leader)}
                     onViewDetails={() => setSelectedLeader(leader)}
                   />

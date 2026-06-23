@@ -23,4 +23,6 @@ export const callbackUrls = {
   registerVerification: () => buildCallbackUrl(env.registerRedirectPath || paths.registerVerification),
   walletFunding: () => buildCallbackUrl(env.walletRedirectPath || paths.walletFundingCallback),
   giving: () => buildCallbackUrl(paths.givingCallback),
+  resources: () => buildCallbackUrl(paths.resourceCheckoutCallback),
+  convention: () => buildCallbackUrl(paths.convention),
 } as const;

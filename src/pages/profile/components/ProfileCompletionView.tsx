@@ -1,15 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Gift, Pencil } from 'lucide-react';
 import { AppButton, AppText } from '@/components/common';
-import { useAppSelector } from '@/store/hooks';
 import type { ProfileCompletion } from '@/types/profile';
 import { emptyText, informationGroups } from '../config/profileConfig';
-import { getMemberChurchInformationRows } from '../utils/churchMembershipUtils';
 import { formatLabel, formatMaybeDate } from '../utils/profileFormatters';
 import {
   getSectionEntries,
   isEmptyValue,
-  renderDetailRow,
   renderInformationEntry,
 } from '../utils/profileDisplayUtils';
 import { ProfileProgressSummary } from './ProfileProgressSummary';
@@ -21,15 +18,10 @@ export const ProfileCompletionView = ({
 }: {
   profile: ProfileCompletion;
 }) => {
-  const memberAccount = useAppSelector((state) => state.member.data);
   const [editingSection, setEditingSection] = useState<{
     key: keyof ProfileCompletion;
     title: string;
   } | null>(null);
-  const memberChurchInformationRows = useMemo(
-    () => getMemberChurchInformationRows(memberAccount),
-    [memberAccount],
-  );
 
   return (
     <div className="grid gap-5">
@@ -40,24 +32,6 @@ export const ProfileCompletionView = ({
 
       <div className="grid gap-4 lg:grid-cols-2">
         {informationGroups.map((group) => {
-          if (group.key === 'churchInformation') {
-            return (
-              <SectionShell title={group.title} key={String(group.key)}>
-                {memberChurchInformationRows.length ? (
-                  <div className="grid gap-3">
-                    {memberChurchInformationRows.map(([label, value]) =>
-                      renderDetailRow(label, value, label),
-                    )}
-                  </div>
-                ) : (
-                  <AppText variant="bodyMedium" color="textMuted">
-                    {emptyText}
-                  </AppText>
-                )}
-              </SectionShell>
-            );
-          }
-
           const entries = getSectionEntries(profile[group.key]);
           const visibleEntries = entries.filter(([, value]) => !isEmptyValue(value));
 

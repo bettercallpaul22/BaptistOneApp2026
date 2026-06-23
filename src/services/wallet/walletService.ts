@@ -68,4 +68,16 @@ export const walletService = {
       { authKey },
     );
   },
+
+  verifyFundTransaction: async (walletNumber: string, transactionId: string) => {
+    const response = await http.get<ApiResponse<unknown>>(
+      endpoints.privateWallets.fundVerify(walletNumber, transactionId),
+    );
+
+    if (!response.status) {
+      throw new Error(response.message || 'Unable to verify transaction.');
+    }
+
+    return response;
+  },
 };

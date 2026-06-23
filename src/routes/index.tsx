@@ -51,6 +51,27 @@ const ForumPage = lazy(() => import('@/pages/forum/ForumPage'));
 const ForumPostListPage = lazy(() => import('@/pages/forum/ForumPostListPage'));
 const ForumPostDetailPage = lazy(() => import('@/pages/forum/ForumPostDetailPage'));
 const MinistryPage = lazy(() => import('@/pages/ministry/MinistryPage'));
+const ConventionPage = lazy(() => import('@/pages/convention/ConventionPage'));
+const ConventionAnnouncementDetailPage = lazy(
+  () => import('@/pages/convention/ConventionAnnouncementDetailPage'),
+);
+const ConventionRegistrationPage = lazy(
+  () => import('@/pages/convention/ConventionRegistrationPage'),
+);
+const ConventionPublicationPaymentPage = lazy(
+  () => import('@/pages/convention/ConventionPublicationPaymentPage'),
+);
+const ConventionMyRegistrationsPage = lazy(
+  () => import('@/pages/convention/ConventionMyRegistrationsPage'),
+);
+const ConventionMyPublicationsPage = lazy(
+  () => import('@/pages/convention/ConventionMyPublicationsPage'),
+);
+const ResourcesPage = lazy(() => import('@/pages/resources/ResourcesPage'));
+const ResourceCartPage = lazy(() => import('@/pages/resources/ResourceCartPage'));
+const ResourceCheckoutCallbackPage = lazy(
+  () => import('@/pages/resources/ResourceCheckoutCallbackPage'),
+);
 const DevotionalPage = lazy(() => import('@/pages/devotional/DevotionalPage'));
 const DevotionalDetailPage = lazy(() => import('@/pages/devotional/DevotionalDetailPage'));
 const LoginPage = lazy(() => import('@/pages/auth/login/LoginPage'));
@@ -153,6 +174,7 @@ const RoutedApp = () => {
     pathname !== paths.familyInvite &&
     pathname !== paths.walletFundingCallback &&
     pathname !== paths.givingCallback &&
+    pathname !== paths.resourceCheckoutCallback &&
     !pathname.startsWith('/auth');
   const hideWebBottomTab = pathname === paths.bible && isBibleBottomTabHidden;
 
@@ -165,6 +187,7 @@ const RoutedApp = () => {
           <Route path={paths.googleRedirect} element={<GoogleRedirectPage />} />
           <Route path={paths.walletFundingCallback} element={<WalletFundingCallbackPage />} />
           <Route path={paths.givingCallback} element={<GivingCallbackPage />} />
+          <Route path={paths.resourceCheckoutCallback} element={<ResourceCheckoutCallbackPage />} />
           <Route path={paths.familyInvite} element={<FamilyInvitePage />} />
           <Route path={paths.churchRegistrationReview} element={<ChurchRegistrationReviewPage />} />
           <Route
@@ -196,7 +219,26 @@ const RoutedApp = () => {
             <Route path={paths.family} element={<FamilyPage />} />
             <Route path={paths.familyMembers} element={<FamilyMembersPage />} />
             <Route path={paths.familyRequests} element={<FamilyRequestsPage />} />
-            <Route path={paths.resources} element={<AppPlaceholderPage title="Resources" />} />
+            <Route path={paths.convention} element={<ConventionPage />} />
+            <Route
+              path={paths.conventionAnnouncementDetail}
+              element={<ConventionAnnouncementDetailPage />}
+            />
+            <Route path={paths.conventionRegistration} element={<ConventionRegistrationPage />} />
+            <Route
+              path={paths.conventionPublicationPayment}
+              element={<ConventionPublicationPaymentPage />}
+            />
+            <Route
+              path={paths.conventionMyRegistrations}
+              element={<ConventionMyRegistrationsPage />}
+            />
+            <Route
+              path={paths.conventionMyPublications}
+              element={<ConventionMyPublicationsPage />}
+            />
+            <Route path={paths.resources} element={<ResourcesPage />} />
+            <Route path={paths.resourceCart} element={<ResourceCartPage />} />
             <Route
               path={paths.discipleship}
               element={<AppPlaceholderPage title="Discipleship" />}

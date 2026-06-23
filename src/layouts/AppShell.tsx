@@ -22,7 +22,7 @@ import { paths } from '@/routes/paths';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logout } from '@/store/slices/authSlice';
 import { pushNotification } from '@/store/slices/notificationSlice';
-import { fetchProfileCompletionThunk } from '@/store/thunks/profileThunk';
+
 
 interface NavigationItem {
   label: string;
@@ -78,7 +78,7 @@ export const AppShell = ({ children, headerAvatar, mobileHeaderAddon }: AppShell
   const { isDesktop } = useDeviceProfile();
   const mobileHeaderRef = useRef<HTMLDivElement>(null);
   const { hasKnownUser, isAuthenticated } = useAppSelector((state) => state.auth);
-  const { loading: profileLoading } = useAppSelector((state) => state.profile);
+
   const showSidebar = isDesktop;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMenuLoginPromptOpen, setIsMenuLoginPromptOpen] = useState(false);
@@ -168,20 +168,6 @@ export const AppShell = ({ children, headerAvatar, mobileHeaderAddon }: AppShell
     setDismissedRestrictedPath(pathname);
     navigate(paths.login);
   };
-
-  const profileFetchInitiated = useRef(false);
-  const profileError = useAppSelector((state) => state.profile.error);
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      profileFetchInitiated.current = false;
-      return;
-    }
-    if (profileLoading) return;
-    if (profileFetchInitiated.current && !profileError) return;
-    profileFetchInitiated.current = true;
-    dispatch(fetchProfileCompletionThunk());
-  }, [dispatch, isAuthenticated, profileLoading, profileError]);
 
   useEffect(() => {
     if (showSidebar) return;

@@ -144,11 +144,33 @@ export const endpoints = {
       params.set('limit', String(limit));
       return `/private/member/forums?${params.toString()}`;
     },
+    resources: ({ search, page = 1, limit = 25 }: { search?: string; page?: number; limit?: number } = {}) => {
+      const params = new URLSearchParams();
+      const q = search?.trim();
+      if (q) params.set('search', q);
+      params.set('page', String(page));
+      params.set('limit', String(limit));
+      return `/private/member/resources?${params.toString()}`;
+    },
+    resourceCart: {
+      items: '/private/member/resources/cart/items',
+      list: ({ page = 1, limit = 25 }: { page?: number; limit?: number } = {}) => {
+        const params = new URLSearchParams();
+        params.set('page', String(page));
+        params.set('limit', String(limit));
+        return `/private/member/resources/cart?${params.toString()}`;
+      },
+      remove: (cartId: string) =>
+        `/private/member/resources/cart/items/${encodeURIComponent(cartId)}`,
+      checkout: '/private/member/resources/checkout',
+    },
   },
   privateWallets: {
     wallets: '/private/wallets',
     authVerify: '/private/wallets/auth/verify',
     fund: (walletNumber: string) => `/private/wallets/${encodeURIComponent(walletNumber)}/fund`,
+    fundVerify: (walletNumber: string, transactionId: string) =>
+      `/private/wallets/${encodeURIComponent(walletNumber)}/fund/${encodeURIComponent(transactionId)}/verify`,
     transactions: (
       walletNumber: string,
       {
@@ -182,5 +204,50 @@ export const endpoints = {
   publicGiving: {
     config: (churchId: string) => `/public/giving/config/${encodeURIComponent(churchId)}`,
     create: '/private/giving',
+  },
+  publicConventions: {
+    programs: (id: string, { page = 1, limit = 25, search }: { page?: number; limit?: number; search?: string } = {}) => {
+      const params = new URLSearchParams();
+      const q = search?.trim();
+      if (q) params.set('search', q);
+      params.set('page', String(page));
+      params.set('limit', String(limit));
+      return `/public/conventions/${encodeURIComponent(id)}/programs?${params.toString()}`;
+    },
+    publications: (id: string, { page = 1, limit = 25, search }: { page?: number; limit?: number; search?: string } = {}) => {
+      const params = new URLSearchParams();
+      const q = search?.trim();
+      if (q) params.set('search', q);
+      params.set('page', String(page));
+      params.set('limit', String(limit));
+      return `/public/conventions/${encodeURIComponent(id)}/publications?${params.toString()}`;
+    },
+    announcements: (id: string, { page = 1, limit = 25, search }: { page?: number; limit?: number; search?: string } = {}) => {
+      const params = new URLSearchParams();
+      params.set('type', 'ANNOUNCEMENT');
+      const q = search?.trim();
+      if (q) params.set('search', q);
+      params.set('page', String(page));
+      params.set('limit', String(limit));
+      return `/public/conventions/${encodeURIComponent(id)}/broadcasts?${params.toString()}`;
+    },
+  },
+  privateConventions: {
+    documents: (id: string, { page = 1, limit = 25, search }: { page?: number; limit?: number; search?: string } = {}) => {
+      const params = new URLSearchParams();
+      const q = search?.trim();
+      if (q) params.set('search', q);
+      params.set('page', String(page));
+      params.set('limit', String(limit));
+      return `/private/conventions/${encodeURIComponent(id)}/documents?${params.toString()}`;
+    },
+    registerProgram: (conventionId: string, programId: string) =>
+      `/private/member/conventions/${encodeURIComponent(conventionId)}/programs/${encodeURIComponent(programId)}/register`,
+    registrations: (conventionId: string) =>
+      `/private/member/conventions/${encodeURIComponent(conventionId)}/registrations`,
+    purchasePublication: (conventionId: string, publicationId: string) =>
+      `/private/member/conventions/${encodeURIComponent(conventionId)}/publications/${encodeURIComponent(publicationId)}/purchase`,
+    publicationAccesses: (conventionId: string) =>
+      `/private/member/conventions/${encodeURIComponent(conventionId)}/publications/accesses`,
   },
 } as const;

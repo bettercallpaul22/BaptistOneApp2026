@@ -22,6 +22,7 @@ export const ProfileProgressSummary = ({
   className,
 }: ProfileProgressSummaryProps) => {
   const dispatch = useAppDispatch();
+  const memberAccount = useAppSelector((state) => state.member.data);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -54,6 +55,13 @@ export const ProfileProgressSummary = ({
     setIsUploadModalOpen(false);
     setUploadError(null);
   };
+
+  const displayName =
+    memberAccount?.basicProfile?.displayName ||
+    [memberAccount?.basicProfile?.firstName, memberAccount?.basicProfile?.lastName]
+      .filter(Boolean)
+      .join(' ') ||
+    'Member';
 
   const module: FileUploadModule = 'baptistone_member';
 
@@ -89,6 +97,9 @@ export const ProfileProgressSummary = ({
             <Camera className="size-3.5" aria-hidden />
           </span>
         </button>
+        <AppText variant="h5" className="mt-2 text-center">
+          {displayName}
+        </AppText>
       </div>
 
       <AppModal
