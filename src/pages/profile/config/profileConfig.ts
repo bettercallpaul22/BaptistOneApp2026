@@ -113,6 +113,7 @@ export const sectionFieldSchemas: Partial<Record<keyof ProfileCompletion, Profil
       options: [
         { label: 'Student', value: 'student' },
         { label: 'Employed', value: 'employed' },
+        { label: 'Self Employed', value: 'self_employed' },
         { label: 'Unemployed', value: 'unemployed' },
       ],
     },
@@ -120,6 +121,8 @@ export const sectionFieldSchemas: Partial<Record<keyof ProfileCompletion, Profil
     { name: 'course' },
     { name: 'employer', label: "Employer's Name" },
     { name: 'occupation' },
+    { name: 'businessName', label: 'Business Name' },
+    { name: 'businessAddress', label: 'Business Address', type: 'textarea' },
     { name: 'workAddress', label: "Employer's Address", type: 'textarea' },
     { name: 'linkedIn', label: 'LinkedIn' },
   ],

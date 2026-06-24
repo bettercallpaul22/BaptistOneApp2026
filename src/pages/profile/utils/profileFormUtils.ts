@@ -218,12 +218,24 @@ export const getVisibleFields = (
     return fields.filter((field) => ['employmentStatus', 'school', 'course'].includes(field.name));
   }
 
-  if (employmentStatus === 'employed' || employmentStatus === 'unemployed') {
+  if (employmentStatus === 'employed') {
     return fields.filter((field) =>
       ['employmentStatus', 'employer', 'occupation', 'workAddress', 'linkedIn'].includes(
         field.name,
       ),
     );
+  }
+
+  if (employmentStatus === 'self_employed') {
+    return fields.filter((field) =>
+      ['employmentStatus', 'occupation', 'businessName', 'businessAddress', 'linkedIn'].includes(
+        field.name,
+      ),
+    );
+  }
+
+  if (employmentStatus === 'unemployed') {
+    return fields.filter((field) => field.name === 'employmentStatus');
   }
 
   return fields.filter((field) => field.name === 'employmentStatus');

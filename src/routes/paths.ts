@@ -57,7 +57,7 @@ export const paths = {
   googleRedirect: '/google-redirect',
   emailVerify: '/auth/email-verify',
   register: '/auth/register',
-  registerVerification: '/auth/register/verify-email',
+  registerVerification: '/auth/email/verify',
   forgotPassword: '/auth/forgot-password',
   verifyOtp: '/auth/verify-otp',
   resetPassword: '/auth/reset-password',
