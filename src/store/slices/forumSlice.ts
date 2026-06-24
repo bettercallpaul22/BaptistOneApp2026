@@ -36,6 +36,17 @@ interface ChurchDepartmentResponse {
   pendingRequest: unknown | null;
 }
 
+export interface MyDepartment {
+  membershipId: string;
+  role: string;
+  joinedAt: string;
+  departmentId: string;
+  name: string;
+  slug: string;
+  description: string;
+  churchId: string;
+}
+
 interface DepartmentRequestResponse {
   id: string;
   departmentId: string;
@@ -126,6 +137,113 @@ export const fetchChurchDepartmentsThunk = createAsyncThunk<
     };
   } catch (error) {
     return rejectWithValue(error instanceof Error ? error.message : 'Unable to load departments.');
+  }
+});
+
+export const fetchMyDepartmentsThunk = createAsyncThunk<
+  { items: MyDepartment[]; lastFetchedAt: string },
+  void,
+  { rejectValue: string }
+>('forum/fetchMyDepartments', async (_, { rejectWithValue }) => {
+  try {
+    const response = await http.get<ApiResponse<MyDepartment[]>>(endpoints.privateMembers.myDepartments);
+
+    if (!response.status || !response.data) {
+      return rejectWithValue('Unable to load your departments.');
+    }
+
+    return {
+      items: response.data,
+      lastFetchedAt: new Date().toISOString(),
+    };
+  } catch (error) {
+    return rejectWithValue(error instanceof Error ? error.message : 'Unable to load your departments.');
+  }
+});
+
+export interface DepartmentMember {
+  memberId: string;
+  profileId: string;
+  displayName: string;
+  avatarUrl: string | null;
+  firstName: string;
+  lastName: string;
+  role: string;
+  joinedAt: string;
+}
+
+export const fetchDepartmentMembersThunk = createAsyncThunk<
+  { items: DepartmentMember[]; meta: { page: number; limit: number; total: number; pages: number } },
+  { departmentId: string; page?: number; limit?: number },
+  { rejectValue: string }
+>('forum/fetchDepartmentMembers', async ({ departmentId, page = 1, limit = 20 }, { rejectWithValue }) => {
+  try {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    const response = await http.get<{ status: boolean; data: DepartmentMember[]; meta: { page: number; limit: number; total: number; pages: number } }>(
+      `${endpoints.privateMembers.departmentMembers(departmentId)}?${params.toString()}`,
+    );
+
+    if (!response.status || !response.data) {
+      return rejectWithValue('Unable to load department members.');
+    }
+
+    return { items: response.data, meta: response.meta };
+  } catch (error) {
+    return rejectWithValue(error instanceof Error ? error.message : 'Unable to load department members.');
+  }
+});
+
+export interface ChurchMember {
+  id: string;
+  profileId: string;
+  avatarUrl: string | null;
+  firstName: string;
+  lastName: string;
+  displayName: string;
+  contactPhone: string | null;
+  gender: string | null;
+}
+
+export const fetchChurchMembersThunk = createAsyncThunk<
+  { items: ChurchMember[]; meta: { page: number; limit: number; total: number; totalPages: number } },
+  { churchId: string; page?: number; limit?: number; search?: string },
+  { rejectValue: string }
+>('forum/fetchChurchMembers', async ({ churchId, page = 1, limit = 20, search }, { rejectWithValue }) => {
+  try {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (search) params.set('search', search);
+    const response = await http.get<{ status: boolean; data: { items: ChurchMember[]; meta: { page: number; limit: number; total: number; totalPages: number } } }>(
+      `${endpoints.privateMembers.churchMembers(churchId)}?${params.toString()}`,
+    );
+
+    if (!response.status || !response.data) {
+      return rejectWithValue('Unable to load church members.');
+    }
+
+    return { items: response.data.items, meta: response.data.meta };
+  } catch (error) {
+    return rejectWithValue(error instanceof Error ? error.message : 'Unable to load church members.');
+  }
+});
+
+export const addDepartmentMemberThunk = createAsyncThunk<
+  { departmentId: string; memberId: string; role: string },
+  { departmentId: string; memberId: string; role: string },
+  { rejectValue: string }
+>('forum/addDepartmentMember', async ({ departmentId, memberId, role }, { rejectWithValue }) => {
+  try {
+    const response = await http.post<{ status: boolean; message?: string }, { memberId: string; role: string }>(
+      endpoints.privateMembers.addDepartmentMember(departmentId),
+      { memberId, role },
+    );
+
+    if (!response.status) {
+      return rejectWithValue(response.message || 'Unable to add member to department.');
+    }
+
+    return { departmentId, memberId, role };
+  } catch (error) {
+    return rejectWithValue(error instanceof Error ? error.message : 'Unable to add member to department.');
   }
 });
 
@@ -248,6 +366,46 @@ export const fetchUnitRequestsThunk = createAsyncThunk<
   }
 });
 
+export const cancelDepartmentRequestThunk = createAsyncThunk<
+  { departmentId: string; requestId: string },
+  { departmentId: string; requestId: string },
+  { rejectValue: string }
+>('forum/cancelDepartmentRequest', async ({ departmentId, requestId }, { rejectWithValue }) => {
+  try {
+    const response = await http.post<{ status: boolean; message?: string }, undefined>(
+      endpoints.privateMembers.cancelDepartmentRequest(requestId),
+    );
+
+    if (!response.status) {
+      return rejectWithValue(response.message || 'Unable to cancel department request.');
+    }
+
+    return { departmentId, requestId };
+  } catch (error) {
+    return rejectWithValue(error instanceof Error ? error.message : 'Unable to cancel department request.');
+  }
+});
+
+export const cancelUnitRequestThunk = createAsyncThunk<
+  { unitId: string; requestId: string },
+  { unitId: string; requestId: string },
+  { rejectValue: string }
+>('forum/cancelUnitRequest', async ({ unitId, requestId }, { rejectWithValue }) => {
+  try {
+    const response = await http.post<{ status: boolean; message?: string }, undefined>(
+      endpoints.privateMembers.cancelUnitRequest(requestId),
+    );
+
+    if (!response.status) {
+      return rejectWithValue(response.message || 'Unable to cancel unit request.');
+    }
+
+    return { unitId, requestId };
+  } catch (error) {
+    return rejectWithValue(error instanceof Error ? error.message : 'Unable to cancel unit request.');
+  }
+});
+
 export { fetchForumsThunk, fetchForumPostsThunk };
 
 interface ForumState {
@@ -260,6 +418,21 @@ interface ForumState {
   lastFetchedAt: string | null;
   departments: ForumDepartment[];
   churchDepartments: ForumDepartment[];
+  myDepartments: MyDepartment[];
+  myDepartmentsLoading: boolean;
+  departmentMembers: DepartmentMember[];
+  departmentMembersLoading: boolean;
+  departmentMembersError: string | null;
+  departmentMembersMeta: { page: number; limit: number; total: number; pages: number } | null;
+  departmentMembersLoadingMore: boolean;
+  churchMembers: ChurchMember[];
+  churchMembersLoading: boolean;
+  churchMembersError: string | null;
+  churchMembersMeta: { page: number; limit: number; total: number; totalPages: number } | null;
+  churchMembersLoadingMore: boolean;
+  churchMembersSearch: string;
+  addMemberLoading: boolean;
+  addMemberError: string | null;
   units: ForumUnit[];
   departmentsLoading: boolean;
   churchDepartmentsLoading: boolean;
@@ -271,11 +444,15 @@ interface ForumState {
   departmentRequests: { id: string; departmentId: string; status: string }[];
   departmentRequestsLoading: boolean;
   departmentRequestsError: string | null;
+  cancellingDepartmentRequestId: string | null;
+  cancelDepartmentRequestError: string | null;
   joiningUnitId: string | null;
   joinUnitError: string | null;
   unitRequests: { id: string; unitId: string; status: string }[];
   unitRequestsLoading: boolean;
   unitRequestsError: string | null;
+  cancellingUnitRequestId: string | null;
+  cancelUnitRequestError: string | null;
   posts: ForumPost[];
   postsMeta: { page: number; limit: number; total: number; totalPages: number } | null;
   postsLoading: boolean;
@@ -306,6 +483,21 @@ const initialState: ForumState = {
   lastFetchedAt: null,
   departments: [],
   churchDepartments: [],
+  myDepartments: [],
+  myDepartmentsLoading: false,
+  departmentMembers: [],
+  departmentMembersLoading: false,
+  departmentMembersError: null,
+  departmentMembersMeta: null,
+  departmentMembersLoadingMore: false,
+  churchMembers: [],
+  churchMembersLoading: false,
+  churchMembersError: null,
+  churchMembersMeta: null,
+  churchMembersLoadingMore: false,
+  churchMembersSearch: '',
+  addMemberLoading: false,
+  addMemberError: null,
   units: [],
   departmentsLoading: false,
   churchDepartmentsLoading: false,
@@ -317,11 +509,15 @@ const initialState: ForumState = {
   departmentRequests: [],
   departmentRequestsLoading: false,
   departmentRequestsError: null,
+  cancellingDepartmentRequestId: null,
+  cancelDepartmentRequestError: null,
   joiningUnitId: null,
   joinUnitError: null,
   unitRequests: [],
   unitRequestsLoading: false,
   unitRequestsError: null,
+  cancellingUnitRequestId: null,
+  cancelUnitRequestError: null,
   posts: [],
   postsMeta: null,
   postsLoading: false,
@@ -465,14 +661,83 @@ export const forumSlice = createSlice({
         state.churchDepartmentsLoading = false;
         state.churchDepartmentsError = action.payload ?? 'Unable to load departments.';
       })
+      .addCase(fetchMyDepartmentsThunk.pending, (state) => {
+        state.myDepartmentsLoading = true;
+      })
+      .addCase(fetchMyDepartmentsThunk.fulfilled, (state, action) => {
+        state.myDepartmentsLoading = false;
+        state.myDepartments = action.payload.items;
+      })
+      .addCase(fetchMyDepartmentsThunk.rejected, (state) => {
+        state.myDepartmentsLoading = false;
+      })
+      .addCase(fetchDepartmentMembersThunk.pending, (state, action) => {
+        const { page = 1 } = action.meta.arg;
+        if (page > 1) {
+          state.departmentMembersLoadingMore = true;
+        } else {
+          state.departmentMembersLoading = true;
+        }
+        state.departmentMembersError = null;
+      })
+      .addCase(fetchDepartmentMembersThunk.fulfilled, (state, action) => {
+        const { page = 1 } = action.meta.arg;
+        state.departmentMembersLoading = false;
+        state.departmentMembersLoadingMore = false;
+        state.departmentMembersMeta = action.payload.meta;
+        if (page > 1) {
+          state.departmentMembers = [...state.departmentMembers, ...action.payload.items];
+        } else {
+          state.departmentMembers = action.payload.items;
+        }
+      })
+      .addCase(fetchDepartmentMembersThunk.rejected, (state, action) => {
+        state.departmentMembersLoading = false;
+        state.departmentMembersLoadingMore = false;
+        state.departmentMembersError = action.payload ?? 'Unable to load department members.';
+      })
+      .addCase(fetchChurchMembersThunk.pending, (state, action) => {
+        const { page = 1 } = action.meta.arg;
+        if (page > 1) {
+          state.churchMembersLoadingMore = true;
+        } else {
+          state.churchMembersLoading = true;
+        }
+        state.churchMembersError = null;
+      })
+      .addCase(fetchChurchMembersThunk.fulfilled, (state, action) => {
+        const { page = 1 } = action.meta.arg;
+        state.churchMembersLoading = false;
+        state.churchMembersLoadingMore = false;
+        state.churchMembersMeta = action.payload.meta;
+        if (page > 1) {
+          state.churchMembers = [...state.churchMembers, ...action.payload.items];
+        } else {
+          state.churchMembers = action.payload.items;
+        }
+      })
+      .addCase(fetchChurchMembersThunk.rejected, (state, action) => {
+        state.churchMembersLoading = false;
+        state.churchMembersLoadingMore = false;
+        state.churchMembersError = action.payload ?? 'Unable to load church members.';
+      })
+      .addCase(addDepartmentMemberThunk.pending, (state) => {
+        state.addMemberLoading = true;
+        state.addMemberError = null;
+      })
+      .addCase(addDepartmentMemberThunk.fulfilled, (state) => {
+        state.addMemberLoading = false;
+      })
+      .addCase(addDepartmentMemberThunk.rejected, (state, action) => {
+        state.addMemberLoading = false;
+        state.addMemberError = action.payload ?? 'Unable to add member.';
+      })
       .addCase(joinDepartmentThunk.pending, (state, action) => {
         state.joiningDepartmentId = action.meta.arg;
         state.joinDepartmentError = null;
       })
-      .addCase(joinDepartmentThunk.fulfilled, (state, action) => {
+      .addCase(joinDepartmentThunk.fulfilled, (state) => {
         state.joiningDepartmentId = null;
-        const dept = state.churchDepartments.find((d) => d.id === action.payload.departmentId);
-        if (dept) dept.joined = true;
       })
       .addCase(joinDepartmentThunk.rejected, (state, action) => {
         state.joiningDepartmentId = null;
@@ -506,10 +771,8 @@ export const forumSlice = createSlice({
         state.joiningUnitId = action.meta.arg;
         state.joinUnitError = null;
       })
-      .addCase(joinUnitThunk.fulfilled, (state, action) => {
+      .addCase(joinUnitThunk.fulfilled, (state) => {
         state.joiningUnitId = null;
-        const unit = state.units.find((u) => u.id === action.payload.unitId);
-        if (unit) unit.joined = true;
       })
       .addCase(joinUnitThunk.rejected, (state, action) => {
         state.joiningUnitId = null;
@@ -526,6 +789,36 @@ export const forumSlice = createSlice({
       .addCase(fetchUnitRequestsThunk.rejected, (state, action) => {
         state.unitRequestsLoading = false;
         state.unitRequestsError = action.payload ?? 'Unable to load unit requests.';
+      })
+      .addCase(cancelDepartmentRequestThunk.pending, (state, action) => {
+        state.cancellingDepartmentRequestId = action.meta.arg.requestId;
+        state.cancelDepartmentRequestError = null;
+      })
+      .addCase(cancelDepartmentRequestThunk.fulfilled, (state, action) => {
+        state.cancellingDepartmentRequestId = null;
+        state.cancelDepartmentRequestError = null;
+        state.departmentRequests = state.departmentRequests.filter(
+          (req) => req.id !== action.payload.requestId,
+        );
+      })
+      .addCase(cancelDepartmentRequestThunk.rejected, (state, action) => {
+        state.cancellingDepartmentRequestId = null;
+        state.cancelDepartmentRequestError = action.payload ?? 'Unable to cancel department request.';
+      })
+      .addCase(cancelUnitRequestThunk.pending, (state, action) => {
+        state.cancellingUnitRequestId = action.meta.arg.requestId;
+        state.cancelUnitRequestError = null;
+      })
+      .addCase(cancelUnitRequestThunk.fulfilled, (state, action) => {
+        state.cancellingUnitRequestId = null;
+        state.cancelUnitRequestError = null;
+        state.unitRequests = state.unitRequests.filter(
+          (req) => req.id !== action.payload.requestId,
+        );
+      })
+      .addCase(cancelUnitRequestThunk.rejected, (state, action) => {
+        state.cancellingUnitRequestId = null;
+        state.cancelUnitRequestError = action.payload ?? 'Unable to cancel unit request.';
       })
       .addCase(fetchPostCommentsThunk.pending, (state) => {
         state.commentsLoading = true;

@@ -50,6 +50,7 @@ const GivingCallbackPage = lazy(() => import('@/pages/giving/GivingCallbackPage'
 const ForumPage = lazy(() => import('@/pages/forum/ForumPage'));
 const ForumPostListPage = lazy(() => import('@/pages/forum/ForumPostListPage'));
 const ForumPostDetailPage = lazy(() => import('@/pages/forum/ForumPostDetailPage'));
+const DepartmentDetailsPage = lazy(() => import('@/pages/forum/DepartmentDetailsPage'));
 const MinistryPage = lazy(() => import('@/pages/ministry/MinistryPage'));
 const ConventionPage = lazy(() => import('@/pages/convention/ConventionPage'));
 const ConventionAnnouncementDetailPage = lazy(
@@ -207,6 +208,7 @@ const RoutedApp = () => {
             <Route path={paths.forum} element={<ForumPage />} />
             <Route path={paths.forumDetailsRoute} element={<ForumPostListPage />} />
             <Route path={paths.forumPostDetailRoute} element={<ForumPostDetailPage />} />
+            <Route path={paths.departmentDetailsRoute} element={<DepartmentDetailsPage />} />
             <Route path={paths.ministries} element={<MinistryPage />} />
             <Route path={paths.events} element={<EventsPage />} />
             <Route path={paths.donation} element={<GivingPage />} />

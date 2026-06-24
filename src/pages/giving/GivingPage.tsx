@@ -7,6 +7,8 @@ import {
   ExternalLink,
   Gift,
   Heart,
+  KeyRound,
+  MoreVertical,
   RefreshCw,
   Wallet as WalletIcon,
   Landmark,
@@ -207,6 +209,7 @@ export default function GivingPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('wallet');
   const [walletPin, setWalletPin] = useState('');
   const [isConfirmSheetOpen, setIsConfirmSheetOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [pinValue, setPinValue] = useState('');
   const [confirmPinValue, setConfirmPinValue] = useState('');
@@ -214,6 +217,7 @@ export default function GivingPage() {
   const [settingPin, setSettingPin] = useState(false);
   const [pinMode, setPinMode] = useState<'set' | 'verify'>('set');
   const pendingGivingRef = useRef<(() => void) | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const churchId = getChurchId(memberAccount);
   const memberId = getMemberId(memberAccount);
@@ -292,6 +296,19 @@ export default function GivingPage() {
 
     dispatch(fetchGivingConfigThunk(churchId));
   }, [churchId, configChurchId, configLastFetchedAt, dispatch, walletsLastFetchedAt]);
+
+  useEffect(() => {
+    if (!isMenuOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isMenuOpen]);
 
   const retry = useCallback(() => {
     if (!memberLastFetchedAt || memberError) {
@@ -649,14 +666,40 @@ export default function GivingPage() {
               Give securely to your church.
             </AppText>
           </div>
-          <AppButton
-            leftIcon={<RefreshCw className="size-4" aria-hidden />}
-            loading={walletsLoading || configLoading}
-            variant="outline"
-            onClick={retry}
-          >
-            Refresh
-          </AppButton>
+          <div className="flex items-center gap-2">
+            <AppButton
+              leftIcon={<RefreshCw className="size-4" aria-hidden />}
+              loading={walletsLoading || configLoading}
+              variant="outline"
+              onClick={retry}
+            >
+              Refresh
+            </AppButton>
+            <div className="relative" ref={menuRef}>
+              <button
+                className="flex size-9 items-center justify-center rounded-lg border border-[#D6DEEB] bg-white text-[#5A6880] transition-colors hover:bg-[#F1F5F9] hover:text-[#0B1F4A]"
+                type="button"
+                onClick={() => setIsMenuOpen((prev) => !prev)}
+              >
+                <MoreVertical className="size-4" aria-hidden />
+              </button>
+              {isMenuOpen && (
+                <div className="absolute right-0 z-20 mt-1 w-48 overflow-hidden rounded-xl border border-[#D6DEEB] bg-white shadow-lg">
+                  <button
+                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm font-medium text-[#0B1F4A] transition-colors hover:bg-[#F1F5F9]"
+                    type="button"
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      setIsPinModalOpen(true);
+                    }}
+                  >
+                    <KeyRound className="size-4 text-[#5A6880]" aria-hidden />
+                    Set Wallet PIN
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </header>
 
         <section className="grid gap-6">

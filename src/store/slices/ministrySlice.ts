@@ -84,10 +84,7 @@ export const ministrySlice = createSlice({
       .addCase(requestToJoinMinistryThunk.fulfilled, (state, action) => {
         state.joinRequestLoading = null;
         state.joinRequestError = null;
-        const ministry = state.churchMinistries.find((m) => m.ministryId === action.payload.ministryId);
-        if (ministry) {
-          ministry.hasPendingRequest = true;
-        }
+        state.churchMinistries = action.payload.updatedMinistries.data;
       })
       .addCase(requestToJoinMinistryThunk.rejected, (state, action) => {
         state.joinRequestLoading = null;

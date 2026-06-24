@@ -131,10 +131,20 @@ export const endpoints = {
     joinDepartment: (departmentId: string) =>
       `/private/members/my/departments/${encodeURIComponent(departmentId)}/request`,
     departmentRequests: '/private/members/my/department-requests',
+    cancelDepartmentRequest: (requestId: string) =>
+      `/private/members/my/department-requests/${requestId}/cancel`,
+    departmentMembers: (departmentId: string) =>
+      `/public/departments/departments/${encodeURIComponent(departmentId)}/members`,
+    addDepartmentMember: (departmentId: string) =>
+      `/private/members/my/departments/${encodeURIComponent(departmentId)}/members`,
+    churchMembers: (churchId: string) =>
+      `/public/members/church/${encodeURIComponent(churchId)}/members`,
     myUnits: '/private/members/my/units',
     joinUnit: (unitId: string) =>
       `/private/members/my/units/${encodeURIComponent(unitId)}/request`,
     unitRequests: '/private/members/my/unit-requests',
+    cancelUnitRequest: (requestId: string) =>
+      `/private/members/my/unit-requests/${requestId}/cancel`,
     myMinistries: '/private/members/my/ministries',
     churchMinistries: '/private/members/my/church/ministries',
     requestToJoinMinistry: (ministryId: string) =>

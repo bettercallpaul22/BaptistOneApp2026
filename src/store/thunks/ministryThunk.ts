@@ -28,13 +28,14 @@ export const fetchChurchMinistriesThunk = createAsyncThunk<
 });
 
 export const requestToJoinMinistryThunk = createAsyncThunk<
-  { ministryId: string },
+  { ministryId: string; updatedMinistries: ChurchMinistriesResponse },
   string,
   { rejectValue: ReturnType<typeof toApiError> }
 >('ministry/requestToJoin', async (ministryId, { rejectWithValue }) => {
   try {
     await ministryService.requestToJoinMinistry(ministryId);
-    return { ministryId };
+    const updatedMinistries = await ministryService.getChurchMinistries();
+    return { ministryId, updatedMinistries };
   } catch (error) {
     return rejectWithValue(toApiError(error));
   }

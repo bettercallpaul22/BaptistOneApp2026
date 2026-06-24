@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Shield } from 'lucide-react';
 import { AppButton, AppScrollableTabs, AppText } from '@/components/common';
 import { AppCard, UserProfileImage } from '@/components/display';
 import { ChurchMembershipGuard } from '@/components/guards';
@@ -7,7 +8,7 @@ import { AppShell } from '@/layouts/AppShell';
 import { AppStateFeedback } from '@/components/feedback';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchForumsThunk } from '@/store/thunks/forumThunk';
-import { fetchChurchDepartmentsThunk, fetchDepartmentRequestsThunk, fetchUserUnitsThunk, joinDepartmentThunk, joinUnitThunk, fetchUnitRequestsThunk } from '@/store/slices/forumSlice';
+import { fetchChurchDepartmentsThunk, fetchDepartmentRequestsThunk, fetchUserUnitsThunk, joinDepartmentThunk, joinUnitThunk, fetchUnitRequestsThunk, cancelDepartmentRequestThunk, cancelUnitRequestThunk, fetchMyDepartmentsThunk } from '@/store/slices/forumSlice';
 import { paths } from '@/routes/paths';
 import { useChurchScreenBootstrapApi } from '@/hooks/useChurchScreenBootstrapApi';
 import type { ForumItem } from '@/services/forum/forumService';
@@ -49,10 +50,13 @@ const ForumPage = () => {
     joinDepartmentError,
     departmentRequests,
     departmentRequestsLoading,
+    cancellingDepartmentRequestId,
+    myDepartments,
     joiningUnitId,
     joinUnitError,
     unitRequests,
     unitRequestsLoading,
+    cancellingUnitRequestId,
   } = useAppSelector((state) => state.forum);
 
   const hasMore = Boolean(meta && meta.page < meta.totalPages);
@@ -91,6 +95,7 @@ const ForumPage = () => {
     hasFetchedDepartments.current = true;
     void dispatch(fetchChurchDepartmentsThunk());
     void dispatch(fetchDepartmentRequestsThunk());
+    void dispatch(fetchMyDepartmentsThunk());
   }, [churchDepartmentsLoading, dispatch]);
 
   useEffect(() => {
@@ -131,6 +136,7 @@ const ForumPage = () => {
     if (value === 'departments') {
       void dispatch(fetchChurchDepartmentsThunk());
       void dispatch(fetchDepartmentRequestsThunk());
+      void dispatch(fetchMyDepartmentsThunk());
     } else if (value === 'units') {
       void dispatch(fetchUserUnitsThunk());
       void dispatch(fetchUnitRequestsThunk());
@@ -183,6 +189,50 @@ const ForumPage = () => {
     }
   };
 
+  const handleCancelDepartmentRequest = async (departmentId: string, requestId: string) => {
+    const result = await dispatch(cancelDepartmentRequestThunk({ departmentId, requestId }));
+
+    if (cancelDepartmentRequestThunk.fulfilled.match(result)) {
+      dispatch(
+        pushNotification({
+          type: 'success',
+          title: 'Request cancelled',
+          message: 'Your department join request has been cancelled.',
+        }),
+      );
+    } else if (cancelDepartmentRequestThunk.rejected.match(result)) {
+      dispatch(
+        pushNotification({
+          type: 'error',
+          title: 'Unable to cancel request',
+          message: (result.payload as string) || 'Unable to cancel request.',
+        }),
+      );
+    }
+  };
+
+  const handleCancelUnitRequest = async (unitId: string, requestId: string) => {
+    const result = await dispatch(cancelUnitRequestThunk({ unitId, requestId }));
+
+    if (cancelUnitRequestThunk.fulfilled.match(result)) {
+      dispatch(
+        pushNotification({
+          type: 'success',
+          title: 'Request cancelled',
+          message: 'Your unit join request has been cancelled.',
+        }),
+      );
+    } else if (cancelUnitRequestThunk.rejected.match(result)) {
+      dispatch(
+        pushNotification({
+          type: 'error',
+          title: 'Unable to cancel request',
+          message: (result.payload as string) || 'Unable to cancel request.',
+        }),
+      );
+    }
+  };
+
   const renderForumCard = (forum: ForumItem) => {
     return (
       <div
@@ -211,10 +261,10 @@ const ForumPage = () => {
             <AppText variant="caption" color="textSecondary" className="line-clamp-2">
               {forum.description}
             </AppText>
-          </div>
-        </AppCard>
-      </div>
-    );
+                        </div>
+                      </AppCard>
+                      </div>
+                    );
   };
 
   return (
@@ -313,12 +363,26 @@ const ForumPage = () => {
                     />
                   )}
                   {churchDepartments.map((department) => {
-                    const hasPendingRequest = departmentRequests.some(
+                    const pendingRequest = departmentRequests.find(
                       (req) => req.departmentId === department.id && req.status === 'PENDING',
                     );
+                    const myMembership = myDepartments.find((d) => d.departmentId === department.id);
+                    const isJoined = Boolean(myMembership);
 
                     return (
-                      <AppCard key={department.id} className="shadow-[0_10px_24px_rgba(11,31,74,0.05)]">
+                      <div
+                        key={department.id}
+                        className="cursor-pointer transition-shadow hover:shadow-[0_10px_30px_rgba(11,31,74,0.12)]"
+                        onClick={() => navigate(paths.departmentDetails(department.id))}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            navigate(paths.departmentDetails(department.id));
+                          }
+                        }}
+                      >
+                      <AppCard className="shadow-[0_10px_24px_rgba(11,31,74,0.05)]">
                         <div className="flex items-start justify-between gap-3 p-4">
                           <div className="min-w-0 flex-1">
                             <AppText variant="h6">{department.title}</AppText>
@@ -326,14 +390,32 @@ const ForumPage = () => {
                               {department.description}
                             </AppText>
                           </div>
-                          {department.joined ? (
-                            <span className="inline-flex shrink-0 items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                              Joined
-                            </span>
-                          ) : hasPendingRequest ? (
-                            <span className="inline-flex shrink-0 items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
-                              Pending
-                            </span>
+                          {isJoined ? (
+                            <div className="flex shrink-0 items-center gap-2">
+                              <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                                Joined
+                              </span>
+                              {myMembership && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-[#EEF4FF] px-3 py-1 text-xs font-semibold text-[#123B8D]">
+                                  <Shield className="size-3" aria-hidden />
+                                  {myMembership.role}
+                                </span>
+                              )}
+                            </div>
+                          ) : pendingRequest ? (
+                            <div className="flex shrink-0 items-center gap-2">
+                              <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                                Pending
+                              </span>
+                              <AppButton
+                                size="sm"
+                                variant="secondary"
+                                loading={cancellingDepartmentRequestId === pendingRequest.id}
+                                onClick={() => void handleCancelDepartmentRequest(department.id, pendingRequest.id)}
+                              >
+                                Cancel
+                              </AppButton>
+                            </div>
                           ) : (
                             <AppButton
                               size="sm"
@@ -351,6 +433,7 @@ const ForumPage = () => {
                           </span>
                         </div>
                       </AppCard>
+                      </div>
                     );
                   })}
                 </div>
@@ -381,7 +464,7 @@ const ForumPage = () => {
                     />
                   )}
                   {units.map((unit) => {
-                    const hasPendingRequest = unitRequests.some(
+                    const pendingRequest = unitRequests.find(
                       (req) => req.unitId === unit.id && req.status === 'PENDING',
                     );
 
@@ -398,10 +481,20 @@ const ForumPage = () => {
                             <span className="inline-flex shrink-0 items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
                               Joined
                             </span>
-                          ) : hasPendingRequest ? (
-                            <span className="inline-flex shrink-0 items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
-                              Pending
-                            </span>
+                          ) : pendingRequest ? (
+                            <div className="flex shrink-0 items-center gap-2">
+                              <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                                Pending
+                              </span>
+                              <AppButton
+                                size="sm"
+                                variant="secondary"
+                                loading={cancellingUnitRequestId === pendingRequest.id}
+                                onClick={() => void handleCancelUnitRequest(unit.id, pendingRequest.id)}
+                              >
+                                Cancel
+                              </AppButton>
+                            </div>
                           ) : (
                             <AppButton
                               size="sm"

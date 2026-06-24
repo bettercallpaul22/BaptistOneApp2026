@@ -12,6 +12,8 @@ export const paths = {
     `/forum/${encodeURIComponent(forumId)}/post/${encodeURIComponent(postId)}`,
   forumPostDetailRoute: '/forum/:forumId/post/:postId',
   ministries: '/ministries',
+  departmentDetails: (departmentId: string) => `/forum/department/${encodeURIComponent(departmentId)}`,
+  departmentDetailsRoute: '/forum/department/:departmentId',
   donation: '/donation',
   media: '/media',
   church: '/church',
