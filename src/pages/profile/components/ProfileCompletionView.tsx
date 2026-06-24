@@ -36,7 +36,13 @@ export const ProfileCompletionView = ({
       <div className="grid gap-4 lg:grid-cols-2">
         {informationGroups.map((group) => {
           const entries = getSectionEntries(profile[group.key]);
-          const visibleEntries = entries.filter(([, value]) => !isEmptyValue(value));
+          const hiddenFields: Record<string, string[]> = {
+            personalInformation: ['profilePhotoFileId', 'profilePhotoFile'],
+          };
+          const visibleEntries = entries.filter(([key, value]) => {
+            if (hiddenFields[group.key]?.includes(key)) return false;
+            return !isEmptyValue(value);
+          });
 
           return (
             <SectionShell

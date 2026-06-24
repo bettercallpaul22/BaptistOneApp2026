@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
-import { Plus, Trash2, X, ChevronDown } from 'lucide-react';
+import { Plus, Trash2, X, ChevronDown, Search } from 'lucide-react';
 import { AppButton, AppText } from '@/components/common';
 import { AppModal } from '@/components/feedback';
 import { AppDropdown, AppFileUploadField, AppInput, AppSwitch } from '@/components/form';
@@ -23,6 +23,117 @@ import {
   getVisibleFields,
   isStringArray,
 } from '../utils/profileFormUtils';
+
+const SearchSelectField = ({
+  fieldLabel,
+  value,
+  options,
+  placeholder,
+  onChange,
+}: {
+  fieldLabel: string;
+  value: string;
+  options: Array<{ label: string; value: string }>;
+  placeholder?: string;
+  onChange: (value: string) => void;
+}) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isOpen, setIsOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const selectedOption = options.find((o) => o.value === value);
+  const filteredOptions = options.filter((o) =>
+    o.label.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+        setSearchQuery('');
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
+  return (
+    <div className="grid gap-2">
+      <span className="text-[11px] font-semibold uppercase tracking-wide text-[#5A6880]">
+        {fieldLabel}
+      </span>
+      <div className="relative" ref={containerRef}>
+        <button
+          type="button"
+          onClick={() => {
+            setIsOpen(!isOpen);
+            if (!isOpen) {
+              setTimeout(() => searchInputRef.current?.focus(), 0);
+            }
+          }}
+          className={`flex w-full items-center justify-between rounded-[10px] border-[1.5px] bg-white px-3.5 py-2.5 text-sm text-left transition-all duration-150 ${
+            isOpen
+              ? 'border-[#123B8D] ring-3 ring-[#123B8D]/10'
+              : 'border-[#D5DCE8] hover:border-[#123B8D]'
+          }`}
+        >
+          <span className={selectedOption ? 'text-[#0B1F4A]' : 'text-[#A8B3C4]'}>
+            {selectedOption?.label ?? placeholder ?? `Select ${fieldLabel}`}
+          </span>
+          <ChevronDown
+            className={`size-4 text-[#5A6880] transition-transform ${isOpen ? 'rotate-180' : ''}`}
+            aria-hidden
+          />
+        </button>
+        {isOpen && (
+          <div className="absolute z-50 mt-1 w-full rounded-lg border border-[#D5DCE8] bg-white shadow-lg">
+            <div className="border-b border-[#EEF2F7] p-2">
+              <div className="flex items-center gap-2 rounded-lg bg-[#F8FAFC] px-3 py-2">
+                <Search className="size-4 text-[#A8B3C4]" aria-hidden />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Search..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-transparent text-sm text-[#0B1F4A] outline-none placeholder:text-[#A8B3C4]"
+                />
+              </div>
+            </div>
+            <div className="max-h-48 overflow-y-auto p-1">
+              {filteredOptions.length === 0 ? (
+                <div className="px-3 py-2 text-sm text-[#A8B3C4]">No options found</div>
+              ) : (
+                filteredOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => {
+                      onChange(option.value);
+                      setIsOpen(false);
+                      setSearchQuery('');
+                    }}
+                    className={`flex w-full items-center rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                      value === option.value
+                        ? 'bg-[#EEF4FF] text-[#123B8D] font-semibold'
+                        : 'text-[#0B1F4A] hover:bg-[#F8FAFC]'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 export const ProfileSectionEditModal = ({
   sectionKey,
@@ -259,6 +370,63 @@ export const ProfileSectionEditModal = ({
                     Array.isArray(nextValue) ? (nextValue[0] ?? '') : nextValue,
                   )
                 }
+              />
+            );
+          }
+
+          if (field.type === 'radio') {
+            const options = field.options ?? [];
+            return (
+              <div className="grid gap-2" key={field.name}>
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-[#5A6880]">
+                  {fieldLabel}
+                </span>
+                <div className="flex flex-wrap gap-3">
+                  {options.map((option) => (
+                    <label
+                      key={option.value}
+                      className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors cursor-pointer ${
+                        value === option.value
+                          ? 'border-[#123B8D] bg-[#EEF4FF] text-[#123B8D]'
+                          : 'border-[#D5DCE8] bg-white text-[#5A6880] hover:border-[#123B8D]'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name={field.name}
+                        value={option.value}
+                        checked={value === option.value}
+                        onChange={() => setFieldValue(field.name, option.value)}
+                        className="sr-only"
+                      />
+                      <span
+                        className={`flex size-4 shrink-0 items-center justify-center rounded-full border ${
+                          value === option.value
+                            ? 'border-[#123B8D]'
+                            : 'border-[#D5DCE8]'
+                        }`}
+                      >
+                        {value === option.value && (
+                          <span className="size-2 rounded-full bg-[#123B8D]" />
+                        )}
+                      </span>
+                      {option.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            );
+          }
+
+          if (field.type === 'search-select') {
+            return (
+              <SearchSelectField
+                key={field.name}
+                fieldLabel={fieldLabel}
+                value={String(value)}
+                options={field.options ?? []}
+                placeholder={field.placeholder}
+                onChange={(nextValue) => setFieldValue(field.name, nextValue)}
               />
             );
           }

@@ -5,6 +5,7 @@ import { useAppSelector } from '@/store/hooks';
 export interface UserProfileImageProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
+  onClick?: () => void;
 }
 
 const initials = (name: string) =>
@@ -36,7 +37,7 @@ const getProfileAvatarUrl = (profileData: unknown) =>
   ((profileData as { personalInformation?: { avatarFile?: { url?: unknown } } } | null)
     ?.personalInformation?.avatarFile?.url as string | undefined) || undefined;
 
-export const UserProfileImage = ({ size = 'md', className }: UserProfileImageProps) => {
+export const UserProfileImage = ({ size = 'md', className, onClick }: UserProfileImageProps) => {
   const profileData = useAppSelector((state) => state.profile.data);
   const memberAccount = useAppSelector((state) => state.member.data);
   const authData = useAppSelector((state) => state.auth.authData);
@@ -48,8 +49,8 @@ export const UserProfileImage = ({ size = 'md', className }: UserProfileImagePro
     : undefined;
 
   const src =
+  getProfileAvatarUrl(profileData) ||
   avatarUrl ||
-    getProfileAvatarUrl(profileData) ||
     authData?.profile?.avatarUrl ||
     undefined;
 
@@ -98,7 +99,7 @@ export const UserProfileImage = ({ size = 'md', className }: UserProfileImagePro
     setImageState({ loaded: false, failed: false });
   }, [src]);
 
-  return (
+  const avatarContent = (
     <span
       className={clsx(
         'relative inline-grid shrink-0 place-items-center overflow-hidden rounded-full bg-[#EAF1FF] font-extrabold text-[#123B8D]',
@@ -136,4 +137,18 @@ export const UserProfileImage = ({ size = 'md', className }: UserProfileImagePro
       )}
     </span>
   );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="cursor-pointer rounded-full border-0 bg-transparent p-0 transition-opacity hover:opacity-80"
+      >
+        {avatarContent}
+      </button>
+    );
+  }
+
+  return avatarContent;
 };

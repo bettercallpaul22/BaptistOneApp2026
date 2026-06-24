@@ -6,9 +6,8 @@ import { AppModal } from '@/components/feedback/AppModal';
 import { AppFileUploadField } from '@/components/form';
 import { UserProfileImage } from '@/components/display/UserProfileImage';
 import type { FileUploadModule } from '@/types/fileUpload';
-import { fileUploadService } from '@/services/fileUpload/fileUploadService';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { updateBasicProfileThunk } from '@/store/thunks/memberThunk';
+import { updateProfileCompletionSectionThunk } from '@/store/thunks/profileThunk';
 import type { ProfileCompletion } from '@/types/profile';
 import { formatCurrencyValue } from '../utils/profileFormatters';
 
@@ -24,7 +23,6 @@ export const ProfileProgressSummary = ({
   const dispatch = useAppDispatch();
   const memberAccount = useAppSelector((state) => state.member.data);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   const rewardBucketValue = `${profile.rewardBalance}:${profile.currency}`;
@@ -68,10 +66,14 @@ export const ProfileProgressSummary = ({
   const handleAvatarUpload = async (fileIds: string | string[]) => {
     const avatarFileId = Array.isArray(fileIds) ? fileIds[0] : fileIds;
     setUploadError(null);
-    setIsUploading(true);
 
     try {
-      await dispatch(updateBasicProfileThunk({ avatarFileId })).unwrap();
+      await dispatch(
+        updateProfileCompletionSectionThunk({
+          sectionKey: 'personalInformation',
+          data: { avatarFileId },
+        }),
+      ).unwrap();
       closeUploadModal();
     } catch (err) {
       const message =
@@ -79,24 +81,18 @@ export const ProfileProgressSummary = ({
           ? String((err as { message?: unknown }).message)
           : 'Unable to update profile image.';
       setUploadError(message);
-    } finally {
-      setIsUploading(false);
     }
   };
 
   return (
     <div className={clsx('grid gap-5', className)}>
       <div className="grid justify-items-center pt-2">
-        <button
-          type="button"
-          onClick={openUploadModal}
-          className="relative grid place-items-center rounded-full border-0 bg-transparent p-0"
-        >
-          <UserProfileImage size="lg" />
+        <div className="relative">
+          <UserProfileImage size="lg" onClick={openUploadModal} />
           <span className="absolute -bottom-0.5 -right-0.5 grid size-7 place-items-center rounded-full border-2 border-white bg-[#123B8D] text-white shadow-sm">
             <Camera className="size-3.5" aria-hidden />
           </span>
-        </button>
+        </div>
         <AppText variant="h5" className="mt-2 text-center">
           {displayName}
         </AppText>

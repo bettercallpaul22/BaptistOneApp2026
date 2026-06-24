@@ -14,6 +14,8 @@ export type ProfileFieldType =
   | 'textarea'
   | 'select'
   | 'multi-select'
+  | 'radio'
+  | 'search-select'
   | 'file'
   | 'file-list'
   | 'children-list'
@@ -26,6 +28,7 @@ export interface ProfileFieldSchema {
   disabled?: boolean;
   placeholder?: string;
   options?: Array<{ label: string; value: string }>;
+  searchable?: boolean;
   uploadModule?: FileUploadModule;
   isPublic?: boolean;
   accept?: string;
