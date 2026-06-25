@@ -11,15 +11,12 @@ import {
   isEmptyValue,
   renderInformationEntry,
 } from '../utils/profileDisplayUtils';
+import { ConsentSection } from './ConsentSection';
 import { ProfileProgressSummary } from './ProfileProgressSummary';
 import { ProfileSectionEditModal } from './ProfileSectionEditModal';
 import { SectionShell } from './SectionShell';
 
-export const ProfileCompletionView = ({
-  profile,
-}: {
-  profile: ProfileCompletion;
-}) => {
+export const ProfileCompletionView = ({ profile }: { profile: ProfileCompletion }) => {
   const navigate = useNavigate();
   const [editingSection, setEditingSection] = useState<{
     key: keyof ProfileCompletion;
@@ -28,22 +25,67 @@ export const ProfileCompletionView = ({
 
   return (
     <div className="grid gap-5">
-      <ProfileProgressSummary
-        profile={profile}
-        className="hidden min-[1181px]:grid"
-      />
+      <ProfileProgressSummary profile={profile} className="hidden min-[1181px]:grid" />
 
       <div className="grid gap-4 lg:grid-cols-2">
         {informationGroups.map((group) => {
           const entries = getSectionEntries(profile[group.key]);
           const hiddenFields: Record<string, string[]> = {
-            personalInformation: ['profilePhotoFileId', 'profilePhotoFile', 'avatarFile', 'avatarFileId', 'languagesSpoken', 'marritalStatus'],
-            contactInformation: ['address', 'phoneNumber', 'whatsapp', 'country', 'countryCode', 'emailAddress'],
-            baptismInformation:['baptismDate'],
-            membershipInformation: ['skills', 'availability', 'ministryUnit', 'serviceRole', 'churchId', 'churchName'],
+            employmentInformation: [
+              'school',
+              'course'
+         
+            ],
+            personalInformation: [
+              'profilePhotoFileId',
+              'profilePhotoFile',
+              'avatarFile',
+              'avatarFileId',
+              'languagesSpoken',
+              'marritalStatus',
+              'displayName',
+              'otherName',
+              'countryCode',
+            ],
+            contactInformation: [
+              'address',
+              'phoneNumber',
+              'whatsapp',
+              'country',
+              'countryCode',
+              'emailAddress',
+            ],
+            salvationInformation: [
+          'salvationDate',
+            ],
+            baptismInformation: [
+              'baptismDate',
+              'passportPhotoFile',
+              'membershipTransferLetterFile',
+            ],
+            membershipInformation: [
+              'skills',
+              'availability',
+              'ministryUnit',
+              'serviceRole',
+              'churchId',
+              'churchName',
+            ],
             emergencyContact: ['fullName'],
             dependants: ['dependants'],
-            documents: ['passportPhotoFileId', 'passportPhotoFile', 'validIdFileId', 'validIdFile', 'baptismCertificateFileId', 'baptismCertificateFile', 'membershipTransferLetterFileId', 'membershipTransferLetterFile', 'otherDocumentFileIds', 'otherDocumentFiles', 'otherDocumentUrls'],
+            documents: [
+              'passportPhotoFileId',
+              'passportPhotoFile',
+              'validIdFileId',
+              'validIdFile',
+              'baptismCertificateFileId',
+              'baptismCertificateFile',
+              'membershipTransferLetterFileId',
+              'membershipTransferLetterFile',
+              'otherDocumentFileIds',
+              'otherDocumentFiles',
+              'otherDocumentUrls',
+            ],
           };
           const isFamilyInfo = group.key === 'familyInformation';
 
@@ -89,66 +131,67 @@ export const ProfileCompletionView = ({
             >
               {isFamilyInfo ? (
                 <>
-                  {typeof profile.familyInformation?.spouseName === 'string' && profile.familyInformation.spouseName.trim() && (
-                    <div className="flex items-center justify-between border-b border-[#EEF2F7] pb-3 last:border-b-0 last:pb-0">
-                      <AppText variant="caption" color="textMuted" weight="bold">
-                        Spouse Name
-                      </AppText>
-                      <div className="text-sm font-semibold text-[#0B1F4A]">
-                        {profile.familyInformation.spouseName}
+                  {typeof profile.familyInformation?.spouseName === 'string' &&
+                    profile.familyInformation.spouseName.trim() && (
+                      <div className="flex items-center justify-between border-b border-[#EEF2F7] pb-3 last:border-b-0 last:pb-0">
+                        <AppText variant="caption" color="textMuted" weight="bold">
+                          Spouse Name
+                        </AppText>
+                        <div className="text-sm font-semibold text-[#0B1F4A]">
+                          {profile.familyInformation.spouseName}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                   {familyChildren.length > 0 ? (
-                  <div className="grid gap-2">
-                    {familyChildren.map((child, index) => {
-                      const c = child as Record<string, unknown>;
-                      const name = typeof c.name === 'string' ? c.name : `Child ${index + 1}`;
-                      const gender = typeof c.gender === 'string' && c.gender ? c.gender : null;
-                      const age = typeof c.age === 'number' ? c.age : null;
-                      const dob = typeof c.dob === 'string' ? c.dob : null;
+                    <div className="grid gap-2">
+                      {familyChildren.map((child, index) => {
+                        const c = child as Record<string, unknown>;
+                        const name = typeof c.name === 'string' ? c.name : `Child ${index + 1}`;
+                        const gender = typeof c.gender === 'string' && c.gender ? c.gender : null;
+                        const age = typeof c.age === 'number' ? c.age : null;
+                        const dob = typeof c.dob === 'string' ? c.dob : null;
 
-                      return (
-                        <details className="group rounded-lg bg-[#F8FAFC]" key={index}>
-                          <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 marker:hidden">
-                            <div className="min-w-0">
-                              <div className="truncate text-sm font-black text-[#0B1F4A]">
-                                {name}
-                                {gender ? ` · ${gender.charAt(0).toUpperCase() + gender.slice(1)}` : ''}
-                                {age !== null ? ` · ${age} yrs` : ''}
+                        return (
+                          <details className="group rounded-lg bg-[#F8FAFC]" key={index}>
+                            <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 marker:hidden">
+                              <div className="min-w-0">
+                                <div className="truncate text-sm font-black text-[#0B1F4A]">
+                                  {name}
+                                  {gender
+                                    ? ` · ${gender.charAt(0).toUpperCase() + gender.slice(1)}`
+                                    : ''}
+                                  {age !== null ? ` · ${age} yrs` : ''}
+                                </div>
                               </div>
+                              <ChevronDown
+                                className="size-4 shrink-0 text-[#123B8D] transition-transform duration-200 group-open:rotate-180"
+                                aria-hidden
+                              />
+                            </summary>
+                            <div className="border-t border-[#E7ECF4] px-3 py-2">
+                              {dob && (
+                                <div className="flex items-center justify-between border-b border-[#EEF2F7] pb-2 last:border-b-0 last:pb-0">
+                                  <AppText variant="caption" color="textMuted" weight="bold">
+                                    Date of Birth
+                                  </AppText>
+                                  <div className="text-sm font-semibold text-[#0B1F4A]">
+                                    {formatMaybeDate(dob)}
+                                  </div>
+                                </div>
+                              )}
+                              {age !== null && (
+                                <div className="flex items-center justify-between border-b border-[#EEF2F7] pb-2 last:border-b-0 last:pb-0">
+                                  <AppText variant="caption" color="textMuted" weight="bold">
+                                    Age
+                                  </AppText>
+                                  <div className="text-sm font-semibold text-[#0B1F4A]">{age}</div>
+                                </div>
+                              )}
                             </div>
-                            <ChevronDown
-                              className="size-4 shrink-0 text-[#123B8D] transition-transform duration-200 group-open:rotate-180"
-                              aria-hidden
-                            />
-                          </summary>
-                          <div className="border-t border-[#E7ECF4] px-3 py-2">
-                            {dob && (
-                              <div className="flex items-center justify-between border-b border-[#EEF2F7] pb-2 last:border-b-0 last:pb-0">
-                                <AppText variant="caption" color="textMuted" weight="bold">
-                                  Date of Birth
-                                </AppText>
-                                <div className="text-sm font-semibold text-[#0B1F4A]">
-                                  {formatMaybeDate(dob)}
-                                </div>
-                              </div>
-                            )}
-                            {age !== null && (
-                              <div className="flex items-center justify-between border-b border-[#EEF2F7] pb-2 last:border-b-0 last:pb-0">
-                                <AppText variant="caption" color="textMuted" weight="bold">
-                                  Age
-                                </AppText>
-                                <div className="text-sm font-semibold text-[#0B1F4A]">
-                                  {age}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </details>
-                      );
-                    })}
-                  </div>
+                          </details>
+                        );
+                      })}
+                    </div>
                   ) : (
                     <AppText variant="bodyMedium" color="textMuted">
                       {emptyText}
@@ -169,14 +212,14 @@ export const ProfileCompletionView = ({
         })}
       </div>
 
-      <SectionShell title="Ministry Information">
+      {/* <SectionShell title="Ministry Information">
         <AppButton
           leftIcon={<Church className="size-4" aria-hidden />}
           onClick={() => navigate(paths.ministries)}
         >
           Go to Ministry
         </AppButton>
-      </SectionShell>
+      </SectionShell> */}
 
       <SectionShell title="Rewards">
         {profile.rewards.length ? (
@@ -204,6 +247,8 @@ export const ProfileCompletionView = ({
           </AppText>
         )}
       </SectionShell>
+
+      <ConsentSection profile={profile} />
 
       {editingSection && (
         <ProfileSectionEditModal

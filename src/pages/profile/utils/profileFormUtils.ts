@@ -222,6 +222,14 @@ export const getVisibleFields = (
   fields: ProfileFieldSchema[],
   formValues: Record<string, EditableFieldValue>,
 ) => {
+  if (sectionKey === 'baptismInformation') {
+    const isBaptized = String(formValues.isBaptized ?? '');
+    if (isBaptized === 'no') {
+      return fields.filter((field) => field.name === 'isBaptized');
+    }
+    return fields;
+  }
+
   if (sectionKey !== 'employmentInformation') return fields;
 
   const employmentStatus = String(formValues.employmentStatus ?? '');

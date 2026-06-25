@@ -23,10 +23,10 @@ export const informationGroups: Array<{ key: keyof ProfileCompletion; title: str
   { key: 'familyInformation', title: 'Household Information' },
   // { key: 'spouseInformation', title: 'Spouse Information' },
   // { key: 'childrenInformation', title: 'Children Information' },
-  { key: 'dependants', title: 'Dependants' },
+  // { key: 'dependants', title: 'Dependants' },
   { key: 'emergencyContact', title: 'Emergency Contact' },
-  { key: 'givingPreferences', title: 'Giving Preferences' }, 
-  { key: 'documents', title: 'Documents' },
+  // { key: 'givingPreferences', title: 'Giving Preferences' }, 
+  // { key: 'documents', title: 'Documents' },
 ];
 
 export const memberUploadDefaults = {

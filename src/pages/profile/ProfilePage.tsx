@@ -48,7 +48,7 @@ export default function ProfilePage() {
       return <ChurchMembershipPanel />;
     }
 
-    if (loading && !data) {
+    if (loading) {
       return <ProfileLoading />;
     }
 
@@ -60,7 +60,7 @@ export default function ProfilePage() {
       return <ProfileCompletionView profile={data} />;
     }
 
-    return null;
+    return <ProfileLoading />;
   }, [activeTab, data, error, loading, retryProfileFetch]);
 
   return (
