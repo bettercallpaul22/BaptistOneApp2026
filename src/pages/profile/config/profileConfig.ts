@@ -26,7 +26,7 @@ export const informationGroups: Array<{ key: keyof ProfileCompletion; title: str
   // { key: 'dependants', title: 'Dependants' },
   { key: 'emergencyContact', title: 'Emergency Contact' },
   // { key: 'givingPreferences', title: 'Giving Preferences' }, 
-  // { key: 'documents', title: 'Documents' },
+  { key: 'documents', title: 'Documents' },
 ];
 
 export const memberUploadDefaults = {
@@ -420,11 +420,8 @@ export const sectionFieldSchemas: Partial<Record<keyof ProfileCompletion, Profil
     { name: 'anonymousGivingDefault', type: 'boolean' },
   ],
   documents: [
-    { name: 'passportPhotoFileId', type: 'file', ...memberUploadDefaults },
-    { name: 'validIdFileId', type: 'file', ...memberUploadDefaults },
-    { name: 'baptismCertificateFileId', type: 'file', ...memberUploadDefaults },
-    { name: 'membershipTransferLetterFileId', type: 'file', ...memberUploadDefaults },
-    { name: 'otherDocumentFileIds', type: 'file-list', ...memberUploadDefaults },
+    { name: 'membershipTransferLetterFileId', label: 'Membership Transfer Letter', type: 'file', ...memberUploadDefaults },
+    { name: 'marriageCertificateFileId', label: 'Marriage Certificate', type: 'file', ...memberUploadDefaults },
   ],
   verification: [
     { name: 'verificationStatus' },

@@ -1099,19 +1099,27 @@ export const ProfileSectionEditModal = ({
 
           if (field.type === 'file' || field.type === 'file-list') {
             return (
-              <AppFileUploadField
-                key={field.name}
-                label={fieldLabel}
-                value={
-                  field.type === 'file-list' ? (isStringArray(value) ? value : []) : String(value)
-                }
-                module={field.uploadModule ?? memberUploadDefaults.uploadModule}
-                isPublic={field.isPublic ?? memberUploadDefaults.isPublic}
-                multiple={field.type === 'file-list'}
-                accept={field.accept}
-                disabled={submitting}
-                onChange={(nextValue) => setFieldValue(field.name, nextValue)}
-              />
+              <div className="grid gap-1" key={field.name}>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-[#5A6880]">
+                    {fieldLabel}
+                  </span>
+                  <span className={`text-[10px] font-semibold ${field.required ? 'text-[#DC2626]' : 'text-[#79859A]'}`}>
+                    {field.required ? 'Required' : 'Optional'}
+                  </span>
+                </div>
+                <AppFileUploadField
+                  value={
+                    field.type === 'file-list' ? (isStringArray(value) ? value : []) : String(value)
+                  }
+                  module={field.uploadModule ?? memberUploadDefaults.uploadModule}
+                  isPublic={field.isPublic ?? memberUploadDefaults.isPublic}
+                  multiple={field.type === 'file-list'}
+                  accept={field.accept}
+                  disabled={submitting}
+                  onChange={(nextValue) => setFieldValue(field.name, nextValue)}
+                />
+              </div>
             );
           }
 

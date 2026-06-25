@@ -73,19 +73,7 @@ export const ProfileCompletionView = ({ profile }: { profile: ProfileCompletion 
             ],
             emergencyContact: ['fullName'],
             dependants: ['dependants'],
-            documents: [
-              'passportPhotoFileId',
-              'passportPhotoFile',
-              'validIdFileId',
-              'validIdFile',
-              'baptismCertificateFileId',
-              'baptismCertificateFile',
-              'membershipTransferLetterFileId',
-              'membershipTransferLetterFile',
-              'otherDocumentFileIds',
-              'otherDocumentFiles',
-              'otherDocumentUrls',
-            ],
+            documents: ['passportPhotoFile','baptismCertificateFile'],
           };
           const isFamilyInfo = group.key === 'familyInformation';
 

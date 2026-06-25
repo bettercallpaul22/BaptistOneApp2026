@@ -33,6 +33,7 @@ export interface ProfileFieldSchema {
   uploadModule?: FileUploadModule;
   isPublic?: boolean;
   accept?: string;
+  required?: boolean;
 }
 
 export interface ChildFormValue {
