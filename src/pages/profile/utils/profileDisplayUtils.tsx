@@ -18,11 +18,17 @@ export const isEmptyValue = (value: ProfileSectionValue): boolean => {
   return false;
 };
 
+const capitalizeFirstLetter = (str: string): string =>
+  str.length > 0 ? str.charAt(0).toUpperCase() + str.slice(1) : str;
+
 const formatPrimitive = (value: ProfileSectionValue): string => {
   if (value === null || value === undefined || value === '') return emptyText;
   if (typeof value === 'boolean') return value ? 'Yes' : 'No';
   if (typeof value === 'number') return value.toLocaleString();
-  if (typeof value === 'string') return formatMaybeDate(value);
+  if (typeof value === 'string') {
+    const formatted = formatMaybeDate(value);
+    return formatted === emptyText ? formatted : capitalizeFirstLetter(formatted);
+  }
   return '';
 };
 
@@ -104,7 +110,7 @@ export const renderFileAsset = (file: ProfileFileAsset) => {
 
 export const renderDetailRow = (label: string, value: ReactNode, key?: string) => (
   <div
-    className="flex min-w-0 items-start justify-between gap-4 border-b border-[#EEF2F7] pb-3 last:border-b-0 last:pb-0"
+    className="flex min-w-0 items-start justify-between gap-4 py-1.5"
     key={key}
   >
     <AppText className="shrink-0 pt-0.5" variant="caption" color="textMuted" weight="bold">
@@ -209,6 +215,7 @@ export const renderInformationEntry = (key: string, value: ProfileSectionValue) 
         item && typeof item === 'object' && !Array.isArray(item) && !isProfileFileAsset(item),
     )
   ) {
+    const isChildrenArray = key === 'children' || key === 'childrenInformation';
     return (
       <div
         className="grid gap-2 border-b border-[#EEF2F7] pb-3 last:border-b-0 last:pb-0"
@@ -217,10 +224,30 @@ export const renderInformationEntry = (key: string, value: ProfileSectionValue) 
         <AppText variant="caption" color="textMuted" weight="bold">
           {formatLabel(key)}
         </AppText>
-        <div className="grid gap-2">
-          {value.map((item, index) =>
-            renderCollapsibleObject(item as ProfileInformationSection, `Item ${index + 1}`),
-          )}
+        <div className="grid gap-3">
+          {value.map((item, index) => {
+            const section = item as ProfileInformationSection;
+            const label = isChildrenArray
+              ? (section.name as string) || `Child ${index + 1}`
+              : `Item ${index + 1}`;
+            return (
+              <div
+                key={index}
+                className="rounded-lg border border-[#EEF2F7] bg-[#F8FAFC] p-3"
+              >
+                <AppText variant="bodySmall" weight="bold" className="mb-1.5 text-[#123B8D]">
+                  {label}
+                </AppText>
+                <div className="grid gap-1">
+                  {Object.entries(section)
+                    .filter(([, v]) => !isEmptyValue(v))
+                    .map(([fieldKey, fieldVal]) =>
+                      renderDetailRow(formatLabel(fieldKey), renderValue(fieldVal), fieldKey),
+                    )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     );
@@ -255,17 +282,31 @@ export const renderValue = (value: ProfileSectionValue): ReactNode => {
 
   if (value && typeof value === 'object') {
     const section = value as ProfileInformationSection;
+    const entries = Object.entries(section).filter(
+      ([itemKey, itemValue]) =>
+        !isEmptyValue(itemValue) && !hasMatchingFileAsset(section, itemKey),
+    );
+
+    if (entries.length === 0) return emptyText;
+
+    const allPrimitive = entries.every(([, v]) =>
+      v === null || v === undefined || typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean',
+    );
+
+    if (allPrimitive) {
+      const parts = entries
+        .map(([, v]) => formatPrimitive(v))
+        .filter((p) => p !== emptyText);
+      return parts.length > 0 ? parts.join(', ') : emptyText;
+    }
 
     return (
-      <div className="grid gap-2">
-        {Object.entries(section)
-          .filter(
-            ([itemKey, itemValue]) =>
-              !isEmptyValue(itemValue) && !hasMatchingFileAsset(section, itemKey),
-          )
-          .map(([itemKey, itemValue]) =>
+      <div className="rounded-lg bg-[#F8FAFC] p-3">
+        <div className="grid gap-1.5">
+          {entries.map(([itemKey, itemValue]) =>
             renderDetailRow(formatLabel(itemKey), renderValue(itemValue), itemKey),
           )}
+        </div>
       </div>
     );
   }

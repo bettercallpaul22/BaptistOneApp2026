@@ -19,7 +19,8 @@ export type ProfileFieldType =
   | 'file'
   | 'file-list'
   | 'children-list'
-  | 'dependants-list';
+  | 'dependants-list'
+  | 'family-children-list';
 
 export interface ProfileFieldSchema {
   name: string;
@@ -55,4 +56,5 @@ export type EditableFieldValue =
   | boolean
   | string[]
   | ChildFormValue[]
-  | DependantFormValue[];
+  | DependantFormValue[]
+  | { children: ChildFormValue[] };

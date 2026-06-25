@@ -1,13 +1,16 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
-import { Plus, Trash2, X, ChevronDown, Search } from 'lucide-react';
-import { AppButton, AppText } from '@/components/common';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { Plus, Trash2, X, ChevronDown, Search, Users, Baby, Send } from 'lucide-react';
+import { AppButton, AppScrollableTabs, AppText } from '@/components/common';
 import { AppModal } from '@/components/feedback';
-import { AppDropdown, AppFileUploadField, AppInput, AppSwitch } from '@/components/form';
+import { AppDatePicker, AppDropdown, AppFileUploadField, AppInput, AppSwitch } from '@/components/form';
+import { AppAvatar } from '@/components/display';
 import { useAppDispatch } from '@/store/hooks';
 import { pushNotification } from '@/store/slices/notificationSlice';
 import { updateProfileCompletionSectionThunk } from '@/store/thunks/profileThunk';
 import type { ProfileCompletion } from '@/types/profile';
 import { memberUploadDefaults } from '../config/profileConfig';
+import { familyInviteService } from '../services/familyInviteService';
+import type { FamilyMemberSearchItem } from '../types/familyInviteTypes';
 import type {
   ChildFormValue,
   DependantFormValue,
@@ -135,6 +138,198 @@ const SearchSelectField = ({
   );
 };
 
+const SpouseSearchSection = ({
+  formValues,
+  setFieldValue,
+}: {
+  formValues: Record<string, EditableFieldValue>;
+  setFieldValue: (name: string, value: EditableFieldValue) => void;
+}) => {
+  const dispatch = useAppDispatch();
+  const [query, setQuery] = useState('');
+  const [items, setItems] = useState<FamilyMemberSearchItem[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [linkingId, setLinkingId] = useState<string | null>(null);
+  const [linkedId, setLinkedId] = useState<string | null>(null);
+  const trimmedQuery = query.trim();
+  const hasSearched = Boolean(trimmedQuery);
+
+  useEffect(() => {
+    if (!trimmedQuery) return;
+
+    const abortController = new AbortController();
+    const debounceTimer = window.setTimeout(async () => {
+      setSearchLoading(true);
+      setSearchError(null);
+
+      try {
+        const response = await familyInviteService.searchMembers(trimmedQuery, {
+          signal: abortController.signal,
+        });
+        setItems(response.data?.items ?? []);
+      } catch (error) {
+        if (abortController.signal.aborted) return;
+        setItems([]);
+        setSearchError('Unable to search members.');
+      } finally {
+        if (!abortController.signal.aborted) setSearchLoading(false);
+      }
+    }, 350);
+
+    return () => {
+      abortController.abort();
+      window.clearTimeout(debounceTimer);
+    };
+  }, [trimmedQuery]);
+
+  const searchStatusMessage = useMemo(() => {
+    if (!hasSearched) return 'Search by name, email, username, or phone.';
+    if (searchLoading) return 'Searching members...';
+    if (searchError) return searchError;
+    if (!items.length) return 'No member found. You can enter spouse details below.';
+    return null;
+  }, [hasSearched, items.length, searchError, searchLoading]);
+
+  const handleLink = async (member: FamilyMemberSearchItem) => {
+    const name = member.displayName?.trim() || member.username?.trim() || 'Spouse';
+    setLinkingId(member.memberId);
+    try {
+      await familyInviteService.linkMember({
+        targetMemberId: member.memberId,
+        relationship: 'SPOUSE',
+      });
+      setFieldValue('spouseName', name);
+      setFieldValue('spousePhone', member.contactPhone || '');
+      setLinkedId(member.memberId);
+      dispatch(
+        pushNotification({
+          type: 'success',
+          title: 'Spouse linked',
+          message: `${name} has been linked as your spouse.`,
+        }),
+      );
+    } catch {
+      dispatch(
+        pushNotification({
+          type: 'error',
+          title: 'Unable to link spouse',
+          message: 'Something went wrong. Please try again.',
+        }),
+      );
+    } finally {
+      setLinkingId(null);
+    }
+  };
+
+  const handleQueryChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const nextQuery = event.target.value;
+    setQuery(nextQuery);
+    if (!nextQuery.trim()) {
+      setItems([]);
+      setSearchError(null);
+      setSearchLoading(false);
+    }
+  };
+
+  return (
+    <section className="grid gap-3 rounded-xl border border-[#E5E7EB] bg-[#F8FAFC] p-3">
+      <div className="grid gap-1">
+        <AppText variant="bodyMedium" weight="bold">
+          Search Existing Member
+        </AppText>
+        <AppText variant="bodySmall" color="textSecondary">
+          Search for your spouse and link them to your family profile.
+        </AppText>
+      </div>
+
+      <AppInput
+        label="Search By Name, Phone Number, or Email"
+        placeholder="Search by name, email, username, or phone"
+        value={query}
+        onChange={handleQueryChange}
+      />
+
+      {searchStatusMessage && (
+        <div
+          className={`rounded-lg border p-3 text-sm font-semibold ${
+            searchError
+              ? 'border-red-100 bg-red-50 text-red-700'
+              : 'border-[#E5E7EB] bg-white text-[#6B7890]'
+          }`}
+        >
+          {searchStatusMessage}
+        </div>
+      )}
+
+      {items.length > 0 && (
+        <div className="grid gap-2" role="list" aria-label="Spouse search results">
+          {items.map((member) => {
+            const name = member.displayName?.trim() || member.username?.trim() || member.email?.trim() || 'Spouse';
+            const email = member.contactEmail?.trim() || member.email?.trim() || '';
+            const phone = member.contactPhone?.trim() || '';
+            const isLinked = linkedId === member.memberId;
+
+            return (
+              <div
+                className="grid gap-3 rounded-lg border border-[#E5E7EB] bg-white p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+                key={member.memberId}
+                role="listitem"
+              >
+                <div className="flex min-w-0 items-start gap-3">
+                  <AppAvatar name={name} src={member.avatarUrl ?? undefined} size="md" />
+                  <div className="grid min-w-0 gap-1">
+                    <span className="min-w-0 truncate text-sm font-black text-[#0B1F4A]">
+                      {name}
+                    </span>
+                    <span className="min-w-0 truncate text-xs font-semibold text-[#5A6880]">
+                      {[email, phone].filter(Boolean).join(' - ') || 'No contact provided'}
+                    </span>
+                    {member.churchName && (
+                      <span className="min-w-0 truncate text-xs font-semibold text-[#8A96AA]">
+                        {member.churchName}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <AppButton
+                  leftIcon={<Send className="size-4" aria-hidden />}
+                  loading={linkingId === member.memberId}
+                  size="sm"
+                  variant={isLinked ? 'outline' : 'primary'}
+                  disabled={isLinked}
+                  onClick={() => void handleLink(member)}
+                >
+                  {isLinked ? 'Linked' : 'Link Spouse'}
+                </AppButton>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="grid gap-3 pt-1">
+        <AppText variant="bodySmall" weight="bold" color="textMuted">
+          If Not Found - Enter Spouse Details:
+        </AppText>
+        <AppInput
+          label="Spouse Name"
+          placeholder="Enter spouse name"
+          value={String(formValues.spouseName ?? '')}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => setFieldValue('spouseName', e.target.value)}
+        />
+        <AppInput
+          label="Phone Number"
+          type="tel"
+          placeholder="+2348030000000"
+          value={String(formValues.spousePhone ?? '')}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => setFieldValue('spousePhone', e.target.value)}
+        />
+      </div>
+    </section>
+  );
+};
+
 export const ProfileSectionEditModal = ({
   sectionKey,
   sectionTitle,
@@ -172,6 +367,14 @@ export const ProfileSectionEditModal = ({
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [collapsedItems, setCollapsedItems] = useState<Record<string, boolean>>({});
+  const [activeTab, setActiveTab] = useState<string>('family-info');
+
+  const isFamilyInformation = sectionKey === 'familyInformation';
+  const familyTabs = useMemo(() => [
+    { value: 'family-info', label: 'Family Info', icon: Users },
+    { value: 'children', label: 'Children', icon: Baby },
+  ], []);
+
   const visibleFields = useMemo(
     () => getVisibleFields(sectionKey, fields, formValues),
     [fields, formValues, sectionKey],
@@ -276,6 +479,45 @@ export const ProfileSectionEditModal = ({
     setSubmitError(null);
   };
 
+  const setFamilyChildValue = (
+    index: number,
+    childKey: keyof ChildFormValue,
+    value: string,
+  ) => {
+    setFormValues((current) => {
+      const key = 'familyInformation.familyInformation';
+      const familyInfo = current[key] && typeof current[key] === 'object' && !Array.isArray(current[key])
+        ? current[key] as { children: ChildFormValue[] }
+        : { children: [] as ChildFormValue[] };
+      const children = [...familyInfo.children];
+      children[index] = { ...(children[index] ?? createEmptyChild()), [childKey]: value };
+      return { ...current, [key]: { children } as EditableFieldValue };
+    });
+    setSubmitError(null);
+  };
+
+  const addFamilyChild = () => {
+    setFormValues((current) => {
+      const key = 'familyInformation.familyInformation';
+      const familyInfo = current[key] && typeof current[key] === 'object' && !Array.isArray(current[key])
+        ? current[key] as { children: ChildFormValue[] }
+        : { children: [] as ChildFormValue[] };
+      return { ...current, [key]: { children: [...familyInfo.children, createEmptyChild()] } as EditableFieldValue };
+    });
+    setSubmitError(null);
+  };
+
+  const removeFamilyChild = (index: number) => {
+    setFormValues((current) => {
+      const key = 'familyInformation.familyInformation';
+      const familyInfo = current[key] && typeof current[key] === 'object' && !Array.isArray(current[key])
+        ? current[key] as { children: ChildFormValue[] }
+        : { children: [] as ChildFormValue[] };
+      return { ...current, [key]: { children: familyInfo.children.filter((_, childIndex) => childIndex !== index) } as EditableFieldValue };
+    });
+    setSubmitError(null);
+  };
+
   const toggleCollapse = (key: string) => {
     setCollapsedItems((current) => ({ ...current, [key]: !current[key] }));
   };
@@ -334,8 +576,18 @@ export const ProfileSectionEditModal = ({
       }
       onClose={onClose}
     >
+      {isFamilyInformation && (
+        <div className="mb-2">
+          <AppScrollableTabs
+            tabs={familyTabs}
+            value={activeTab}
+            onValueChange={setActiveTab}
+            fullWidthTabs
+          />
+        </div>
+      )}
       <form
-        className="grid min-h-[20rem] max-h-[74vh] content-start gap-4 overflow-y-auto pb-8 pr-1"
+        className="grid h-[28rem] content-start gap-4 overflow-y-auto pb-8 pr-1"
         id={`profile-${String(sectionKey)}-form`}
         onSubmit={handleSubmit}
       >
@@ -351,7 +603,25 @@ export const ProfileSectionEditModal = ({
             {submitError}
           </div>
         )}
-        {visibleFields.map((field) => {
+        {isFamilyInformation && activeTab === 'family-info' && (
+          <SpouseSearchSection formValues={formValues} setFieldValue={setFieldValue} />
+        )}
+        {visibleFields
+          .filter((field) => {
+            if (!isFamilyInformation) return true;
+            const childrenFieldNames = ['familyInformation.familyInformation'];
+            if (activeTab === 'children') {
+              return childrenFieldNames.includes(field.name) || field.type === 'family-children-list';
+            }
+            if (activeTab === 'family-info') {
+              return !childrenFieldNames.includes(field.name)
+                && field.type !== 'family-children-list'
+                && field.name !== 'spouseName'
+                && field.name !== 'spousePhone';
+            }
+            return true;
+          })
+          .map((field) => {
           const fieldLabel = field.label ?? formatLabel(field.name);
           const value = formValues[field.name] ?? '';
 
@@ -578,15 +848,14 @@ export const ProfileSectionEditModal = ({
                               />
                             </div>
                             <div className="grid gap-3 sm:grid-cols-2">
-                              <AppInput
+                              <AppDatePicker
                                 label="Date Of Birth"
-                                type="date"
                                 value={child.dob}
-                                onChange={(event) => {
-                                  setChildValue(field.name, index, 'dob', event.target.value);
-                                  if (event.target.value) {
+                                onChange={(nextValue) => {
+                                  setChildValue(field.name, index, 'dob', nextValue);
+                                  if (nextValue) {
                                     const age = Math.floor(
-                                      (Date.now() - new Date(event.target.value).getTime()) /
+                                      (Date.now() - new Date(nextValue).getTime()) /
                                         (365.25 * 24 * 60 * 60 * 1000),
                                     );
                                     setChildValue(field.name, index, 'age', String(age));
@@ -709,6 +978,125 @@ export const ProfileSectionEditModal = ({
             );
           }
 
+          if (field.type === 'family-children-list') {
+            const familyInfo = value && typeof value === 'object' && !Array.isArray(value)
+              ? value as { children: ChildFormValue[] }
+              : { children: [] as ChildFormValue[] };
+            const children = familyInfo.children ?? [];
+
+            return (
+              <div className="grid gap-3" key={field.name}>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-[#5A6880]">
+                    Children Information
+                  </span>
+                  <AppButton
+                    leftIcon={<Plus className="size-4" aria-hidden />}
+                    size="sm"
+                    variant="outline"
+                    onClick={addFamilyChild}
+                  >
+                    Add child
+                  </AppButton>
+                </div>
+                {children.length === 0 ? (
+                  <div className="rounded-lg border border-dashed border-[#CBD5E1] bg-[#F8FAFC] p-4 text-sm font-semibold text-[#6B7890]">
+                    No child added yet.
+                  </div>
+                ) : (
+                  children.map((child, index) => {
+                    const isCollapsed = collapsedItems[`family-child-${index}`] ?? false;
+                    const computedAge = child.dob
+                      ? String(Math.floor((Date.now() - new Date(child.dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000)))
+                      : '';
+                    return (
+                      <div
+                        className="rounded-xl border border-[#E5E7EB] bg-[#F8FAFC]"
+                        key={index}
+                      >
+                        <div className="flex items-center justify-between gap-3 px-3 py-2">
+                          <button
+                            type="button"
+                            className="flex items-center gap-2 text-left"
+                            onClick={() => toggleCollapse(`family-child-${index}`)}
+                          >
+                            <ChevronDown
+                              className={`size-4 text-[#5A6880] transition-transform ${isCollapsed ? '' : 'rotate-180'}`}
+                              aria-hidden
+                            />
+                            <AppText variant="bodySmall" weight="bold">
+                              {child.name || `Child ${index + 1}`}
+                              {computedAge ? `, ${computedAge} yrs` : ''}
+                            </AppText>
+                          </button>
+                          <AppButton
+                            leftIcon={<Trash2 className="size-4" aria-hidden />}
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => removeFamilyChild(index)}
+                          >
+                            Remove
+                          </AppButton>
+                        </div>
+                        {!isCollapsed && (
+                          <div className="grid gap-3 border-t border-[#E5E7EB] p-3">
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <AppInput
+                                label="Name"
+                                value={child.name}
+                                onChange={(event) =>
+                                  setFamilyChildValue(index, 'name', event.target.value)
+                                }
+                              />
+                              <AppDropdown
+                                label="Gender"
+                                options={[
+                                  { label: 'Male', value: 'male' },
+                                  { label: 'Female', value: 'female' },
+                                ]}
+                                placeholder="Select gender"
+                                value={child.gender}
+                                onChange={(nextValue) =>
+                                  setFamilyChildValue(
+                                    index,
+                                    'gender',
+                                    Array.isArray(nextValue) ? (nextValue[0] ?? '') : nextValue,
+                                  )
+                                }
+                              />
+                            </div>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <AppDatePicker
+                                label="Date Of Birth"
+                                value={child.dob}
+                                onChange={(nextValue) => {
+                                  setFamilyChildValue(index, 'dob', nextValue);
+                                  if (nextValue) {
+                                    const age = Math.floor(
+                                      (Date.now() - new Date(nextValue).getTime()) /
+                                        (365.25 * 24 * 60 * 60 * 1000),
+                                    );
+                                    setFamilyChildValue(index, 'age', String(age));
+                                  }
+                                }}
+                              />
+                              <AppInput
+                                label="Age"
+                                type="number"
+                                value={computedAge}
+                                disabled
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            );
+          }
+
           if (field.type === 'file' || field.type === 'file-list') {
             return (
               <AppFileUploadField
@@ -739,6 +1127,18 @@ export const ProfileSectionEditModal = ({
             );
           }
 
+          if (field.type === 'date') {
+            return (
+              <AppDatePicker
+                key={field.name}
+                label={fieldLabel}
+                value={String(value)}
+                disabled={field.disabled}
+                onChange={(nextValue) => setFieldValue(field.name, nextValue)}
+              />
+            );
+          }
+
           if (field.type === 'textarea' || field.type === 'list') {
             return (
               <label className="grid gap-1" key={field.name}>
@@ -762,13 +1162,12 @@ export const ProfileSectionEditModal = ({
               label={fieldLabel}
               placeholder={field.placeholder}
               type={field.type ?? 'text'}
-              inputMode={field.type === 'tel' ? 'numeric' : undefined}
-              pattern={field.type === 'tel' ? '[0-9]*' : undefined}
+              inputMode={field.type === 'tel' ? 'tel' : undefined}
               value={String(value)}
               disabled={field.disabled}
               onChange={(event) => {
                 const nextValue = field.type === 'tel'
-                  ? event.target.value.replace(/[^0-9]/g, '')
+                  ? event.target.value.replace(/[^0-9+]/g, '')
                   : event.target.value;
                 setFieldValue(field.name, nextValue);
               }}

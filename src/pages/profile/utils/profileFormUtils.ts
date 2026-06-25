@@ -166,13 +166,25 @@ export const stringifyFieldValue = (
     return Array.isArray(value) ? value.map((item) => String(item)) : [];
   if (fieldType === 'children-list') return normalizeChildrenFormValue(value);
   if (fieldType === 'dependants-list') return normalizeDependantsFormValue(value);
+  if (fieldType === 'family-children-list') {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      const section = value as ProfileInformationSection;
+      return { children: normalizeChildrenFormValue(section.children) } as EditableFieldValue;
+    }
+    return { children: [] } as EditableFieldValue;
+  }
   if (value === null || value === undefined) return '';
   if (Array.isArray(value)) {
     return value.every((item) => ['string', 'number', 'boolean'].includes(typeof item))
       ? value.join(', ')
       : JSON.stringify(value, null, 2);
   }
-  if (typeof value === 'object') return JSON.stringify(value, null, 2);
+  if (typeof value === 'object') {
+    const obj = value as Record<string, ProfileSectionValue>;
+    const parts = Object.values(obj)
+      .filter((v): v is string => typeof v === 'string' && v.trim().length > 0);
+    return parts.length > 0 ? parts.join(', ') : JSON.stringify(value, null, 2);
+  }
   if (fieldType === 'date' && typeof value === 'string') return value.slice(0, 10);
   return String(value);
 };
@@ -215,26 +227,30 @@ export const getVisibleFields = (
   const employmentStatus = String(formValues.employmentStatus ?? '');
 
   if (employmentStatus === 'student') {
-    return fields.filter((field) => ['employmentStatus', 'school', 'course'].includes(field.name));
+    return fields.filter((field) =>
+      ['employmentStatus', 'institution', 'courseOfStudy', 'levelOrYear'].includes(field.name),
+    );
   }
 
   if (employmentStatus === 'employed') {
     return fields.filter((field) =>
-      ['employmentStatus', 'employer', 'occupation', 'workAddress', 'linkedIn'].includes(
-        field.name,
-      ),
+      ['employmentStatus', 'occupation', 'employerOrBusinessName'].includes(field.name),
     );
   }
 
   if (employmentStatus === 'self_employed') {
     return fields.filter((field) =>
-      ['employmentStatus', 'occupation', 'businessName', 'businessAddress', 'linkedIn'].includes(
-        field.name,
-      ),
+      ['employmentStatus', 'occupation', 'employerOrBusinessName'].includes(field.name),
     );
   }
 
-  if (employmentStatus === 'unemployed') {
+  if (employmentStatus === 'business_owner') {
+    return fields.filter((field) =>
+      ['employmentStatus', 'occupation', 'employerOrBusinessName'].includes(field.name),
+    );
+  }
+
+  if (employmentStatus === 'unemployed' || employmentStatus === 'retired') {
     return fields.filter((field) => field.name === 'employmentStatus');
   }
 
@@ -264,6 +280,18 @@ export const buildInitialFormValues = (
       return values;
     }
 
+    if (field.type === 'family-children-list') {
+      const familyInfo = getNestedValue(sectionData, 'familyInformation.familyInformation');
+      values[field.name] = {
+        children: normalizeChildrenFormValue(
+          familyInfo && typeof familyInfo === 'object' && !Array.isArray(familyInfo)
+            ? (familyInfo as ProfileInformationSection).children
+            : familyInfo,
+        ),
+      } as EditableFieldValue;
+      return values;
+    }
+
     values[field.name] = stringifyFieldValue(getNestedValue(sectionData, field.name), field.type);
     return values;
   }, {});
@@ -277,6 +305,13 @@ export const parseEditableValue = (
   if (fieldType === 'file-list') return isStringArray(value) ? value : [];
   if (fieldType === 'children-list') return parseChildrenFormValue(value);
   if (fieldType === 'dependants-list') return parseDependantsFormValue(value);
+  if (fieldType === 'family-children-list') {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      const obj = value as { children?: EditableFieldValue };
+      return { children: parseChildrenFormValue(obj.children ?? ([] as EditableFieldValue)) } as ProfileInformationSection;
+    }
+    return { children: [] } as ProfileInformationSection;
+  }
 
   const stringValue = String(value).trim();
 

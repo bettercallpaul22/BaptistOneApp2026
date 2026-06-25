@@ -1,4 +1,5 @@
-import { type ReactNode, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import { ChevronDown } from 'lucide-react';
 
@@ -46,7 +47,47 @@ export const AppDropdown = <TOption extends DropdownOption>({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const calculatePosition = useCallback(() => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const showAbove = spaceBelow < 300;
+
+    setDropdownStyle({
+      position: 'fixed',
+      left: `${rect.left}px`,
+      width: `${rect.width}px`,
+      zIndex: 9999,
+      ...(showAbove
+        ? { bottom: `${window.innerHeight - rect.top + 4}px` }
+        : { top: `${rect.bottom + 4}px` }),
+    });
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node) &&
+        !(event.target as HTMLElement)?.closest('[role="listbox"]')
+      ) {
+        setOpen(false);
+      }
+    };
+    if (open) {
+      calculatePosition();
+      window.addEventListener('resize', calculatePosition);
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      window.removeEventListener('resize', calculatePosition);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [open, calculatePosition]);
 
   const resolvedQuery = searchQuery ?? query;
   const values = useMemo(() => (Array.isArray(value) ? value : value ? [value] : []), [value]);
@@ -102,7 +143,7 @@ export const AppDropdown = <TOption extends DropdownOption>({
   };
 
   return (
-    <div className="relative grid min-w-0 gap-1.5" onKeyDown={handleKeyDown}>
+    <div className="relative grid min-w-0 gap-1.5" ref={containerRef} onKeyDown={handleKeyDown}>
       {label && <span className="text-xs font-bold text-[#0B1F4A]">{label}</span>}
       <button
         ref={triggerRef}
@@ -119,8 +160,11 @@ export const AppDropdown = <TOption extends DropdownOption>({
         <span className={clsx('min-w-0 truncate', !selectedLabel && 'text-[#8A96AA]')}>{selectedLabel || placeholder}</span>
         <ChevronDown className={clsx('size-4 shrink-0 transition-transform', open && 'rotate-180')} aria-hidden />
       </button>
-      {open && (
-        <div className="absolute top-[calc(100%+0.375rem)] right-0 left-0 z-[70] overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-[0_20px_45px_rgba(11,31,74,0.16)]">
+      {open && createPortal(
+        <div
+          style={dropdownStyle}
+          className="overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-[0_20px_45px_rgba(11,31,74,0.16)]"
+        >
           {searchable && (
             <input
               autoFocus
@@ -140,7 +184,7 @@ export const AppDropdown = <TOption extends DropdownOption>({
               }}
             />
           )}
-          <div className="max-h-[18rem] overflow-auto overscroll-contain p-1.5" role="listbox" aria-multiselectable={multi}>
+          <div className="max-h-[24rem] overflow-auto overscroll-contain p-1.5" role="listbox" aria-multiselectable={multi}>
             {loading && (
               <span className="flex items-center gap-2 p-2 text-xs font-semibold text-[#123B8D]">
                 <span className="size-3.5 animate-spin rounded-full border-2 border-[#D9E4F6] border-t-[#123B8D]" aria-hidden />
@@ -172,7 +216,8 @@ export const AppDropdown = <TOption extends DropdownOption>({
             })}
             {!loading && filtered.length === 0 && <span className="block p-2 text-xs text-[#79859A]">{emptyText}</span>}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
       {error && <span className="text-xs text-[#DC2626]">{error}</span>}
     </div>

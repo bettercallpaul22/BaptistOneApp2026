@@ -1,4 +1,5 @@
 export * from './AppCheckbox';
+export * from './AppDatePicker';
 export * from './AppDropdown';
 export * from './AppFileUploadField';
 export * from './AppInput';
