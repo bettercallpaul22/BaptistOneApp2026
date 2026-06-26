@@ -55,7 +55,7 @@ export const ProfileProgressSummary = ({
   };
 
   const displayName =
-    memberAccount?.basicProfile?.displayName ||
+    memberAccount?.basicProfile?.username ||
     [memberAccount?.basicProfile?.firstName, memberAccount?.basicProfile?.lastName]
       .filter(Boolean)
       .join(' ') ||
