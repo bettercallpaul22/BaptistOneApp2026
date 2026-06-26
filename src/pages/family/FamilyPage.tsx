@@ -743,6 +743,11 @@ const FamilyPage = () => {
                             @{member.username}
                           </span>
                         )}
+                        {member.churchName && (
+                          <span className="truncate text-xs font-semibold text-[#5A6880]">
+                            {member.churchName}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <AppButton

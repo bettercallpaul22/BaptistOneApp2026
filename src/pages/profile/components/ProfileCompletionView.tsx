@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Gift, Pencil, Church, ChevronDown } from 'lucide-react';
+import { Pencil, Church, ChevronDown } from 'lucide-react';
 import { AppButton, AppText } from '@/components/common';
 import { paths } from '@/routes/paths';
 import type { ProfileCompletion } from '@/types/profile';
@@ -208,33 +208,6 @@ export const ProfileCompletionView = ({ profile }: { profile: ProfileCompletion 
           Go to Ministry
         </AppButton>
       </SectionShell> */}
-
-      <SectionShell title="Rewards">
-        {profile.rewards.length ? (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {profile.rewards.map((reward) => (
-              <div className="grid gap-2 rounded-lg border border-[#EEF2F7] p-3" key={reward.id}>
-                <div className="flex items-center gap-2">
-                  <Gift className="size-4 text-[#D4A017]" aria-hidden />
-                  <AppText variant="bodyMedium" weight="bold">
-                    {reward.points} {reward.currency}
-                  </AppText>
-                </div>
-                <AppText variant="bodySmall" color="textSecondary">
-                  {formatLabel(reward.sectionKey)} - {formatLabel(reward.reason)}
-                </AppText>
-                <AppText variant="caption" color="textMuted">
-                  {formatMaybeDate(reward.createdAt)}
-                </AppText>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <AppText variant="bodyMedium" color="textMuted">
-            {emptyText}
-          </AppText>
-        )}
-      </SectionShell>
 
       <ConsentSection profile={profile} />
 
