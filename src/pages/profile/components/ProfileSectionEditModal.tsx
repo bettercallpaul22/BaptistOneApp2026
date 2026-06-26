@@ -4,7 +4,7 @@ import { AppButton, AppScrollableTabs, AppText } from '@/components/common';
 import { AppModal } from '@/components/feedback';
 import { AppDatePicker, AppDropdown, AppFileUploadField, AppInput, AppSwitch } from '@/components/form';
 import { AppAvatar } from '@/components/display';
-import { useAppDispatch } from '@/store/hooks';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { pushNotification } from '@/store/slices/notificationSlice';
 import { updateProfileCompletionSectionThunk } from '@/store/thunks/profileThunk';
 import type { ProfileCompletion } from '@/types/profile';
@@ -146,6 +146,8 @@ const SpouseSearchSection = ({
   setFieldValue: (name: string, value: EditableFieldValue) => void;
 }) => {
   const dispatch = useAppDispatch();
+  const membershipStatus = useAppSelector((state) => state.member.data?.membershipStatus ?? null);
+  const isMember = membershipStatus === 'APPROVED';
   const [query, setQuery] = useState('');
   const [items, setItems] = useState<FamilyMemberSearchItem[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -239,18 +241,26 @@ const SpouseSearchSection = ({
           Search Existing Member
         </AppText>
         <AppText variant="bodySmall" color="textSecondary">
-          Search for your spouse and link them to your family profile.
+          {isMember
+            ? 'Search for your spouse and link them to your family profile.'
+            : 'Join a church to search and link family members.'}
         </AppText>
       </div>
 
-      <AppInput
-        label="Search By Name, Phone Number, or Email"
-        placeholder="Search by name, email, username, or phone"
-        value={query}
-        onChange={handleQueryChange}
-      />
+      {isMember ? (
+        <AppInput
+          label="Search By Name, Phone Number, or Email"
+          placeholder="Search by name, email, username, or phone"
+          value={query}
+          onChange={handleQueryChange}
+        />
+      ) : (
+        <div className="rounded-lg border border-amber-100 bg-amber-50 p-3 text-sm font-semibold text-amber-700">
+          You need to be a church member to search for family members.
+        </div>
+      )}
 
-      {searchStatusMessage && (
+      {isMember && searchStatusMessage && (
         <div
           className={`rounded-lg border p-3 text-sm font-semibold ${
             searchError
@@ -262,7 +272,7 @@ const SpouseSearchSection = ({
         </div>
       )}
 
-      {items.length > 0 && (
+      {isMember && items.length > 0 && (
         <div className="grid gap-2" role="list" aria-label="Spouse search results">
           {items.map((member) => {
             const name = member.displayName?.trim() || member.username?.trim() || member.email?.trim() || 'Spouse';
@@ -308,24 +318,26 @@ const SpouseSearchSection = ({
         </div>
       )}
 
-      <div className="grid gap-3 pt-1">
-        <AppText variant="bodySmall" weight="bold" color="textMuted">
-          If Not Found - Enter Spouse Details:
-        </AppText>
-        <AppInput
-          label="Spouse Name"
-          placeholder="Enter spouse name"
-          value={String(formValues.spouseName ?? '')}
-          onChange={(e: ChangeEvent<HTMLInputElement>) => setFieldValue('spouseName', e.target.value)}
-        />
-        <AppInput
-          label="Phone Number"
-          type="tel"
-          placeholder="+2348030000000"
-          value={String(formValues.spousePhone ?? '')}
-          onChange={(e: ChangeEvent<HTMLInputElement>) => setFieldValue('spousePhone', e.target.value)}
-        />
-      </div>
+      {isMember && (
+        <div className="grid gap-3 pt-1">
+          <AppText variant="bodySmall" weight="bold" color="textMuted">
+            If Not Found - Enter Spouse Details:
+          </AppText>
+          <AppInput
+            label="Spouse Name"
+            placeholder="Enter spouse name"
+            value={String(formValues.spouseName ?? '')}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setFieldValue('spouseName', e.target.value)}
+          />
+          <AppInput
+            label="Phone Number"
+            type="tel"
+            placeholder="+2348030000000"
+            value={String(formValues.spousePhone ?? '')}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setFieldValue('spousePhone', e.target.value)}
+          />
+        </div>
+      )}
     </section>
   );
 };

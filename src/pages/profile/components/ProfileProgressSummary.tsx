@@ -59,7 +59,7 @@ export const ProfileProgressSummary = ({
     [memberAccount?.basicProfile?.firstName, memberAccount?.basicProfile?.lastName]
       .filter(Boolean)
       .join(' ') ||
-    'Member';
+    'User';
 
   const module: FileUploadModule = 'baptistone_member';
 

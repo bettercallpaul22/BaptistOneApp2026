@@ -11,6 +11,7 @@ import { CheckCircle2, Clock3, LogOut, Mail, Plus, Send, UserPlus, Users, XCircl
 import { useNavigate } from 'react-router-dom';
 import { AppButton, AppScrollableTabs, AppText } from '@/components/common';
 import { AppAvatar } from '@/components/display';
+import { ChurchMembershipGuard } from '@/components/guards';
 import { AppModal, AppStateFeedback } from '@/components/feedback';
 import { AppDropdown, AppInput } from '@/components/form';
 import { AppShell } from '@/layouts/AppShell';
@@ -123,10 +124,34 @@ const getFamilyMemberName = (member: UserFamilyMember) =>
 const getFamilyMemberContact = (member: UserFamilyMember) =>
   [member.contactEmail || member.email, member.contactPhone].filter(Boolean).join(' - ');
 
+const httpStatusMessages: Record<number, string> = {
+  400: 'Invalid request. Please check your input and try again.',
+  401: 'You are not logged in. Please sign in and try again.',
+  403: 'You do not have permission to access this resource.',
+  404: 'Family profile not found. It may not have been set up yet.',
+  409: 'This action conflicts with the current state. Please refresh and try again.',
+  429: 'Too many requests. Please wait a moment and try again.',
+  500: 'Something went wrong on our end. Please try again later.',
+  502: 'Service temporarily unavailable. Please try again later.',
+  503: 'Service temporarily unavailable. Please try again later.',
+};
+
 const getErrorMessage = (error: unknown, fallback: string) => {
-  if (error && typeof error === 'object' && 'message' in error) {
-    const message = (error as { message?: unknown }).message;
-    if (typeof message === 'string' && message.trim()) return message;
+  if (error && typeof error === 'object') {
+    const errObj = error as { message?: unknown; response?: { status?: number; data?: { message?: string } }; status?: number };
+
+    if (errObj.response?.data?.message && typeof errObj.response.data.message === 'string') {
+      return errObj.response.data.message;
+    }
+
+    const status = errObj.response?.status ?? errObj.status;
+    if (typeof status === 'number' && httpStatusMessages[status]) {
+      return httpStatusMessages[status];
+    }
+
+    if (typeof errObj.message === 'string' && errObj.message.trim()) {
+      return errObj.message;
+    }
   }
 
   return fallback;
@@ -580,7 +605,8 @@ const FamilyPage = () => {
 
   return (
     <AppShell>
-      <main className="mx-auto grid max-w-[78rem] gap-5 px-4 py-6 pb-28 sm:px-6 md:px-9">
+      <ChurchMembershipGuard>
+        <main className="mx-auto grid max-w-[78rem] gap-5 px-4 py-6 pb-28 sm:px-6 md:px-9">
         <section className="rounded-xl border border-[#E5E7EB] bg-white px-4 py-3 shadow-[0_8px_18px_rgba(11,31,74,0.05)]">
           <div className="flex items-center justify-between gap-3">
             <div className="grid min-w-0 gap-1">
@@ -1124,6 +1150,7 @@ const FamilyPage = () => {
           </label>
         </div>
       </AppModal>
+      </ChurchMembershipGuard>
     </AppShell>
   );
 };
