@@ -203,10 +203,10 @@ export const SpouseInviteSearch = () => {
                       {name}
                     </span>
                     <span className="min-w-0 truncate text-xs font-semibold text-[#5A6880]">
-                      {[email, phone].filter(Boolean).join(' - ') || 'No contact provided'}
+                      {member.username ? `@${member.username}` : 'No username'}
                     </span>
                     {member.churchName && (
-                      <span className="min-w-0 truncate text-xs font-semibold text-[#8A96AA]">
+                      <span className="min-w-0 truncate text-xs font-semibold text-[#5A6880]">
                         {member.churchName}
                       </span>
                     )}

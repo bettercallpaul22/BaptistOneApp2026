@@ -266,8 +266,6 @@ const SpouseSearchSection = ({
         <div className="grid gap-2" role="list" aria-label="Spouse search results">
           {items.map((member) => {
             const name = member.displayName?.trim() || member.username?.trim() || member.email?.trim() || 'Spouse';
-            const email = member.contactEmail?.trim() || member.email?.trim() || '';
-            const phone = member.contactPhone?.trim() || '';
             const isLinked = linkedId === member.memberId;
 
             return (
@@ -282,11 +280,13 @@ const SpouseSearchSection = ({
                     <span className="min-w-0 truncate text-sm font-black text-[#0B1F4A]">
                       {name}
                     </span>
-                    <span className="min-w-0 truncate text-xs font-semibold text-[#5A6880]">
-                      {[email, phone].filter(Boolean).join(' - ') || 'No contact provided'}
-                    </span>
+                    {member.username && (
+                      <span className="min-w-0 truncate text-xs font-semibold text-[#5A6880]">
+                        @{member.username}
+                      </span>
+                    )}
                     {member.churchName && (
-                      <span className="min-w-0 truncate text-xs font-semibold text-[#8A96AA]">
+                      <span className="min-w-0 truncate text-xs font-semibold text-[#5A6880]">
                         {member.churchName}
                       </span>
                     )}
