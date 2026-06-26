@@ -215,7 +215,7 @@ export const sectionFieldSchemas: Partial<Record<keyof ProfileCompletion, Profil
   contactInformation: [
     { name: 'phone', label: 'Phone Number', type: 'tel', placeholder: '+2348030000000' },
     { name: 'whatsappNumber', label: 'WhatsApp Number', type: 'tel', placeholder: '+2348030000000' },
-    { name: 'email', label: 'Email Address', type: 'email', placeholder: 'example@email.com' },
+    { name: 'email', label: 'Email Address', type: 'email', placeholder: 'example@email.com', disabled: true },
     { name: 'homeAddress', label: 'Home Address', type: 'textarea', placeholder: 'Enter your home address' },
     { name: 'landmark', label: 'Landmark Near Home', placeholder: 'e.g. Near shopping mall' },
     { name: 'city', label: 'City / Town', placeholder: 'e.g. Lagos' },
