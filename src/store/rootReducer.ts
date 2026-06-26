@@ -8,6 +8,7 @@ import { givingReducer } from './slices/givingSlice';
 import { memberReducer } from './slices/memberSlice';
 import { ministryReducer } from './slices/ministrySlice';
 import { notificationReducer } from './slices/notificationSlice';
+import { notificationListReducer } from './slices/notificationListSlice';
 import { profileReducer } from './slices/profileSlice';
 import { forumReducer } from './slices/forumSlice';
 import { forumPostsSlice } from './slices/forumPostsSlice';
@@ -28,6 +29,7 @@ export const rootReducer = combineReducers({
   member: memberReducer,
   ministry: ministryReducer,
   notifications: notificationReducer,
+  notificationList: notificationListReducer,
   realtimeNotification: realtimeNotificationReducer,
   profile: profileReducer,
   forum: forumReducer,

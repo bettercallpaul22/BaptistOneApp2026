@@ -1,5 +1,8 @@
 import type { ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Bell, Menu, X } from 'lucide-react';
+import { paths } from '@/routes/paths';
+import { useAppSelector } from '@/store/hooks';
 
 type HeaderAction = 'menu' | 'close';
 type HeaderPosition = 'fixed' | 'static';
@@ -13,16 +16,26 @@ interface AppMobileHeaderProps {
   onActionPress?: () => void;
 }
 
-export const NotificationButton = () => (
-  <button
-    className="relative grid size-11 shrink-0 place-items-center rounded-full border border-[#E5E7EB] bg-white text-[#123B8D] shadow-sm transition hover:border-[#B8C6E4] hover:bg-[#F8FAFE]"
-    type="button"
-    aria-label="Notifications"
-  >
-    <Bell className="size-5" aria-hidden />
-    <span className="absolute top-2.5 right-2.5 size-2.5 rounded-full bg-red-500 ring-2 ring-white" />
-  </button>
-);
+export const NotificationButton = () => {
+  const navigate = useNavigate();
+  const unreadCount = useAppSelector((state) => state.notificationList.unreadCount);
+
+  return (
+    <button
+      className="relative grid size-11 shrink-0 place-items-center rounded-full border border-[#E5E7EB] bg-white text-[#123B8D] shadow-sm transition hover:border-[#B8C6E4] hover:bg-[#F8FAFE]"
+      type="button"
+      aria-label="Notifications"
+      onClick={() => navigate(paths.notifications)}
+    >
+      <Bell className="size-5" aria-hidden />
+      {unreadCount > 0 && (
+        <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-red-500 text-[0.6rem] font-bold text-white ring-2 ring-white">
+          {unreadCount > 99 ? '99+' : unreadCount}
+        </span>
+      )}
+    </button>
+  );
+};
 
 export const AppMobileHeader = ({
   title,

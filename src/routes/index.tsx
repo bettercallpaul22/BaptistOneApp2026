@@ -75,6 +75,7 @@ const ResourceCheckoutCallbackPage = lazy(
 );
 const DevotionalPage = lazy(() => import('@/pages/devotional/DevotionalPage'));
 const DevotionalDetailPage = lazy(() => import('@/pages/devotional/DevotionalDetailPage'));
+const NotificationsPage = lazy(() => import('@/pages/notifications/NotificationsPage'));
 const LoginPage = lazy(() => import('@/pages/auth/login/LoginPage'));
 const GoogleRedirectPage = lazy(() => import('@/pages/auth/google-redirect/GoogleRedirectPage'));
 const EmailVerifyPage = lazy(() => import('@/pages/auth/email-verify/EmailVerifyPage'));
@@ -251,6 +252,7 @@ const RoutedApp = () => {
               path={paths.walletTransactionDetailsRoute}
               element={<WalletTransactionDetailsPage />}
             />
+            <Route path={paths.notifications} element={<NotificationsPage />} />
             <Route path={paths.profile} element={<ProfilePage />} />
             <Route path={paths.settings} element={<AppPlaceholderPage title="Settings" />} />
             <Route path={paths.devotional} element={<DevotionalPage />} />
