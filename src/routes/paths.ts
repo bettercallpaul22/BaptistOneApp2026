@@ -36,6 +36,7 @@ export const paths = {
   convention: '/convention',
   conventionAnnouncementDetail: '/convention/announcement',
   conventionRegistration: '/convention/registration',
+  conventionProgramDetails: '/convention/program',
   conventionPublicationPayment: '/convention/publication/payment',
   conventionMyRegistrations: '/convention/registrations',
   conventionMyPublications: '/convention/publications',

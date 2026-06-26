@@ -162,7 +162,7 @@ export const conventionSlice = createSlice({
         state.registrations.error = null;
       })
       .addCase(fetchProgramRegistrationsThunk.fulfilled, (state, action) => {
-        state.registrations.items = action.payload.data.items;
+        state.registrations.items = action.payload.data;
         state.registrations.loading = false;
       })
       .addCase(fetchProgramRegistrationsThunk.rejected, (state, action) => {

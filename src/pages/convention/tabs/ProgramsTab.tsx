@@ -23,12 +23,12 @@ const formatDate = (dateStr: string) => {
 };
 
 const attendanceLabel: Record<string, string> = {
-  PHYSICAL: 'In-Person',
-  ONLINE: 'Online',
+  ONSITE: 'In-Person',
+  VIRTUAL: 'Online',
   BOTH: 'In-Person & Online',
 };
 
-const ProgramCard = ({ program, onRegister }: { program: ConventionProgram; onRegister: (p: ConventionProgram) => void }) => (
+const ProgramCard = ({ program, isRegistered, onRegister, onViewProgram }: { program: ConventionProgram; isRegistered: boolean; onRegister: (p: ConventionProgram) => void; onViewProgram: (p: ConventionProgram) => void }) => (
   <article className="flex flex-col overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-[0_4px_12px_rgba(11,31,74,0.08)]">
     <div className="relative h-32 bg-gradient-to-br from-[#123B8D] to-[#0B1F4A]">
       {program.coverFile?.url ? (
@@ -50,6 +50,11 @@ const ProgramCard = ({ program, onRegister }: { program: ConventionProgram; onRe
         ) : (
           <span className="rounded-full bg-emerald-400/90 px-2 py-0.5 text-[10px] font-bold text-white">
             Free
+          </span>
+        )}
+        {isRegistered && (
+          <span className="rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-bold text-white">
+            Registered
           </span>
         )}
       </div>
@@ -78,8 +83,8 @@ const ProgramCard = ({ program, onRegister }: { program: ConventionProgram; onRe
         )}
       </div>
       <div className="mt-auto pt-2">
-        <AppButton fullWidth size="sm" onClick={() => onRegister(program)}>
-          Register
+        <AppButton fullWidth size="sm" onClick={() => isRegistered ? onViewProgram(program) : onRegister(program)}>
+          {isRegistered ? 'View Program' : 'Register'}
         </AppButton>
       </div>
     </div>
@@ -102,11 +107,6 @@ export function ProgramsTab({ conventionId }: { conventionId: string }) {
   const hasMore = currentPage < totalPages;
 
   const registeredProgramIds = useMemo(() => new Set(registrations.map((r) => r.programId)), [registrations]);
-
-  const visiblePrograms = useMemo(
-    () => items.filter((p) => !registeredProgramIds.has(p.id)),
-    [items, registeredProgramIds],
-  );
 
   const fetchPage = useCallback(
     (page: number, search?: string) => {
@@ -149,6 +149,13 @@ export function ProgramsTab({ conventionId }: { conventionId: string }) {
   const handleRegister = useCallback(
     (program: ConventionProgram) => {
       navigate(paths.conventionRegistration, { state: { program } });
+    },
+    [navigate],
+  );
+
+  const handleViewProgram = useCallback(
+    (program: ConventionProgram) => {
+      navigate(paths.conventionProgramDetails, { state: { program } });
     },
     [navigate],
   );
@@ -201,7 +208,7 @@ export function ProgramsTab({ conventionId }: { conventionId: string }) {
         </AppButton>
       )}
 
-      {visiblePrograms.length === 0 && !loading ? (
+      {items.length === 0 && !loading ? (
         <div className="grid min-h-[30vh] place-items-center">
           <div className="grid w-full max-w-sm justify-items-center gap-3 text-center">
             <AppText variant="h5" align="center">
@@ -214,8 +221,8 @@ export function ProgramsTab({ conventionId }: { conventionId: string }) {
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {visiblePrograms.map((program) => (
-            <ProgramCard key={program.id} program={program} onRegister={handleRegister} />
+          {items.map((program) => (
+            <ProgramCard key={program.id} program={program} isRegistered={registeredProgramIds.has(program.id)} onRegister={handleRegister} onViewProgram={handleViewProgram} />
           ))}
         </div>
       )}

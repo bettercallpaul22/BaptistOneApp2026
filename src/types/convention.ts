@@ -1,6 +1,6 @@
 export type ConventionTabKey = 'programs' | 'publications' | 'announcement' | 'documents';
 
-export type AttendanceMode = 'PHYSICAL' | 'ONLINE' | 'BOTH';
+export type AttendanceMode = 'ONSITE' | 'VIRTUAL' | 'BOTH';
 
 export type PricingModel = 'FREE' | 'SUBSCRIPTION' | 'ONE_TIME';
 
@@ -48,6 +48,7 @@ export interface ConventionProgram {
 
 export interface ConventionProgramRegistration {
   id: string;
+  conventionId: string;
   programId: string;
   memberId: string;
   churchId: string;
@@ -58,6 +59,8 @@ export interface ConventionProgramRegistration {
   paymentMethod: string;
   reference: string;
   status: RegistrationStatus;
+  paidAt: string | null;
+  checkedInAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -169,10 +172,7 @@ export interface ConventionDocumentsResponse {
 export interface ConventionProgramRegistrationsResponse {
   status: boolean;
   message?: string;
-  data: {
-    items: ConventionProgramRegistration[];
-    meta: ConventionMeta;
-  };
+  data: ConventionProgramRegistration[];
 }
 
 export interface ConventionPublicationAccessesResponse {

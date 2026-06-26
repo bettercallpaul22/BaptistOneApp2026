@@ -32,8 +32,8 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 };
 
 const attendanceOptions: Array<{ label: string; value: AttendanceMode }> = [
-  { label: 'In-Person', value: 'PHYSICAL' },
-  { label: 'Online', value: 'ONLINE' },
+  { label: 'In-Person', value: 'ONSITE' },
+  { label: 'Online', value: 'VIRTUAL' },
 ];
 
 type PaymentMethod = 'wallet' | 'paystack';
@@ -50,10 +50,10 @@ export default function ConventionRegistrationPage() {
   const wallets = useAppSelector((state) => state.wallet.items);
   const walletBalance = wallets[0]?.balance ?? 0;
   const walletCurrency = wallets[0]?.currency ?? 'NGN';
-  const conventionId = useAppSelector((state) => state.convention.conventionId);
+  const conventionId = useAppSelector((state) => state.convention.conventionId) ?? program?.conventionId ?? null;
 
   const [attendanceMode, setAttendanceMode] = useState<AttendanceMode>(
-    program?.attendanceMode === 'BOTH' ? 'PHYSICAL' : (program?.attendanceMode ?? 'PHYSICAL'),
+    program?.attendanceMode === 'BOTH' ? 'ONSITE' : (program?.attendanceMode ?? 'ONSITE'),
   );
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('wallet');
@@ -134,7 +134,10 @@ export default function ConventionRegistrationPage() {
   }, [paymentMethod, handleRegister]);
 
   const handleSubmitPin = async () => {
-    if (pinValue.length !== 4 || !program || !conventionId) return;
+    if (pinValue.length !== 4 || !program || !conventionId) {
+      setPinError('Unable to proceed. Please go back and try again.');
+      return;
+    }
     setSubmittingPin(true);
     setPinError('');
     const payload = {

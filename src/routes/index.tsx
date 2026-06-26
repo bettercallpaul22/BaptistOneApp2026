@@ -59,6 +59,9 @@ const ConventionAnnouncementDetailPage = lazy(
 const ConventionRegistrationPage = lazy(
   () => import('@/pages/convention/ConventionRegistrationPage'),
 );
+const ConventionProgramDetailsPage = lazy(
+  () => import('@/pages/convention/ConventionProgramDetailsPage'),
+);
 const ConventionPublicationPaymentPage = lazy(
   () => import('@/pages/convention/ConventionPublicationPaymentPage'),
 );
@@ -228,6 +231,7 @@ const RoutedApp = () => {
               element={<ConventionAnnouncementDetailPage />}
             />
             <Route path={paths.conventionRegistration} element={<ConventionRegistrationPage />} />
+            <Route path={paths.conventionProgramDetails} element={<ConventionProgramDetailsPage />} />
             <Route
               path={paths.conventionPublicationPayment}
               element={<ConventionPublicationPaymentPage />}
