@@ -10,6 +10,7 @@ export const endpoints = {
     forgotPassword: '/auth/forgot-password',
     verifyOtp: '/auth/verify-otp',
     setPassword: '/auth/set-password',
+    access: '/auth/access',
     me: '/auth/me',
     switchAccess: '/auth/access/switch',
   },

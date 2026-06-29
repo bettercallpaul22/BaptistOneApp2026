@@ -1,6 +1,7 @@
 import { http } from '@/services/api/http';
 import { endpoints } from '@/services/api/endpoints';
 import type {
+  AuthAccessData,
   AuthApiResponse,
   AuthData,
   ForgotPasswordPayload,
@@ -23,4 +24,5 @@ export const authService = {
     http.post<AuthApiResponse<unknown>, SetPasswordPayload>(endpoints.auth.setPassword, payload),
   switchAccess: (payload: SwitchAccessPayload) =>
     http.post<AuthApiResponse<AuthData>, SwitchAccessPayload>(endpoints.auth.switchAccess, payload),
+  getAuthAccess: () => http.get<AuthApiResponse<AuthAccessData>>(endpoints.auth.access),
 };

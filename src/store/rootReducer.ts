@@ -1,6 +1,7 @@
 import { combineReducers } from '@reduxjs/toolkit';
 import { appReducer } from './slices/appSlice';
 import { authReducer } from './slices/authSlice';
+import { authAccessReducer } from './slices/authAccessSlice';
 import { churchReducer } from './slices/churchSlice';
 import { churchContentReducer } from './slices/churchContentSlice';
 import { conventionReducer } from './slices/conventionSlice';
@@ -22,6 +23,7 @@ import { realtimeNotificationReducer } from './slices/realtimeNotificationSlice'
 export const rootReducer = combineReducers({
   app: appReducer,
   auth: authReducer,
+  authAccess: authAccessReducer,
   church: churchReducer,
   churchContent: churchContentReducer,
   convention: conventionReducer,

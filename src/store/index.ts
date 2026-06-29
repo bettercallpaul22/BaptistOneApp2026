@@ -28,7 +28,7 @@ import { rootReducer } from './rootReducer';
 const persistConfig = {
   key: 'newbaptist',
   storage,
-  whitelist: ['userAvatarUrl', 'resource'],
+  whitelist: ['userAvatarUrl', 'resource', 'authAccess'],
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

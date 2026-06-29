@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logout } from '@/store/slices/authSlice';
+import { fetchAuthAccessThunk } from '@/store/thunks/authAccessThunk';
 import { switchAccessThunk } from '@/store/thunks/authThunk';
 import { fetchDevotionalBannerThunk } from '@/store/thunks/homeThunk';
 import { fetchMemberAccountThunk } from '@/store/thunks/memberThunk';
@@ -52,6 +53,7 @@ export const useHomeBootstrapApi = () => {
     setError(null);
 
     const bootstrapPromises: Promise<unknown>[] = [
+      dispatch(fetchAuthAccessThunk()).unwrap(),
       dispatch(fetchMemberAccountThunk()).unwrap(),
     ];
 

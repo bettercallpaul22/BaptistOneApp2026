@@ -4,7 +4,10 @@ import { env } from '@/config/env';
 import type { AppDispatch } from '@/store';
 import { pushNotification } from '@/store/slices/notificationSlice';
 import { setUnreadCount, upsertNotification, updateReadState } from '@/store/slices/realtimeNotificationSlice';
+import { switchAccessThunk } from '@/store/thunks/authThunk';
 import type { RealtimeNotification, FilterCategory } from '@/types/realtimeNotification';
+import type { UserAccess } from '@/types/auth';
+import { useAppSelector } from '@/store/hooks';
 
 const MEMBER_REFRESH_TYPES = new Set([
   'member.removed.from-church',
@@ -27,6 +30,8 @@ export function useNotificationSocket(
 ) {
   const socketRef = useRef<Socket | null>(null);
   const accessTokenRef = useRef(accessToken);
+  const authData = useAppSelector((state) => state.auth.authData);
+  const authDataRef = useRef(authData);
   const notificationsRef = useRef(notifications);
   const activeFilterRef = useRef(activeFilter);
   const dispatchRef = useRef(dispatch);
@@ -52,6 +57,10 @@ export function useNotificationSocket(
   useEffect(() => {
     dispatchRef.current = dispatch;
   }, [dispatch]);
+
+  useEffect(() => {
+    authDataRef.current = authData;
+  }, [authData]);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -85,6 +94,42 @@ export function useNotificationSocket(
         import('@/store/thunks/memberThunk').then(({ fetchMemberAccountThunk }) => {
           dispatchRef.current(fetchMemberAccountThunk());
         });
+
+        if (notification.type === 'member.membership.approved') {
+          import('@/store/thunks/authAccessThunk').then(({ fetchAuthAccessThunk }) => {
+            console.log('[socket] fetching auth access after membership approval');
+            dispatchRef.current(fetchAuthAccessThunk()).unwrap().then((result) => {
+              console.log('[socket] auth access fetched', { accessCount: result.userAccess.length, currentType: result.currentAccess?.resourceType });
+              const targetAccess = result.userAccess.find(
+                (a: UserAccess) => a.status === 'active' && a.resourceType === 'church-member',
+              );
+              if (targetAccess && result.currentAccess?.resourceType !== 'church-member') {
+                console.log('[socket] switching to church-member access', { accessId: targetAccess.id });
+                const maxAttempts = 3;
+                const attemptSwitch = (attempt: number) => {
+                  dispatchRef.current(switchAccessThunk({ accessId: targetAccess.id }))
+                    .unwrap()
+                    .then(() => {
+                      console.log('[socket] switch access succeeded', { attempt });
+                    })
+                    .catch((err) => {
+                      console.log('[socket] switch access failed', { attempt, error: err?.message });
+                      if (attempt < maxAttempts) {
+                        setTimeout(() => attemptSwitch(attempt + 1), 1000 * attempt);
+                      }
+                    });
+                };
+                attemptSwitch(1);
+              } else {
+                console.log('[socket] no church-member switch needed', { currentType: result.currentAccess?.resourceType, hasTarget: !!targetAccess });
+              }
+            }).catch((err) => {
+              console.log('[socket] failed to fetch auth access after membership approval', err);
+            });
+          }).catch((err) => {
+            console.log('[socket] failed to import authAccessThunk', err);
+          });
+        }
       }
       if (TRANSACTION_REFRESH_TYPES.has(notification.type)) {
         console.log('[socket] refreshing wallet data due to', notification.type);

@@ -112,6 +112,12 @@ export interface SetPasswordResult {
   message: string;
 }
 
+export interface AuthAccessData {
+  userAccess: UserAccess[];
+  currentAccess: UserAccess;
+  profile: AuthProfile;
+}
+
 export interface SwitchAccessPayload {
   accessId: string;
 }
