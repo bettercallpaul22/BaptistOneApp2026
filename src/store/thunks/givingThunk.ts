@@ -2,7 +2,7 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { toApiError } from '@/services/api/responseHandler';
 import { givingService } from '@/services/giving/givingService';
 import type { RootState } from '@/store/rootReducer';
-import type { CreateGivingPayload, CreateGivingResponse, GivingConfigResponse } from '@/types/giving';
+import type { CreateGivingPayload, CreateGivingResponse, GivingConfigResponse, GivingHistoryResponse } from '@/types/giving';
 
 export const fetchGivingConfigThunk = createAsyncThunk<
   GivingConfigResponse & { churchId: string; lastFetchedAt: string },
@@ -49,5 +49,20 @@ export const createGivingThunk = createAsyncThunk<
       const { paymentLoading } = getState().giving;
       return !paymentLoading;
     },
+  },
+);
+
+export const fetchGivingHistoryThunk = createAsyncThunk<
+  GivingHistoryResponse,
+  { limit?: number; offset?: number },
+  { rejectValue: ReturnType<typeof toApiError> }
+>(
+  'giving/fetchHistory',
+  async (params, { rejectWithValue }) => {
+    try {
+      return await givingService.getHistory(params);
+    } catch (error) {
+      return rejectWithValue(toApiError(error));
+    }
   },
 );

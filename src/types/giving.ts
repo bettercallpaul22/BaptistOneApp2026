@@ -70,3 +70,37 @@ export interface CreateGivingResponse {
   message?: string;
   data: CreateGivingInnerResponse;
 }
+
+export interface GivingHistoryItem {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  amountTotal: number;
+  currency: string;
+  status: string;
+  reference: string;
+  checkoutUrl: string;
+  feesAmountTotal: number;
+  meta: {
+    finance: {
+      note: string | null;
+      domain: string;
+      subtype: string;
+      bucketId: string;
+      churchId: string;
+      memberId: string;
+      pledgeId: string | null;
+    };
+  };
+}
+
+export interface GivingHistoryResponse {
+  status: boolean;
+  message?: string;
+  data: {
+    items: GivingHistoryItem[];
+    total: number;
+    limit: number;
+    offset: number;
+  };
+}

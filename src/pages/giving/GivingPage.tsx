@@ -3,6 +3,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Church,
+  Clock,
   CreditCard,
   ExternalLink,
   Gift,
@@ -667,6 +668,13 @@ export default function GivingPage() {
             </AppText>
           </div>
           <div className="flex items-center gap-2">
+            <AppButton
+              leftIcon={<Clock className="size-4" aria-hidden />}
+              variant="outline"
+              onClick={() => navigate(paths.givingHistory)}
+            >
+              History
+            </AppButton>
             <AppButton
               leftIcon={<RefreshCw className="size-4" aria-hidden />}
               loading={walletsLoading || configLoading}

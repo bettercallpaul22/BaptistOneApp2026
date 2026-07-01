@@ -161,15 +161,7 @@ export default function WalletTransactionsPage() {
             Wallet
           </AppButton>
 
-          <div className="rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-[0_12px_28px_rgba(11,31,74,0.08)]">
-            <AppText variant="caption" color="textMuted" weight="bold">
-              Transaction history
-            </AppText>
-            <AppText variant="h4">{wallet?.displayName || `${currency} Wallet`}</AppText>
-            <AppText variant="bodySmall" color="textSecondary">
-              Wallet No. {decodedWalletNumber || 'Not provided'}
-            </AppText>
-          </div>
+  
         </header>
 
         <section className="grid gap-3 rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-[0_8px_18px_rgba(11,31,74,0.05)] sm:grid-cols-3">

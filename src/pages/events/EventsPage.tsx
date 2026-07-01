@@ -120,20 +120,26 @@ export default function EventsPage() {
   };
 
   return (
-    <AppShell>
-      <main className="mx-auto grid max-w-[78rem] gap-5 px-4 py-6 pb-28 sm:px-6 md:px-9">
-        <header className="flex items-start gap-3">
-          <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-[#EAF1FF] text-[#123B8D]">
-            <CalendarDays className="size-6" aria-hidden />
-          </span>
-          <div className="grid min-w-0 gap-1">
-            <AppText variant="h4">Events</AppText>
-            <AppText variant="bodySmall" color="textSecondary">
-              Upcoming programs and activities.
-            </AppText>
+    <AppShell
+      mobileHeaderAddon={
+        <div className="min-w-0 bg-white/95 backdrop-blur-xl">
+          <div className="min-w-0 border-b border-[#E5E7EB]">
+            <div className="mx-auto max-w-[78rem] flex items-center gap-3 px-4 py-3 sm:px-6 md:px-9">
+              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#EAF1FF] text-[#123B8D]">
+                <CalendarDays className="size-5" aria-hidden />
+              </span>
+              <div className="grid min-w-0 gap-0.5">
+                <AppText variant="h5">Events</AppText>
+                <AppText variant="caption" color="textSecondary">
+                  Upcoming programs and activities.
+                </AppText>
+              </div>
+            </div>
           </div>
-        </header>
-
+        </div>
+      }
+    >
+      <main className="mx-auto grid max-w-[78rem] gap-5 px-4 py-6 pb-28 sm:px-6 md:px-9">
         {renderContent()}
       </main>
     </AppShell>

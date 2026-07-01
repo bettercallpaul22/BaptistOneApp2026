@@ -272,19 +272,19 @@ const ForumPage = () => {
       mobileHeaderAddon={
         <div className="min-w-0 bg-white/95 backdrop-blur-xl">
           <div className="min-w-0 border-b border-[#E5E7EB]">
-            <div className="mx-auto max-w-[78rem] px-4 py-6 sm:px-6 md:px-9">
-              <div className="grid gap-6">
+            <div className="mx-auto max-w-[78rem] px-4 py-3 sm:px-6 md:px-9">
+              <div className="grid gap-3">
                 {/* Top row: Member greeting stacked below avatar */}
-                <div className="flex flex-col items-start gap-3">
-                  <UserProfileImage size="lg" />
+                <div className="flex items-center gap-3">
+                  <UserProfileImage size="md" />
                   <AppText variant="h5" className="font-bold text-[#0B1F4A]">
                     Hi, {memberName.split(' ')[0]}!
                   </AppText>
                 </div>
 
                 {/* Center: Church name and slug */}
-                <div className="grid gap-2 text-center">
-                  <AppText variant="h2" className="text-4xl font-extrabold">
+                <div className="grid gap-1 text-center">
+                  <AppText variant="h4" className="text-2xl font-extrabold">
                     Welcome to{'\n'}{churchDetails?.name}
                   </AppText>
                  

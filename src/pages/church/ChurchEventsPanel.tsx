@@ -67,38 +67,34 @@ const ChurchEventCard = ({ event, onView }: { event: ChurchEventItem; onView: (e
   const location = getEventLocation(event);
 
   return (
-    <article className="grid gap-3 rounded-xl border border-[#E5E7EB] bg-[#F8FAFC] p-4 shadow-[0_8px_18px_rgba(11,31,74,0.05)]">
+    <button
+      type="button"
+      className="w-full cursor-pointer rounded-2xl border border-[#E5E7EB] bg-white p-4 text-left shadow-sm transition active:scale-[0.98]"
+      onClick={() => onView(event)}
+    >
       <div className="flex items-start gap-3">
-        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-[#EAF1FF] text-[#123B8D]">
+        <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#EAF1FF] text-[#123B8D]">
           <CalendarDays className="size-5" aria-hidden />
         </span>
-        <div className="grid min-w-0 gap-1">
-          <AppText variant="bodyMedium" weight="bold">
+        <div className="min-w-0 flex-1">
+          <AppText variant="bodyMedium" weight="bold" className="line-clamp-1">
             {getEventTitle(event)}
           </AppText>
           <AppText variant="caption" color="#D4A017" weight="bold">
             {formatEventType(event.type)}
           </AppText>
+          <AppText variant="caption" color="textMuted" className="mt-1">
+            {formatEventDate(event)}
+          </AppText>
+          {location && (
+            <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-[#5A6880]">
+              <MapPin className="size-3 shrink-0" aria-hidden />
+              <span className="truncate">{location}</span>
+            </span>
+          )}
         </div>
       </div>
-      <AppText variant="bodySmall" color="textSecondary">
-        {formatEventDate(event)}
-      </AppText>
-      {event.description && (
-        <AppText variant="bodySmall" color="textSecondary">
-          {event.description}
-        </AppText>
-      )}
-      {location && (
-        <span className="inline-flex min-w-0 items-center gap-2 text-sm font-semibold text-[#5A6880]">
-          <MapPin className="size-4 shrink-0 text-[#123B8D]" aria-hidden />
-          <span className="min-w-0 truncate">{location}</span>
-        </span>
-      )}
-      <AppButton size="sm" fullWidth onClick={() => onView(event)}>
-        View event
-      </AppButton>
-    </article>
+    </button>
   );
 };
 
@@ -170,7 +166,7 @@ export const ChurchEventsPanel = ({ bootstrap }: { bootstrap: ChurchBootstrapSta
   }, [currentLoadMoreError, error, hasMore, isLoading, loadMoreEvents, loadingMore]);
 
   return (
-    <section className="grid gap-3 rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-[0_8px_18px_rgba(11,31,74,0.06)]">
+    <section className="grid gap-3">
       {isLoading && <AppStateFeedback state="loading" label="Loading church events" className="min-h-44" />}
       {error && !isLoading && (
         <AppStateFeedback

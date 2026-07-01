@@ -1,7 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { logout } from '@/store/slices/authSlice';
-import { createGivingThunk, fetchGivingConfigThunk } from '@/store/thunks/givingThunk';
-import type { CreateGivingResponse, GivingConfig } from '@/types/giving';
+import { createGivingThunk, fetchGivingConfigThunk, fetchGivingHistoryThunk } from '@/store/thunks/givingThunk';
+import type { CreateGivingResponse, GivingConfig, GivingHistoryItem } from '@/types/giving';
 
 interface GivingState {
   config: GivingConfig | null;
@@ -12,6 +12,14 @@ interface GivingState {
   paymentLoading: boolean;
   paymentError: string | null;
   paymentResult: CreateGivingResponse | null;
+  historyItems: GivingHistoryItem[];
+  historyLoading: boolean;
+  historyLoadingMore: boolean;
+  historyError: string | null;
+  historyTotal: number;
+  historyLimit: number;
+  historyOffset: number;
+  historyHasMore: boolean;
 }
 
 const initialState: GivingState = {
@@ -23,6 +31,14 @@ const initialState: GivingState = {
   paymentLoading: false,
   paymentError: null,
   paymentResult: null,
+  historyItems: [],
+  historyLoading: false,
+  historyLoadingMore: false,
+  historyError: null,
+  historyTotal: 0,
+  historyLimit: 20,
+  historyOffset: 0,
+  historyHasMore: false,
 };
 
 export const givingSlice = createSlice({
@@ -70,6 +86,35 @@ export const givingSlice = createSlice({
       .addCase(createGivingThunk.rejected, (state, action) => {
         state.paymentLoading = false;
         state.paymentError = action.payload?.message ?? 'Unable to initiate giving payment.';
+      })
+      .addCase(fetchGivingHistoryThunk.pending, (state, action) => {
+        const isLoadMore = (action.meta.arg.offset ?? 0) > 0;
+        if (isLoadMore) {
+          state.historyLoadingMore = true;
+        } else {
+          state.historyLoading = true;
+        }
+        state.historyError = null;
+      })
+      .addCase(fetchGivingHistoryThunk.fulfilled, (state, action) => {
+        const { items, total, limit, offset } = action.payload.data;
+        const isLoadMore = (offset ?? 0) > 0;
+        if (isLoadMore) {
+          state.historyItems = [...state.historyItems, ...items];
+          state.historyLoadingMore = false;
+        } else {
+          state.historyItems = items;
+          state.historyLoading = false;
+        }
+        state.historyTotal = total;
+        state.historyLimit = limit;
+        state.historyOffset = offset;
+        state.historyHasMore = state.historyItems.length < total;
+      })
+      .addCase(fetchGivingHistoryThunk.rejected, (state, action) => {
+        state.historyLoading = false;
+        state.historyLoadingMore = false;
+        state.historyError = action.payload?.message ?? 'Unable to load giving history.';
       })
       .addCase(logout, () => initialState);
   },

@@ -1,6 +1,6 @@
 import { endpoints } from '@/services/api/endpoints';
 import { http } from '@/services/api/http';
-import type { CreateGivingPayload, CreateGivingResponse, GivingConfigResponse } from '@/types/giving';
+import type { CreateGivingPayload, CreateGivingResponse, GivingConfigResponse, GivingHistoryResponse } from '@/types/giving';
 
 export const givingService = {
   getConfig: async (churchId: string) => {
@@ -25,6 +25,16 @@ export const givingService = {
 
     if (payload.paymentMethod === 'paystack' && !response.data?.data?.transaction?.checkoutUrl) {
       throw new Error('Unable to initiate giving payment.');
+    }
+
+    return response;
+  },
+
+  getHistory: async ({ limit = 20, offset = 0 }: { limit?: number; offset?: number } = {}) => {
+    const response = await http.get<GivingHistoryResponse>(endpoints.publicGiving.history({ limit, offset }));
+
+    if (!response.status || !response.data) {
+      throw new Error(response.message || 'Unable to load giving history.');
     }
 
     return response;

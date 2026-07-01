@@ -46,6 +46,7 @@ const WalletFundingCallbackPage = lazy(
   () => import('@/pages/wallet/funding-callback/WalletFundingCallbackPage'),
 );
 const GivingPage = lazy(() => import('@/pages/giving/GivingPage'));
+const GivingHistoryPage = lazy(() => import('@/pages/giving/GivingHistoryPage'));
 const GivingCallbackPage = lazy(() => import('@/pages/giving/GivingCallbackPage'));
 const ForumPage = lazy(() => import('@/pages/forum/ForumPage'));
 const ForumPostListPage = lazy(() => import('@/pages/forum/ForumPostListPage'));
@@ -216,6 +217,7 @@ const RoutedApp = () => {
             <Route path={paths.ministries} element={<MinistryPage />} />
             <Route path={paths.events} element={<EventsPage />} />
             <Route path={paths.donation} element={<GivingPage />} />
+            <Route path={paths.givingHistory} element={<GivingHistoryPage />} />
             <Route path={paths.media} element={<AppPlaceholderPage title="Media" />} />
             <Route path={paths.church} element={<AppTabPage kind="church" />} />
             <Route path={paths.churchBrowse} element={<ChurchBrowsePage />} />

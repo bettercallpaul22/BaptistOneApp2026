@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   CreditCard,
   ExternalLink,
+  KeyRound,
   List,
   Plus,
   RefreshCw,
@@ -14,7 +15,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { AppButton, AppText } from '@/components/common';
 import { AppLoader, AppModal } from '@/components/feedback';
-import { AppDropdown, AppMoneyInput } from '@/components/form';
+import { AppDropdown, AppInput, AppMoneyInput } from '@/components/form';
 import { callbackUrls } from '@/constants/callbackUrls';
 import { AppShell } from '@/layouts/AppShell';
 import { paths } from '@/routes/paths';
@@ -26,7 +27,7 @@ import {
   setWalletCurrency,
 } from '@/store/slices/walletSlice';
 import { pushNotification } from '@/store/slices/notificationSlice';
-import { createWalletThunk, fetchWalletsThunk, fundWalletThunk } from '@/store/thunks/walletThunk';
+import { createWalletThunk, fetchWalletsThunk, fundWalletThunk, setWalletPinThunk, verifyWalletPinThunk } from '@/store/thunks/walletThunk';
 import type { Wallet, WalletCreateCurrency } from '@/types/wallet';
 
 const currencyOptions: Array<{ label: string; value: WalletCreateCurrency }> = [
@@ -97,11 +98,13 @@ const WalletSummary = ({
   featured = false,
   onFundWallet,
   onViewTransactions,
+  onSetPin,
 }: {
   wallet: Wallet;
   featured?: boolean;
   onFundWallet: (wallet: Wallet) => void;
   onViewTransactions: (wallet: Wallet) => void;
+  onSetPin: (wallet: Wallet) => void;
 }) => (
   <section className="grid gap-4 rounded-xl border border-[#D6DEEB] bg-white p-4 shadow-[0_12px_28px_rgba(11,31,74,0.08)] sm:p-5">
     <div className="flex flex-wrap items-start justify-between gap-4">
@@ -116,9 +119,14 @@ const WalletSummary = ({
           </AppText>
         </div>
       </div>
-      <span className="rounded-full border border-[#D6DEEB] bg-[#F8FAFC] px-3 py-1 text-xs font-black uppercase text-[#123B8D]">
-        {wallet.status || 'active'}
-      </span>
+      <AppButton
+        size="sm"
+        variant="outline"
+        leftIcon={<KeyRound className="size-3.5" aria-hidden />}
+        onClick={() => onSetPin(wallet)}
+      >
+        Set Pin
+      </AppButton>
     </div>
 
     <div className="grid gap-1 rounded-xl bg-[#0B1F4A] p-4 text-white">
@@ -180,6 +188,12 @@ export default function WalletPage() {
   } = useAppSelector((state) => state.wallet);
   const [fundingWallet, setFundingWallet] = useState<Wallet | null>(null);
   const [fundingAmount, setFundingAmount] = useState('');
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+  const [pinValue, setPinValue] = useState('');
+  const [confirmPinValue, setConfirmPinValue] = useState('');
+  const [pinError, setPinError] = useState('');
+  const [settingPin, setSettingPin] = useState(false);
+  const [pinMode, setPinMode] = useState<'set' | 'verify'>('set');
   const primaryWallet = items[0] ?? null;
   const otherWallets = items.slice(1);
   const fundingAmountMajor = Number(fundingAmount || 0);
@@ -219,6 +233,95 @@ export default function WalletPage() {
     },
     [navigate],
   );
+
+  const openPinModal = useCallback((wallet: Wallet) => {
+    setIsPinModalOpen(true);
+    setPinValue('');
+    setConfirmPinValue('');
+    setPinError('');
+    setPinMode('set');
+  }, []);
+
+  const handlePinChange = (value: string) => {
+    const numeric = value.replace(/[^0-9]/g, '').slice(0, 4);
+    setPinValue(numeric);
+    if (confirmPinValue && numeric !== confirmPinValue) {
+      setPinError('PINs do not match');
+    } else {
+      setPinError('');
+    }
+  };
+
+  const handleConfirmPinChange = (value: string) => {
+    const numeric = value.replace(/[^0-9]/g, '').slice(0, 4);
+    setConfirmPinValue(numeric);
+    if (pinValue && numeric !== pinValue) {
+      setPinError('PINs do not match');
+    } else {
+      setPinError('');
+    }
+  };
+
+  const canSetPin = pinValue.length === 4 && confirmPinValue.length === 4 && pinValue === confirmPinValue && !settingPin;
+
+  const handleSetPin = async () => {
+    if (!canSetPin) return;
+
+    setSettingPin(true);
+    setPinError('');
+
+    try {
+      await dispatch(setWalletPinThunk({ authKey: pinValue })).unwrap();
+      dispatch(pushNotification({ type: 'success', title: 'PIN set', message: 'Your wallet PIN has been set successfully.' }));
+      setIsPinModalOpen(false);
+      setPinValue('');
+      setConfirmPinValue('');
+      setPinError('');
+      setPinMode('set');
+      void dispatch(fetchWalletsThunk());
+    } catch (err) {
+      const msg = getErrorMessage(err, 'Failed to set PIN.');
+      if (msg.toLowerCase().includes('already set')) {
+        setPinMode('verify');
+        setPinError('');
+      } else {
+        setPinError(msg);
+      }
+    } finally {
+      setSettingPin(false);
+    }
+  };
+
+  const handleVerifyPin = async () => {
+    if (pinValue.length !== 4) return;
+
+    setSettingPin(true);
+    setPinError('');
+
+    try {
+      await dispatch(verifyWalletPinThunk({ authKey: pinValue })).unwrap();
+      dispatch(pushNotification({ type: 'success', title: 'PIN verified', message: 'Your wallet PIN has been verified successfully.' }));
+      setIsPinModalOpen(false);
+      setPinValue('');
+      setConfirmPinValue('');
+      setPinError('');
+      setPinMode('set');
+      void dispatch(fetchWalletsThunk());
+    } catch (err) {
+      const msg = getErrorMessage(err, 'Failed to verify PIN.');
+      setPinError(msg);
+    } finally {
+      setSettingPin(false);
+    }
+  };
+
+  const closePinModal = () => {
+    setIsPinModalOpen(false);
+    setPinValue('');
+    setConfirmPinValue('');
+    setPinError('');
+    setPinMode('set');
+  };
 
   const handleCreateWallet = async () => {
     dispatch(clearCreateWalletStatus());
@@ -383,6 +486,7 @@ export default function WalletPage() {
                 featured
                 onFundWallet={openFundingModal}
                 onViewTransactions={openTransactionsPage}
+                onSetPin={openPinModal}
               />
             )}
 
@@ -396,6 +500,7 @@ export default function WalletPage() {
                       key={wallet.id}
                       onFundWallet={openFundingModal}
                       onViewTransactions={openTransactionsPage}
+                      onSetPin={openPinModal}
                     />
                   ))}
                 </div>
@@ -508,6 +613,71 @@ export default function WalletPage() {
             )}
           </div>
         )}
+      </AppModal>
+
+      <AppModal
+        open={isPinModalOpen}
+        title={pinMode === 'verify' ? 'Verify Wallet PIN' : 'Set Wallet PIN'}
+        onClose={closePinModal}
+        footer={
+          <>
+            <AppButton variant="secondary" onClick={closePinModal}>
+              Cancel
+            </AppButton>
+            {pinMode === 'verify' ? (
+              <AppButton
+                variant="primary"
+                loading={settingPin}
+                disabled={pinValue.length !== 4}
+                onClick={() => void handleVerifyPin()}
+              >
+                Verify PIN
+              </AppButton>
+            ) : (
+              <AppButton
+                variant="primary"
+                loading={settingPin}
+                disabled={!canSetPin}
+                onClick={() => void handleSetPin()}
+              >
+                Set PIN
+              </AppButton>
+            )}
+          </>
+        }
+      >
+        <div className="grid gap-4">
+          <AppText variant="bodyMedium" color="textSecondary">
+            {pinMode === 'verify'
+              ? 'Enter your existing 4-digit PIN to verify your identity.'
+              : 'Create a 4-digit PIN to secure your wallet transactions.'}
+          </AppText>
+          {pinError && (
+            <AppText variant="bodySmall" color="#B91C1C">
+              {pinError}
+            </AppText>
+          )}
+          <AppInput
+            label="Enter PIN"
+            type="password"
+            inputMode="numeric"
+            maxLength={4}
+            placeholder="4-digit PIN"
+            value={pinValue}
+            onChange={(e) => handlePinChange(e.target.value)}
+          />
+          {pinMode === 'set' && (
+            <AppInput
+              label="Confirm PIN"
+              type="password"
+              inputMode="numeric"
+              maxLength={4}
+              placeholder="Confirm PIN"
+              value={confirmPinValue}
+              onChange={(e) => handleConfirmPinChange(e.target.value)}
+            />
+          )}
+        </div>
       </AppModal>
     </AppShell>
   );

@@ -218,6 +218,12 @@ export const endpoints = {
   publicGiving: {
     config: (churchId: string) => `/public/giving/config/${encodeURIComponent(churchId)}`,
     create: '/private/giving',
+    history: ({ limit = 20, offset = 0 }: { limit?: number; offset?: number } = {}) => {
+      const params = new URLSearchParams();
+      params.set('limit', String(limit));
+      params.set('offset', String(offset));
+      return `/private/giving/history?${params.toString()}`;
+    },
   },
   publicConventions: {
     programs: (id: string, { page = 1, limit = 25, search }: { page?: number; limit?: number; search?: string } = {}) => {
