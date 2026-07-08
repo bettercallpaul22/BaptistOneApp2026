@@ -80,7 +80,7 @@ export function TabWebViewScreen({ tabName }: { tabName: WebTabName }) {
               Unable to load {tabName}
             </AppText>
             <AppText align="center" color="textSecondary" variant="bodyMedium">
-              Confirm the web server is running and reachable at {url}.
+               Something went wrong while loading the page. Please check your internet connection and try again.
             </AppText>
             <AppButton onPress={retry}>Retry</AppButton>
           </View>
