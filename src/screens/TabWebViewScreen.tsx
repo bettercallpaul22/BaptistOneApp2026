@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Linking, Platform, StyleSheet, View } from 'react-native';
 import WebView, { type WebViewMessageEvent } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppButton, AppText } from '../components/common';
 import { SplashLogo } from '../components/SplashLogo';
-import { getTabWebUrl, type WebTabName } from '../config/webRoutes';
+import { baseWebUrl, getTabWebUrl, type WebTabName } from '../config/webRoutes';
+import { useDeepLink } from '../navigation/DeepLinkContext';
 import { useNativeAuthSession } from '../navigation/NativeAuthSessionContext';
 import { colors, spacing } from '../theme';
+
+const GOOGLE_AUTH_URL_MARKERS = ['/auth/google/sign-in', '/auth/google/sign-up'];
 
 const nativeShellBootstrapScript = `
   window.__BAPTIST_ONE_NATIVE_SHELL__ = true;
@@ -30,14 +33,27 @@ const webLogoutScript = `
   true;
 `;
 
+const isGoogleAuthNavigation = (url: string): boolean => {
+  // Don't intercept the callback URL - it should load in the WebView
+  if (url.includes('/auth/google/callback')) {
+    return false;
+  }
+  return GOOGLE_AUTH_URL_MARKERS.some((marker) => url.includes(marker));
+};
+
 export function TabWebViewScreen({ tabName }: { tabName: WebTabName }) {
   const { clearNativeSession, completeWebLogout, isWebLogoutPending, logoutVersion } = useNativeAuthSession();
+  const { pendingGoogleIntent, consumeGoogleIntent } = useDeepLink();
   const webViewRef = useRef<WebView>(null);
   const [webViewKey, setWebViewKey] = useState(0);
   const [webLogoutVersion, setWebLogoutVersion] = useState(0);
   const [hasError, setHasError] = useState(false);
+  const [googleCallbackUrl, setGoogleCallbackUrl] = useState<string | null>(null);
   const url = getTabWebUrl(tabName);
-  const source = useMemo(() => ({ uri: url }), [url]);
+  const source = useMemo(
+    () => ({ uri: googleCallbackUrl ?? url }),
+    [googleCallbackUrl, url],
+  );
   const injectedJavaScriptBeforeContentLoaded = useMemo(
     () => `${nativeShellBootstrapScript}\n${logoutVersion > 0 && webLogoutVersion === logoutVersion ? webLogoutScript : ''}`,
     [logoutVersion, webLogoutVersion],
@@ -56,10 +72,56 @@ export function TabWebViewScreen({ tabName }: { tabName: WebTabName }) {
     }
   }, [isWebLogoutPending, logoutVersion, webLogoutVersion]);
 
+  useEffect(() => {
+    if (pendingGoogleIntent) {
+      const callbackUrl = `${baseWebUrl.replace(/\/+$/, '')}/auth/google/callback?intent=${encodeURIComponent(pendingGoogleIntent)}`;
+      console.log(`[DeepLink] Received Google intent, navigating WebView to: ${callbackUrl}`);
+      setGoogleCallbackUrl(callbackUrl);
+      consumeGoogleIntent();
+    }
+  }, [pendingGoogleIntent, consumeGoogleIntent]);
+
+  const openGoogleAuthInSystemBrowser = useCallback((url: string) => {
+    console.log(`[GoogleAuth] Opening in system browser: ${url}`);
+    Linking.openURL(url).catch((err) => {
+      console.warn('[GoogleAuth] Failed to open system browser:', err);
+    });
+  }, []);
+
+  const handleShouldStartLoad = useCallback(
+    (event: any): boolean => {
+      const requestUrl = event?.url ?? event?.nativeEvent?.url ?? '';
+      console.log(`[WebView] onShouldStartLoad: ${requestUrl} (platform: ${Platform.OS})`);
+
+      if (isGoogleAuthNavigation(requestUrl)) {
+        console.log(`[GoogleAuth] Intercepted Google auth navigation in WebView — redirecting to system browser`);
+        openGoogleAuthInSystemBrowser(requestUrl);
+        return false;
+      }
+
+      return true;
+    },
+    [openGoogleAuthInSystemBrowser],
+  );
+
   const handleWebViewMessage = useCallback(
     (event: WebViewMessageEvent) => {
       try {
-        const payload = JSON.parse(event.nativeEvent.data) as { type?: string };
+        const raw = event.nativeEvent.data;
+        console.log(`[WebView] onMessage received: ${raw.substring(0, 200)}`);
+        const payload = JSON.parse(raw) as { type?: string; url?: string };
+
+        if (payload.type === 'google-auth-complete') {
+          console.log('[GoogleAuth] Login completed in WebView, resetting callback URL');
+          setGoogleCallbackUrl(null);
+          return;
+        }
+
+        if (payload.type === 'google-auth' && payload.url) {
+          console.log(`[GoogleAuth] postMessage received, opening: ${payload.url}`);
+          openGoogleAuthInSystemBrowser(payload.url);
+          return;
+        }
 
         if (payload.type === 'baptist-one:logout') {
           clearNativeSession();
@@ -68,7 +130,7 @@ export function TabWebViewScreen({ tabName }: { tabName: WebTabName }) {
         // Ignore messages that do not belong to the native shell bridge.
       }
     },
-    [clearNativeSession],
+    [clearNativeSession, openGoogleAuthInSystemBrowser],
   );
 
   return (
@@ -101,6 +163,7 @@ export function TabWebViewScreen({ tabName }: { tabName: WebTabName }) {
             setSupportMultipleWindows={false}
             sharedCookiesEnabled
             startInLoadingState
+            onShouldStartLoadWithRequest={handleShouldStartLoad}
             onError={() => setHasError(true)}
             onHttpError={(event) => {
               if (event.nativeEvent.statusCode >= 500) {

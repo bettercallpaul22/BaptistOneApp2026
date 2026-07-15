@@ -3,6 +3,7 @@ import { BackHandler, StatusBar, StyleSheet, ToastAndroid, useColorScheme } from
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppNavigator } from './src/navigation/AppNavigator';
+import { DeepLinkProvider } from './src/navigation/DeepLinkContext';
 import { colors } from './src/theme/colors';
 
 function App() {
@@ -26,11 +27,13 @@ function App() {
   return (
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
-        <StatusBar
-          barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-          backgroundColor={colors.surface}
-        />
-        <AppNavigator />
+        <DeepLinkProvider>
+          <StatusBar
+            barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+            backgroundColor={colors.surface}
+          />
+          <AppNavigator />
+        </DeepLinkProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
