@@ -137,21 +137,8 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
             focused={focused}
             key={route.key}
             label={label}
-            onPressIn={() => {
-              console.log('[BottomTab] press in', {
-                focused,
-                route: route.name,
-                tabBarHidden: isTabBarHidden,
-                tabBarHeight,
-              });
-            }}
+            onPressIn={() => {}}
             onPress={() => {
-              console.log('[BottomTab] press', {
-                focused,
-                route: route.name,
-                tabBarHidden: isTabBarHidden,
-                tabBarHeight,
-              });
               setIsTabBarHidden(false);
 
               const event = navigation.emit({
@@ -159,15 +146,9 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
                 target: route.key,
                 canPreventDefault: true,
               });
-              console.log('[BottomTab] tabPress emitted', {
-                defaultPrevented: event.defaultPrevented,
-                focused,
-                route: route.name,
-              });
 
               if (!focused && !event.defaultPrevented) {
                 navigation.dispatch(TabActions.jumpTo(route.name));
-                console.log('[BottomTab] jumpTo dispatched', { route: route.name });
               }
             }}
           />

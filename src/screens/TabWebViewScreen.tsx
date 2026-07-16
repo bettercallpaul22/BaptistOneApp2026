@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Linking, Platform, StyleSheet, View } from 'react-native';
+import { Linking, StyleSheet, View } from 'react-native';
 import WebView, { type WebViewMessageEvent } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppButton, AppText } from '../components/common';
@@ -75,26 +75,20 @@ export function TabWebViewScreen({ tabName }: { tabName: WebTabName }) {
   useEffect(() => {
     if (pendingGoogleIntent) {
       const callbackUrl = `${baseWebUrl.replace(/\/+$/, '')}/auth/google/callback?intent=${encodeURIComponent(pendingGoogleIntent)}`;
-      console.log(`[DeepLink] Received Google intent, navigating WebView to: ${callbackUrl}`);
       setGoogleCallbackUrl(callbackUrl);
       consumeGoogleIntent();
     }
   }, [pendingGoogleIntent, consumeGoogleIntent]);
 
   const openGoogleAuthInSystemBrowser = useCallback((url: string) => {
-    console.log(`[GoogleAuth] Opening in system browser: ${url}`);
-    Linking.openURL(url).catch((err) => {
-      console.warn('[GoogleAuth] Failed to open system browser:', err);
-    });
+    Linking.openURL(url).catch(() => {});
   }, []);
 
   const handleShouldStartLoad = useCallback(
     (event: any): boolean => {
       const requestUrl = event?.url ?? event?.nativeEvent?.url ?? '';
-      console.log(`[WebView] onShouldStartLoad: ${requestUrl} (platform: ${Platform.OS})`);
 
       if (isGoogleAuthNavigation(requestUrl)) {
-        console.log(`[GoogleAuth] Intercepted Google auth navigation in WebView — redirecting to system browser`);
         openGoogleAuthInSystemBrowser(requestUrl);
         return false;
       }
@@ -107,18 +101,14 @@ export function TabWebViewScreen({ tabName }: { tabName: WebTabName }) {
   const handleWebViewMessage = useCallback(
     (event: WebViewMessageEvent) => {
       try {
-        const raw = event.nativeEvent.data;
-        console.log(`[WebView] onMessage received: ${raw.substring(0, 200)}`);
-        const payload = JSON.parse(raw) as { type?: string; url?: string };
+        const payload = JSON.parse(event.nativeEvent.data) as { type?: string; url?: string };
 
         if (payload.type === 'google-auth-complete') {
-          console.log('[GoogleAuth] Login completed in WebView, resetting callback URL');
           setGoogleCallbackUrl(null);
           return;
         }
 
         if (payload.type === 'google-auth' && payload.url) {
-          console.log(`[GoogleAuth] postMessage received, opening: ${payload.url}`);
           openGoogleAuthInSystemBrowser(payload.url);
           return;
         }

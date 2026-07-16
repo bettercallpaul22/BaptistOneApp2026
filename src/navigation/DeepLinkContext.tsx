@@ -12,14 +12,11 @@ const DeepLinkContext = createContext<DeepLinkContextValue | null>(null);
 const GOOGLE_CALLBACK_PREFIX = 'baptistone://auth/google/callback';
 
 const extractIntent = (url: string): string | null => {
-  console.log(`[DeepLink] Checking URL: ${url}`);
   if (!url.startsWith(GOOGLE_CALLBACK_PREFIX)) return null;
 
   const queryString = url.includes('?') ? url.split('?')[1] : '';
   const params = new URLSearchParams(queryString);
-  const intent = params.get('intent');
-  console.log(`[DeepLink] Extracted intent: ${intent ? intent.substring(0, 30) + '...' : 'null'}`);
-  return intent;
+  return params.get('intent');
 };
 
 export const DeepLinkProvider = ({ children }: { children: ReactNode }) => {
@@ -31,16 +28,13 @@ export const DeepLinkProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const handleUrl = ({ url }: { url: string }) => {
-      console.log(`[DeepLink] URL event received: ${url}`);
       const intent = extractIntent(url);
       if (intent) {
-        console.log(`[DeepLink] Setting pending Google intent`);
         setPendingIntent(intent);
       }
     };
 
     Linking.getInitialURL().then((url) => {
-      console.log(`[DeepLink] Initial URL: ${url ?? 'null'}`);
       if (url) handleUrl({ url });
     });
 
