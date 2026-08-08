@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Linking, StyleSheet, View } from 'react-native';
+import { Linking, Platform, StyleSheet, View } from 'react-native';
+import DeviceInfo from 'react-native-device-info';
 import WebView, { type WebViewMessageEvent } from 'react-native-webview';
+import type { ShouldStartLoadRequest } from 'react-native-webview/lib/WebViewTypes';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppButton, AppText } from '../components/common';
 import { SplashLogo } from '../components/SplashLogo';
@@ -13,6 +15,9 @@ const GOOGLE_AUTH_URL_MARKERS = ['/auth/google/sign-in', '/auth/google/sign-up']
 
 const nativeShellBootstrapScript = `
   window.__BAPTIST_ONE_NATIVE_SHELL__ = true;
+  window.__NATIVE_APP_VERSION__ = ${JSON.stringify(DeviceInfo.getVersion())};
+  window.__NATIVE_APP_BUILD__ = ${JSON.stringify(DeviceInfo.getBuildNumber())};
+  window.__NATIVE_PLATFORM__ = ${JSON.stringify(Platform.OS)};
   try {
     window.sessionStorage.setItem('baptistOne:nativeShell', '1');
   } catch (error) {}
@@ -85,8 +90,8 @@ export function TabWebViewScreen({ tabName }: { tabName: WebTabName }) {
   }, []);
 
   const handleShouldStartLoad = useCallback(
-    (event: any): boolean => {
-      const requestUrl = event?.url ?? event?.nativeEvent?.url ?? '';
+    (event: ShouldStartLoadRequest): boolean => {
+      const requestUrl = event.url;
 
       if (isGoogleAuthNavigation(requestUrl)) {
         openGoogleAuthInSystemBrowser(requestUrl);

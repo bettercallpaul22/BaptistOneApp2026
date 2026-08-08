@@ -13,6 +13,19 @@ jest.mock('react-native-gesture-handler', () => {
 jest.mock('react-native-reanimated', () => require('react-native-reanimated/mock'));
 jest.mock('react-native-worklets', () => require('react-native-worklets/src/mock'));
 
+jest.mock('react-native-device-info', () => ({
+  getApplicationName: jest.fn(() => Promise.resolve('BaptistOneApp')),
+  getVersion: jest.fn(() => Promise.resolve('1.0.0')),
+  getBuildNumber: jest.fn(() => Promise.resolve('1')),
+  getBundleId: jest.fn(() => Promise.resolve('com.baptistapp')),
+  getSystemName: jest.fn(() => Promise.resolve('iOS')),
+  getSystemVersion: jest.fn(() => Promise.resolve('18.0')),
+  getModel: jest.fn(() => Promise.resolve('iPhone')),
+  getBrand: jest.fn(() => Promise.resolve('Apple')),
+  getDeviceId: jest.fn(() => Promise.resolve('test-device-id')),
+  isTablet: jest.fn(() => Promise.resolve(false)),
+}));
+
 jest.mock('react-native-config', () => ({
   API_BASE_URL: 'http://localhost:3000',
   WEBVIEW_URL: 'http://192.168.18.5:5173',
